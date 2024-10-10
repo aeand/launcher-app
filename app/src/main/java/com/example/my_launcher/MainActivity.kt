@@ -170,10 +170,7 @@ class MainActivity : ComponentActivity() {
                             Icon(
                                 modifier = Modifier
                                     .size(30.dp)
-                                    .background(Color.DarkGray)
-                                    .drawBehind {
-                                        CircleShape
-                                    },
+                                    .background(Color.DarkGray),
                                 imageVector = Icons.Rounded.KeyboardArrowUp,
                                 contentDescription = null
                             )
