@@ -11,7 +11,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,28 +37,48 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
+
+object AppColors {
+    val primary = Color.Red
+    val secondary = Color.Green
+    val tertiary = Color.Blue
+    val white = Color.White
+    val black = Color.Black
+    val transparent = Color.Transparent
+}
 
 class MainActivity : ComponentActivity() {
     class ApplicationInformation {
@@ -67,7 +96,7 @@ class MainActivity : ComponentActivity() {
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
 
         //TODO set text color
-        val textColor = Color.White
+        val textColor = AppColors.white
 
         // GET ALL APPS //TODO add refresh app list. donno when tho
         val intent = Intent(Intent.ACTION_MAIN, null)
@@ -119,20 +148,20 @@ class MainActivity : ComponentActivity() {
         setContent {
             //TODO make home button default to top of app list
             //TODO blur background
-            //MylauncherTheme {}
 
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
             DisposableEffect(isDarkMode) {
                 context.enableEdgeToEdge(
-                    statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                    navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+                    statusBarStyle = SystemBarStyle.dark(AppColors.transparent.toArgb()),
+                    navigationBarStyle = SystemBarStyle.dark(AppColors.transparent.toArgb()),
                 )
 
                 onDispose { }
             }
 
-            VerticalPager( //TODO fix lag when going back to empty screen
+            //TODO fix lag when going back to empty screen
+            VerticalPager(
                 modifier = Modifier
                     .padding(top = 32.dp, bottom = 48.dp),
                 state = rememberPagerState(pageCount = {
@@ -140,10 +169,10 @@ class MainActivity : ComponentActivity() {
                 })
             ) {
                 if (it == 1) {
-                    Box(modifier = Modifier.fillMaxSize()) //TODO add widgets
+                    Box(modifier = Modifier.fillMaxSize())
                 }
                 else if (it == 0) {
-                    //TODO put something else at the top. Like date, duolingo widget, brightness level
+                    //TODO Add duolingo widget support
                     val scope = rememberCoroutineScope()
                     val lazyScroll = rememberLazyListState()
 
@@ -237,31 +266,51 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            Column( //TODO prettify the button press and animations
+                            //TODO make it follow when dragging
+                            //TODO prettify the button press and animations
+                            var offsetX by remember { mutableFloatStateOf(0f) }
+                            var selectedLetter by remember { mutableStateOf("") }
+
+                            //TODO I broke the alphabetical list when swiping back from page 2
+                            Column(
                                 modifier = Modifier
                                     .fillMaxHeight(),
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 alphabet.forEach { letter ->
-                                    Text(
+                                    Text(//TODO doesn't seem to work for apps called 1*
                                         modifier = Modifier
-                                            .clickable {
-                                                scope.launch {
-                                                    var i = 0
+                                            .pointerInput(Unit) {
+                                                detectTapGestures(
+                                                    onPress = {
+                                                        try {
+                                                            selectedLetter = letter
+                                                            offsetX = 0f//-100f
+                                                            awaitRelease()
+                                                        } finally {
+                                                            scope.launch {
+                                                                var i = 0
 
-                                                    apps.forEachIndexed { index, app ->
-                                                        if (i == 0 && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                                                            i = index
+                                                                apps.forEachIndexed { index, app ->
+                                                                    if (i == 0 && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                                                                        i = index
+                                                                    }
+                                                                }
+
+                                                                //appScroll.animateScrollTo(itemPositions[i].roundToInt() - 30)
+                                                                lazyScroll.animateScrollToItem(i)
+                                                            }
+                                                            offsetX = 0f
+                                                            selectedLetter = ""
                                                         }
-                                                    }
-
-                                                    //appScroll.animateScrollTo(itemPositions[i].roundToInt() - 30)
-                                                    lazyScroll.animateScrollToItem(i)
-                                                }
-                                            },
+                                                    },
+                                                )
+                                            }
+                                            .offset { IntOffset(offsetX.roundToInt(), 0) }
+                                            .background(if (selectedLetter == letter) AppColors.tertiary else AppColors.transparent),
                                         text = letter,
                                         color = textColor,
-                                        fontSize = 16.sp,
+                                        fontSize = if (selectedLetter == letter) 30.sp else 16.sp,
                                         fontWeight = FontWeight(600)
                                     )
                                 }
