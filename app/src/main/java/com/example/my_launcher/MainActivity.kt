@@ -32,6 +32,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -39,12 +44,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,6 +59,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.launch
+
+/* TODO
+- make scrollable section 60%. put something else at the top. Like date, duolingo widget, brightness level
+- stop clipping with statusbar and navbar
+- add settings. I wanna hide specific apps
+- add refresh app list. donno when tho
+*/
 
 class MainActivity : ComponentActivity() {
     class ApplicationInformation {
@@ -120,118 +134,131 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current as ComponentActivity
             DisposableEffect(isDarkMode) {
                 context.enableEdgeToEdge(
-                    statusBarStyle = if (!isDarkMode) {
-                        SystemBarStyle.light(
-                            Color.Transparent.toArgb(),
-                            Color.Transparent.toArgb()
-                        )
-                    } else {
-                        SystemBarStyle.dark(
-                            Color.Transparent.toArgb()
-                        )
-                    },
-                    navigationBarStyle = if(!isDarkMode){
-                        SystemBarStyle.light(
-                            Color.Transparent.toArgb(),
-                            Color.Transparent.toArgb()
-                        )
-                    } else {
-                        SystemBarStyle.dark(Color.Transparent.toArgb())
-                    }
+                    statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+                    navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
                 )
 
                 onDispose { }
             }
 
             VerticalPager( //TODO fix lag when going back to empty screen
+                modifier = Modifier
+                    .padding(top = 32.dp, bottom = 48.dp),
                 state = rememberPagerState(pageCount = {
                     2
                 })
             ) {
                 if (it == 0) {
-                    Box(modifier = Modifier.fillMaxSize())
+                    Box(modifier = Modifier.fillMaxSize()) //TODO add widgets
                 }
                 else if (it == 1) {
-                    Row(
+                    val scope = rememberCoroutineScope()
+                    val lazyScroll = rememberLazyListState()
+
+                    Box(
                         modifier = Modifier
-                            .padding(10.dp)
-                            .fillMaxSize(),
-                        horizontalArrangement = Arrangement.End
                     ) {
-                        //val appScroll = rememberScrollState()
-                        val lazyScroll = rememberLazyListState()
-                        val scope = rememberCoroutineScope()
-                        val itemPositions: MutableList<Float> = mutableListOf()
-
-                        LazyColumn(
+                        Button(
                             modifier = Modifier
-                                .padding(end = 20.dp),
-                            state = lazyScroll,
-                            horizontalAlignment = Alignment.End
+                                .align(Alignment.BottomStart),
+                            onClick = {
+                                scope.launch {
+                                    lazyScroll.animateScrollToItem(0)
+                                }
+                            }
                         ) {
-                            apps.forEach { app ->
-                                item {
-                                    Row(
-                                        modifier = Modifier
-                                            .onGloballyPositioned {
-                                                itemPositions.add(it.positionInRoot().y)
-                                            }
-                                            .padding(bottom = 20.dp)
-                                            .clickable {
-                                                launchApp(app.packageName)
-                                            }
-                                    ) {
-                                        Text(
-                                            modifier = Modifier
-                                                .align(Alignment.CenterVertically)
-                                                .padding(end = 10.dp)
-                                                .width(300.dp),
-                                            text = "${app.label}",
-                                            color = Color.White,
-                                            fontSize = 24.sp,
-                                            fontWeight = FontWeight(weight = 700),
-                                            overflow = TextOverflow.Ellipsis,
-                                            maxLines = 1,
-                                            textAlign = TextAlign.End
-                                        )
+                            Icon(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .background(Color.DarkGray)
+                                    .drawBehind {
+                                        CircleShape
+                                    },
+                                imageVector = Icons.Rounded.KeyboardArrowUp,
+                                contentDescription = null
+                            )
+                        }
 
-                                        Image(
+                        Row(
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .fillMaxSize(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            //val appScroll = rememberScrollState()
+                            val itemPositions: MutableList<Float> = mutableListOf()
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .padding(end = 20.dp),
+                                state = lazyScroll,
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                apps.forEach { app ->
+                                    item {
+                                        Row(
                                             modifier = Modifier
-                                                .size(50.dp),
-                                            painter = rememberDrawablePainter(drawable = app.icon),
-                                            contentDescription = null)
+                                                .onGloballyPositioned {
+                                                    itemPositions.add(it.positionInRoot().y)
+                                                }
+                                                .padding(bottom = 20.dp)
+                                                .clickable {
+                                                    launchApp(app.packageName)
+                                                }
+                                        ) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterVertically)
+                                                    .padding(end = 10.dp)
+                                                    .width(300.dp),
+                                                text = "${app.label}",
+                                                color = Color.White,
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight(weight = 700),
+                                                overflow = TextOverflow.Ellipsis,
+                                                maxLines = 1,
+                                                textAlign = TextAlign.End
+                                            )
+
+                                            Image(
+                                                modifier = Modifier
+                                                    .size(50.dp),
+                                                painter = rememberDrawablePainter(drawable = app.icon),
+                                                contentDescription = null
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        Column( //TODO prettify the button press and animations
-                            modifier = Modifier
-                                .fillMaxHeight(),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            alphabet.forEach { letter ->
-                                Text(
-                                    modifier = Modifier
-                                        .clickable {
-                                            scope.launch {
-                                                var i = 0
+                            Column( //TODO prettify the button press and animations
+                                modifier = Modifier
+                                    .fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                alphabet.forEach { letter ->
+                                    Text(
+                                        modifier = Modifier
+                                            .clickable {
+                                                scope.launch {
+                                                    var i = 0
 
-                                                apps.forEachIndexed { index, app ->
-                                                    if (i == 0 && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                                                        i = index
+                                                    apps.forEachIndexed { index, app ->
+                                                        if (i == 0 && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                                                            i = index
+                                                        }
                                                     }
-                                                }
 
-                                                //appScroll.animateScrollTo(itemPositions[i].roundToInt() - 30)
-                                                lazyScroll.animateScrollToItem(i)
-                                            }
-                                        },
-                                    text = letter,
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight(600)
-                                )
+                                                    //appScroll.animateScrollTo(itemPositions[i].roundToInt() - 30)
+                                                    lazyScroll.animateScrollToItem(i)
+                                                }
+                                            },
+                                        text = letter,
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight(600)
+                                    )
+                                }
                             }
                         }
                     }
