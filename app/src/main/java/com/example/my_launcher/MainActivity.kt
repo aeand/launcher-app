@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -40,15 +41,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,8 +72,6 @@ object AppColors {
 }
 
 /* TODO
-1. Bug. alpha list doesn't seem to work for apps called 1*
-2. Bug. I broke the alphabetical list when swiping back from page 2
 3. make alpha list letter follow when dragging
 4. Performance. fix pager lag when going back to empty screen
 5. Add duolingo widget support
@@ -86,6 +84,8 @@ object AppColors {
 */
 
 class MainActivity : ComponentActivity() {
+    private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
+
     class ApplicationInformation {
         var label: String? = null
         var packageName: String? = null
@@ -100,7 +100,6 @@ class MainActivity : ComponentActivity() {
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
-
         setContent {
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
@@ -112,6 +111,7 @@ class MainActivity : ComponentActivity() {
 
                 onDispose { }
             }
+            val lazyScroll = rememberLazyListState()
 
             VerticalPager(
                 modifier = Modifier
@@ -124,9 +124,6 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize())
                 }
                 else if (it == 1) {
-                    val scope = rememberCoroutineScope()
-                    val lazyScroll = rememberLazyListState()
-
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -153,7 +150,7 @@ class MainActivity : ComponentActivity() {
                                     .height(30.dp)
                                     .align(Alignment.BottomEnd)
                                     .clickable {
-                                        scope.launch {
+                                        customScope.launch {
                                             lazyScroll.animateScrollToItem(0)
                                         }
                                     },
@@ -171,8 +168,6 @@ class MainActivity : ComponentActivity() {
                                 .align(Alignment.BottomEnd),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            val itemPositions: MutableList<Float> = mutableListOf()
-
                             LazyColumn(
                                 modifier = Modifier
                                     .padding(end = 20.dp),
@@ -183,9 +178,6 @@ class MainActivity : ComponentActivity() {
                                     item {
                                         Row(
                                             modifier = Modifier
-                                                .onGloballyPositioned {
-                                                    itemPositions.add(it.positionInRoot().y)
-                                                }
                                                 .padding(bottom = 20.dp)
                                                 .clickable {
                                                     launchApp(app.packageName)
@@ -233,26 +225,16 @@ class MainActivity : ComponentActivity() {
                                                         try {
                                                             selectedLetter = letter
                                                             offsetY = 0f//-100f
+                                                            scrollToFirstItem(apps, letter, lazyScroll)
                                                             awaitRelease()
                                                         } finally {
-                                                            scope.launch {
-                                                                var i = 0
-
-                                                                apps.forEachIndexed { index, app ->
-                                                                    if (i == 0 && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                                                                        i = index
-                                                                    }
-                                                                }
-
-                                                                lazyScroll.animateScrollToItem(i)
-                                                            }
                                                             offsetY = 0f
                                                             selectedLetter = ""
                                                         }
                                                     },
                                                 )
                                             }
-                                            .offset { IntOffset(offsetY.roundToInt(), 0) }
+                                            .offset { IntOffset(0, offsetY.roundToInt()) }
                                             .background(if (selectedLetter == letter) AppColors.tertiary else AppColors.transparent),
                                         text = letter,
                                         color = textColor,
@@ -274,6 +256,22 @@ class MainActivity : ComponentActivity() {
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         startActivity(launchIntent)
+    }
+
+    private fun scrollToFirstItem(apps: MutableList<ApplicationInformation>, letter: String, lazyScroll: LazyListState) {
+        customScope.launch {
+            var i = 0
+            var found = false
+
+            apps.forEachIndexed { index, app ->
+                if (!found && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                    i = index
+                    found = true
+                }
+            }
+
+            lazyScroll.animateScrollToItem(i)
+        }
     }
 
     private fun createAppList(): MutableList<ApplicationInformation> {
