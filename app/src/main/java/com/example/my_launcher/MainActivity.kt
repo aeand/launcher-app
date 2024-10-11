@@ -80,6 +80,21 @@ object AppColors {
     val transparent = Color.Transparent
 }
 
+/* TODO
+1. Bug. alpha list doesn't seem to work for apps called 1*
+2. I broke the alphabetical list when swiping back from page 2
+3. make alpha list letter follow when dragging
+4. Performance. fix pager lag when going back to empty screen
+5. Add duolingo widget support
+6. make home button default to top of app list and open the wallpaper view
+7. blur background when list is open
+8. set text color dynamically depending on background color
+9. add refresh app list. donno when tho
+10. update date when date changes
+11. add settings. I wanna hide specific apps
+12. figure out how to add settings
+*/
+
 class MainActivity : ComponentActivity() {
     class ApplicationInformation {
         var label: String? = null
@@ -88,67 +103,15 @@ class MainActivity : ComponentActivity() {
     }
 
     @OptIn(ExperimentalFoundationApi::class)
-    override fun onCreate(savedInstanceState: Bundle?) { //TODO figure out how to add settings
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //TODO add settings. I wanna hide specific apps
 
-        //TODO update date when date changes
-        val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-
-        //TODO set text color
         val textColor = AppColors.white
-
-        // GET ALL APPS //TODO add refresh app list. donno when tho
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        val packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
-
-        val apps = mutableListOf<ApplicationInformation>()
-        for (app in packages) {
-            val appInfo = ApplicationInformation()
-            appInfo.label = app.loadLabel(packageManager).toString()
-            appInfo.packageName = app.activityInfo.packageName
-            appInfo.icon = app.loadIcon(packageManager)
-            apps.add(appInfo)
-        }
-        apps.sortWith { a, b ->
-            a.label?.compareTo(b.label!!)!!
-        }
-
-        // GET ALPHABET WITH APP NAMES
-        val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
-        val alphabet = tempAlphabet.subList(1, tempAlphabet.size)
-        alphabet.sortWith { a, b ->
-            a.compareTo(b)
-        }
-        alphabet.add("å")
-        alphabet.add("ä")
-        alphabet.add("ö")
-
-        val removeLetters = mutableListOf<String>()
-        alphabet.forEach { letter ->
-            var result = false
-            apps.forEach { app ->
-                if (!result) {
-                    if (app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                        result = true
-                    }
-                }
-            }
-
-            if (!result) {
-                removeLetters.add(letter)
-            }
-        }
-
-        removeLetters.forEach { letter ->
-            alphabet.remove(letter)
-        }
+        val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
+        val apps = createAppList()
+        val alphabet = createAlphabetList(apps)
 
         setContent {
-            //TODO make home button default to top of app list
-            //TODO blur background
-
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
             DisposableEffect(isDarkMode) {
@@ -160,7 +123,6 @@ class MainActivity : ComponentActivity() {
                 onDispose { }
             }
 
-            //TODO fix lag when going back to empty screen
             VerticalPager(
                 modifier = Modifier
                     .padding(top = 32.dp, bottom = 48.dp),
@@ -172,7 +134,6 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize())
                 }
                 else if (it == 0) {
-                    //TODO Add duolingo widget support
                     val scope = rememberCoroutineScope()
                     val lazyScroll = rememberLazyListState()
 
@@ -266,19 +227,16 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            //TODO make it follow when dragging
-                            //TODO prettify the button press and animations
                             var offsetX by remember { mutableFloatStateOf(0f) }
                             var selectedLetter by remember { mutableStateOf("") }
 
-                            //TODO I broke the alphabetical list when swiping back from page 2
                             Column(
                                 modifier = Modifier
                                     .fillMaxHeight(),
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 alphabet.forEach { letter ->
-                                    Text(//TODO doesn't seem to work for apps called 1*
+                                    Text(
                                         modifier = Modifier
                                             .pointerInput(Unit) {
                                                 detectTapGestures(
@@ -328,5 +286,58 @@ class MainActivity : ComponentActivity() {
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         startActivity(launchIntent)
+    }
+
+    private fun createAppList(): MutableList<ApplicationInformation> {
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+
+        val apps = mutableListOf<ApplicationInformation>()
+        for (app in packages) {
+            val appInfo = ApplicationInformation()
+            appInfo.label = app.loadLabel(packageManager).toString()
+            appInfo.packageName = app.activityInfo.packageName
+            appInfo.icon = app.loadIcon(packageManager)
+            apps.add(appInfo)
+        }
+        apps.sortWith { a, b ->
+            a.label?.compareTo(b.label!!)!!
+        }
+
+        return apps
+    }
+
+    private fun createAlphabetList(apps: MutableList<ApplicationInformation>): MutableList<String> {
+        val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
+        val alphabet = tempAlphabet.subList(1, tempAlphabet.size)
+        alphabet.sortWith { a, b ->
+            a.compareTo(b)
+        }
+        alphabet.add("å")
+        alphabet.add("ä")
+        alphabet.add("ö")
+
+        val removeLetters = mutableListOf<String>()
+        alphabet.forEach { letter ->
+            var result = false
+            apps.forEach { app ->
+                if (!result) {
+                    if (app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                        result = true
+                    }
+                }
+            }
+
+            if (!result) {
+                removeLetters.add(letter)
+            }
+        }
+
+        removeLetters.forEach { letter ->
+            alphabet.remove(letter)
+        }
+
+        return alphabet
     }
 }
