@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
 
                 onDispose { }
             }
+
             val lazyScroll = rememberLazyListState()
 
             VerticalPager(
