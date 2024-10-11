@@ -82,7 +82,7 @@ object AppColors {
 
 /* TODO
 1. Bug. alpha list doesn't seem to work for apps called 1*
-2. I broke the alphabetical list when swiping back from page 2
+2. Bug. I broke the alphabetical list when swiping back from page 2
 3. make alpha list letter follow when dragging
 4. Performance. fix pager lag when going back to empty screen
 5. Add duolingo widget support
@@ -92,7 +92,6 @@ object AppColors {
 9. add refresh app list. donno when tho
 10. update date when date changes
 11. add settings. I wanna hide specific apps
-12. figure out how to add settings
 */
 
 class MainActivity : ComponentActivity() {
@@ -181,7 +180,6 @@ class MainActivity : ComponentActivity() {
                                 .align(Alignment.BottomEnd),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            //val appScroll = rememberScrollState()
                             val itemPositions: MutableList<Float> = mutableListOf()
 
                             LazyColumn(
@@ -227,7 +225,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            var offsetX by remember { mutableFloatStateOf(0f) }
+                            var offsetY by remember { mutableFloatStateOf(0f) }
                             var selectedLetter by remember { mutableStateOf("") }
 
                             Column(
@@ -243,7 +241,7 @@ class MainActivity : ComponentActivity() {
                                                     onPress = {
                                                         try {
                                                             selectedLetter = letter
-                                                            offsetX = 0f//-100f
+                                                            offsetY = 0f//-100f
                                                             awaitRelease()
                                                         } finally {
                                                             scope.launch {
@@ -255,16 +253,15 @@ class MainActivity : ComponentActivity() {
                                                                     }
                                                                 }
 
-                                                                //appScroll.animateScrollTo(itemPositions[i].roundToInt() - 30)
                                                                 lazyScroll.animateScrollToItem(i)
                                                             }
-                                                            offsetX = 0f
+                                                            offsetY = 0f
                                                             selectedLetter = ""
                                                         }
                                                     },
                                                 )
                                             }
-                                            .offset { IntOffset(offsetX.roundToInt(), 0) }
+                                            .offset { IntOffset(offsetY.roundToInt(), 0) }
                                             .background(if (selectedLetter == letter) AppColors.tertiary else AppColors.transparent),
                                         text = letter,
                                         color = textColor,
