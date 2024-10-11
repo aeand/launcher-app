@@ -226,9 +226,9 @@ class MainActivity : ComponentActivity() {
                                                         try {
                                                             selectedLetter = letter
                                                             offsetY = 0f//-100f
-                                                            scrollToFirstItem(apps, letter, lazyScroll)
                                                             awaitRelease()
                                                         } finally {
+                                                            scrollToFirstItem(apps, letter, lazyScroll)
                                                             offsetY = 0f
                                                             selectedLetter = ""
                                                         }
