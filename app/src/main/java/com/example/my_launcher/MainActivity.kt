@@ -11,7 +11,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -32,7 +31,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -74,15 +72,15 @@ object AppColors {
 }
 
 /*
-3. make alpha list letter follow when dragging
-4. Performance. fix pager lag when going back to empty screen
-5. Add duolingo widget support
-6. make home button default to top of app list and open the wallpaper view
-7. blur background when list is open
-8. set text color dynamically depending on background color
-9. add refresh app list. donno when tho
-10. update date when date changes
-11. add settings. I wanna hide specific apps
+1. make alpha list letter follow when dragging
+2. Performance. fix pager lag when going back to empty screen
+3. Add duolingo widget support
+4. make home button default to top of app list and open the wallpaper view
+5. blur background when list is open
+6. set text color dynamically depending on background color
+7. add refresh app list. donno when tho
+8. update date when date changes
+9. add settings. I wanna hide specific apps
 */
 
 class MainActivity : ComponentActivity() {
@@ -102,6 +100,7 @@ class MainActivity : ComponentActivity() {
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
+        
         setContent {
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
