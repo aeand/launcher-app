@@ -115,6 +115,15 @@ class MainActivity : ComponentActivity() {
 
             val lazyScroll = rememberLazyListState()
 
+            Text(
+                modifier = Modifier
+                    .padding(start = 19.dp, top = 30.dp),
+                text = date,
+                color = textColor,
+                fontSize = 11.sp,
+                fontWeight = FontWeight(600)
+            )
+
             VerticalPager(
                 modifier = Modifier
                     .padding(top = 32.dp, bottom = 48.dp),
@@ -136,16 +145,6 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxWidth()
                                 .fillMaxHeight(0.4f)
                         ) {
-                            Text(
-                                modifier = Modifier
-                                    .padding(start = 5.dp)
-                                    .align(Alignment.TopStart),
-                                text = date,
-                                color = textColor,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight(600)
-                            )
-
                             Icon(
                                 modifier = Modifier
                                     .width(36.dp)
@@ -240,7 +239,12 @@ class MainActivity : ComponentActivity() {
                                                     },
                                                 )
                                             }
-                                            .offset { if (selectedLetter == letter) IntOffset(0, offsetY.roundToInt()) else IntOffset(0,0) }
+                                            .offset {
+                                                if (selectedLetter == letter) IntOffset(
+                                                    0,
+                                                    offsetY.roundToInt()
+                                                ) else IntOffset(0, 0)
+                                            }
                                             .drawBehind {
                                                 if (selectedLetter == letter)
                                                     drawCircle(
