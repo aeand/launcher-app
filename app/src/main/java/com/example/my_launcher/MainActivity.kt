@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -44,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -71,7 +73,7 @@ object AppColors {
     val transparent = Color.Transparent
 }
 
-/* TODO
+/*
 3. make alpha list letter follow when dragging
 4. Performance. fix pager lag when going back to empty screen
 5. Add duolingo widget support
@@ -225,21 +227,31 @@ class MainActivity : ComponentActivity() {
                                                     onPress = {
                                                         try {
                                                             selectedLetter = letter
-                                                            offsetY = 0f//-100f
+                                                            offsetY = -150f
                                                             awaitRelease()
                                                         } finally {
-                                                            scrollToFirstItem(apps, letter, lazyScroll)
+                                                            scrollToFirstItem(
+                                                                apps,
+                                                                letter,
+                                                                lazyScroll
+                                                            )
                                                             offsetY = 0f
                                                             selectedLetter = ""
                                                         }
                                                     },
                                                 )
                                             }
-                                            .offset { IntOffset(0, offsetY.roundToInt()) }
-                                            .background(if (selectedLetter == letter) AppColors.tertiary else AppColors.transparent),
+                                            .offset { if (selectedLetter == letter) IntOffset(0, offsetY.roundToInt()) else IntOffset(0,0) }
+                                            .drawBehind {
+                                                if (selectedLetter == letter)
+                                                    drawCircle(
+                                                        radius = 80f,
+                                                        color = AppColors.black
+                                                    )
+                                            },
                                         text = letter,
                                         color = textColor,
-                                        fontSize = if (selectedLetter == letter) 30.sp else 16.sp,
+                                        fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
                                         fontWeight = FontWeight(600)
                                     )
                                 }
