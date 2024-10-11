@@ -120,10 +120,10 @@ class MainActivity : ComponentActivity() {
                     2
                 })
             ) {
-                if (it == 1) {
+                if (it == 0) {
                     Box(modifier = Modifier.fillMaxSize())
                 }
-                else if (it == 0) {
+                else if (it == 1) {
                     val scope = rememberCoroutineScope()
                     val lazyScroll = rememberLazyListState()
 
