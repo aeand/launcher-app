@@ -72,6 +72,7 @@ object AppColors {
 }
 
 /*
+0. change API version to minimum so more people can use it
 1. make alpha list letter follow when dragging
 2. Performance. fix pager lag when going back to empty screen
 3. Add duolingo widget support
