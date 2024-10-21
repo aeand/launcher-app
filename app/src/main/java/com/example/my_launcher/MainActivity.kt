@@ -62,19 +62,26 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/*
+/* TODO
 0. change API version to minimum so more people can use it
-0.5. foodora and my-launcher don't sort properly
-1. make alpha list letter follow when dragging
+1. foodora and my-launcher don't sort properly
 2. Performance. fix pager lag when going back to empty screen
-3. Add duolingo widget support
-4. make home button default to top of app list and open the wallpaper view
-5. blur background when list is open
+4. update app list. donno when tho
+5. update date when date changes
+*/
+
+/* Features
+1. Add duolingo widget support
+2. blur background when list is open
+3. make home button default to top of app list and open the wallpaper view
+4. make alpha list letter follow when dragging
+5. add settings. I wanna hide specific apps
 6. set text color dynamically depending on background color
-7. add refresh app list. donno when tho
-8. update date when date changes
-9. add settings. I wanna hide specific apps
-10. update app list with a letter at the top of the section for that letter. And a line. to improve readability
+7. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
+*/
+
+/* Inspiration
+https://www.youtube.com/watch?v=aVg3RkfNtqE
 */
 
 class MainActivity : ComponentActivity() {
