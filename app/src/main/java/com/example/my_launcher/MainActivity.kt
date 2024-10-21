@@ -73,6 +73,7 @@ import kotlin.math.roundToInt
 7. add refresh app list. donno when tho
 8. update date when date changes
 9. add settings. I wanna hide specific apps
+10. update app list with a letter at the top of the section for that letter. And a line. to improve readability
 */
 
 class MainActivity : ComponentActivity() {
