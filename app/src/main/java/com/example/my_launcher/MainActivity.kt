@@ -84,6 +84,12 @@ import kotlin.math.roundToInt
 https://www.youtube.com/watch?v=aVg3RkfNtqE
 */
 
+/* Resources
+https://developer.android.com/develop/ui/views/appwidgets/host
+https://www.youtube.com/watch?v=tml0oqLyY78&list=PLxabZQCAe5fhGgSue40-_DjfFc_5EThhr
+https://duckduckgo.com/?t=ffab&q=BIND_APPWIDGET&atb=v447-1&ia=web
+*/
+
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
 
