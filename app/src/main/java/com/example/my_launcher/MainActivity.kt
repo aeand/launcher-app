@@ -62,15 +62,6 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-object AppColors {
-    val primary = Color.Red
-    val secondary = Color.Green
-    val tertiary = Color.Blue
-    val white = Color.White
-    val black = Color.Black
-    val transparent = Color.Transparent
-}
-
 /*
 0. change API version to minimum so more people can use it
 1. make alpha list letter follow when dragging
@@ -97,7 +88,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val textColor = AppColors.white
+        val textColor = Color.White
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
@@ -107,8 +98,8 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current as ComponentActivity
             DisposableEffect(isDarkMode) {
                 context.enableEdgeToEdge(
-                    statusBarStyle = SystemBarStyle.dark(AppColors.transparent.toArgb()),
-                    navigationBarStyle = SystemBarStyle.dark(AppColors.transparent.toArgb()),
+                    statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+                    navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
                 )
 
                 onDispose { }
@@ -250,7 +241,7 @@ class MainActivity : ComponentActivity() {
                                                 if (selectedLetter == letter)
                                                     drawCircle(
                                                         radius = 80f,
-                                                        color = AppColors.black
+                                                        color = Color.Black
                                                     )
                                             },
                                         text = letter,
