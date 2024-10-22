@@ -124,16 +124,6 @@ class MainActivity : ComponentActivity() {
         val alphabet = createAlphabetList(apps)
         val duolingoWidgetView = getDuolingoWidgetView()
 
-        /*val newOptions = Bundle().apply {
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, height)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height)
-        }
-        appWidgetManager.updateAppWidgetOptions(appWidgetId, newOptions)*/
-
-        //appWidgetHost.deleteAppWidgetId(appWidgetId)
-
         setContent {
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
@@ -289,6 +279,16 @@ class MainActivity : ComponentActivity() {
         return appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
             setAppWidget(appWidgetId, appWidgetInfo)
         }
+
+        /*val newOptions = Bundle().apply {
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, height)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height)
+        }
+        appWidgetManager.updateAppWidgetOptions(appWidgetId, newOptions)*/
+
+        //appWidgetHost.deleteAppWidgetId(appWidgetId)
     }
 }
 
