@@ -84,6 +84,7 @@ import kotlin.math.roundToInt
 5. add settings. I wanna hide specific apps
 6. set text color dynamically depending on background color
 7. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
+8. add a notes feature on swipe right or something
 */
 
 /* Inspiration
