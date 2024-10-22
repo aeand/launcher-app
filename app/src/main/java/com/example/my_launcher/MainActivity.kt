@@ -72,10 +72,9 @@ import kotlin.math.roundToInt
 
 /* TODO
 0. change API version to minimum so more people can use it
-1. foodora and my-launcher don't sort properly
-2. Performance. fix pager lag when going back to empty screen
-4. update app list. donno when tho
-5. update date when date changes
+1. Performance. fix pager lag when going back to empty screen
+2. update app list. donno when tho
+3. update date when date changes
 */
 
 /* Features
@@ -152,7 +151,7 @@ class MainActivity : ComponentActivity() {
                     2
                 })
             ) {
-                if (it == 0) {
+                if (it == 1) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier
@@ -164,7 +163,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                else if (it == 1) {
+                else if (it == 0) {
                     AppDrawer(
                         alphabet = alphabet,
                         apps = apps,
@@ -221,7 +220,7 @@ class MainActivity : ComponentActivity() {
             apps.add(appInfo)
         }
         apps.sortWith { a, b ->
-            a.label?.compareTo(b.label!!)!!
+            a.label?.uppercase()!!.compareTo(b.label?.uppercase()!!)
         }
 
         return apps
