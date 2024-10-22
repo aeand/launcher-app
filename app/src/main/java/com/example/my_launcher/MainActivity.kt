@@ -43,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -118,8 +120,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val textColor = Color.White
-        val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-        val hoursTilTomorrow = Date()
+        var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
         val duolingoWidgetView = getDuolingoWidgetView()
@@ -134,6 +135,13 @@ class MainActivity : ComponentActivity() {
                 )
 
                 onDispose { }
+            }
+            
+            LaunchedEffect(key1 = true) {
+                delay(3600000)
+                val newDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
+                if (date != newDate)
+                    date = newDate
             }
 
             Text(
