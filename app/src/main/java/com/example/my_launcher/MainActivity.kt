@@ -94,6 +94,10 @@ https://www.youtube.com/watch?v=aVg3RkfNtqE
 
 /* Resources
 https://developer.android.com/develop/ui/views/appwidgets/host
+https://medium.com/@philipp.cherubim/how-to-display-widgets-inside-your-app-f3885cc27cff
+https://stackoverflow.com/questions/77911492/appwidgethostview-is-not-updating-inside-androidview-composable
+https://stackoverflow.com/questions/14000415/binding-widgets-in-custom-launcher
+
 https://www.youtube.com/watch?v=tml0oqLyY78&list=PLxabZQCAe5fhGgSue40-_DjfFc_5EThhr
 https://duckduckgo.com/?t=ffab&q=BIND_APPWIDGET&atb=v447-1&ia=web
 */
