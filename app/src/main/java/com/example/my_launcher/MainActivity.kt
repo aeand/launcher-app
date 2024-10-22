@@ -78,13 +78,13 @@ import kotlin.math.roundToInt
 */
 
 /* Features
-2. blur background when list is open
-3. make home button default to top of app list and open the wallpaper view
-4. make alpha list letter follow when dragging
-5. add settings. I wanna hide specific apps
-6. set text color dynamically depending on background color
-7. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
-8. add a notes feature on swipe right or something
+1. blur background when list is open
+2. make home button default to top of app list and open the wallpaper view
+3. make alpha list letter follow when dragging
+4. add settings. I wanna hide specific apps
+5. set text color dynamically depending on background color
+6. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
+7. add a notes feature on swipe right or something
 */
 
 /* Inspiration
