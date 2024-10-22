@@ -1,5 +1,9 @@
 package com.example.my_launcher
 
+import android.appwidget.AppWidgetHost
+import android.appwidget.AppWidgetHostView
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -55,12 +59,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+
 
 /* TODO
 0. change API version to minimum so more people can use it
@@ -92,6 +98,8 @@ https://duckduckgo.com/?t=ffab&q=BIND_APPWIDGET&atb=v447-1&ia=web
 
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
+    private var appWidgetHost: AppWidgetHost? = null
+    private var appWidgetManager: AppWidgetManager? = null
 
     class ApplicationInformation {
         var label: String? = null
@@ -107,7 +115,42 @@ class MainActivity : ComponentActivity() {
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
-        
+
+        appWidgetHost = AppWidgetHost(applicationContext, 123123123)
+        appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+        appWidgetHost!!.startListening()
+        val widgets = appWidgetManager!!.installedProviders
+
+        var duolingoWidget: AppWidgetProviderInfo? = null
+        widgets.forEach {
+            if (it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider"))
+                duolingoWidget = it
+        }
+
+        val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
+        val canBind = appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider) //info.provider
+        println("can bind: $canBind")
+        if (!canBind) {
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget!!.provider) //info.provider
+            }
+            startActivity(intent)
+        }
+        val widgetView = appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
+            setAppWidget(appWidgetId, appWidgetInfo)
+        }
+
+        /*val newOptions = Bundle().apply {
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, height)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height)
+        }
+        appWidgetManager.updateAppWidgetOptions(appWidgetId, newOptions)*/
+
+        //appWidgetHost.deleteAppWidgetId(appWidgetId)
+
         setContent {
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
@@ -139,7 +182,18 @@ class MainActivity : ComponentActivity() {
                 })
             ) {
                 if (it == 0) {
-                    Box(modifier = Modifier.fillMaxSize())
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .width(300.dp)
+                                .height(100.dp)
+                        ) {
+                            AndroidView(factory = {
+                                widgetView
+                            })
+                        }
+                    }
                 }
                 else if (it == 1) {
                     Box(
@@ -271,6 +325,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      with the appropriate {@link ActivityResultContract} and handling the result in the\n      {@link ActivityResultCallback#onActivityResult(Object) callback}.")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        //TODO check if we can bind the widget
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        appWidgetHost!!.stopListening()
     }
 
     private fun launchApp(packageName: String?) {
