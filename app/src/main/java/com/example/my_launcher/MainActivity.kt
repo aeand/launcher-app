@@ -76,7 +76,6 @@ import kotlin.math.roundToInt
 0. change API version to minimum so more people can use it
 1. Performance. fix pager lag when going back to empty screen
 2. update app list. donno when tho
-3. update date when date changes
 4. update duolingo widget
 */
 
