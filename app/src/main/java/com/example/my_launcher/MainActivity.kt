@@ -122,33 +122,7 @@ class MainActivity : ComponentActivity() {
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
-
-        appWidgetHost = AppWidgetHost(applicationContext, 123123123)
-        appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-        appWidgetHost!!.startListening()
-        val widgets = appWidgetManager!!.installedProviders
-
-        var duolingoWidget: AppWidgetProviderInfo? = null
-        widgets.forEach {
-            if (it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider"))
-                duolingoWidget = it
-        }
-
-        val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
-        val canBind = appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider) //info.provider
-        var widgetView: AppWidgetHostView? = null
-        customScope.launch {
-            if (!canBind) {
-                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget!!.provider) //info.provider
-                }
-                startActivity(intent)
-            }
-            widgetView = appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
-                setAppWidget(appWidgetId, appWidgetInfo)
-            }
-        }
+        val duolingoWidgetView = getDuolingoWidgetView()
 
         /*val newOptions = Bundle().apply {
             putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
@@ -196,8 +170,7 @@ class MainActivity : ComponentActivity() {
                                 .width(300.dp)
                                 .height(100.dp)
                         ) {
-                            if (widgetView != null)
-                                AndroidView(factory = { widgetView!! })
+                            AndroidView(factory = { duolingoWidgetView })
                         }
                     }
                 }
@@ -295,6 +268,27 @@ class MainActivity : ComponentActivity() {
         }
 
         return alphabet
+    }
+
+    private fun getDuolingoWidgetView(): AppWidgetHostView {
+        appWidgetHost = AppWidgetHost(applicationContext, 123123123)
+        appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+        appWidgetHost!!.startListening()
+
+        val duolingoWidget: AppWidgetProviderInfo? = appWidgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
+        val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
+
+        if (!appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider)) { //info.provider
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget!!.provider) //info.provider
+            }
+            startActivity(intent)
+        }
+
+        return appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
+            setAppWidget(appWidgetId, appWidgetInfo)
+        }
     }
 }
 
