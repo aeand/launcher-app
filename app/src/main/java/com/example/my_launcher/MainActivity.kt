@@ -75,10 +75,10 @@ import kotlin.math.roundToInt
 1. Performance. fix pager lag when going back to empty screen
 2. update app list. donno when tho
 3. update date when date changes
+4. update duolingo widget
 */
 
 /* Features
-1. Add duolingo widget support
 2. blur background when list is open
 3. make home button default to top of app list and open the wallpaper view
 4. make alpha list letter follow when dragging
@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
     private var appWidgetManager: AppWidgetManager? = null
 
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        //TODO check if I can bind the widget
+        //check if I can bind the widget
         println("uri: $uri")
     }
 
@@ -119,6 +119,7 @@ class MainActivity : ComponentActivity() {
 
         val textColor = Color.White
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
+        val hoursTilTomorrow = Date()
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
         val duolingoWidgetView = getDuolingoWidgetView()
@@ -151,7 +152,7 @@ class MainActivity : ComponentActivity() {
                     2
                 })
             ) {
-                if (it == 1) {
+                if (it == 0) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier
@@ -163,7 +164,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                else if (it == 0) {
+                else if (it == 1) {
                     AppDrawer(
                         alphabet = alphabet,
                         apps = apps,
