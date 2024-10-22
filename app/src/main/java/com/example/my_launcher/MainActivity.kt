@@ -71,10 +71,10 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-0. change API version to minimum so more people can use it
-1. Performance. fix pager lag when going back to empty screen
-2. update app list. don't know when tho
-4. update duolingo widget
+1. update duolingo widget
+2. change API version to minimum so more people can use it
+3. Performance. fix pager lag when going back to empty screen
+4. update app list. don't know when tho
 */
 
 /* Features
