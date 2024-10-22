@@ -8,11 +8,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -39,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,7 +69,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
-
 
 /* TODO
 0. change API version to minimum so more people can use it
@@ -101,6 +103,11 @@ class MainActivity : ComponentActivity() {
     private var appWidgetHost: AppWidgetHost? = null
     private var appWidgetManager: AppWidgetManager? = null
 
+    private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        //TODO check if I can bind the widget
+        println("uri: $uri")
+    }
+
     class ApplicationInformation {
         var label: String? = null
         var packageName: String? = null
@@ -129,16 +136,18 @@ class MainActivity : ComponentActivity() {
 
         val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
         val canBind = appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider) //info.provider
-        println("can bind: $canBind")
-        if (!canBind) {
-            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget!!.provider) //info.provider
+        var widgetView: AppWidgetHostView? = null
+        customScope.launch {
+            if (!canBind) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget!!.provider) //info.provider
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
-        }
-        val widgetView = appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
-            setAppWidget(appWidgetId, appWidgetInfo)
+            widgetView = appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
+                setAppWidget(appWidgetId, appWidgetInfo)
+            }
         }
 
         /*val newOptions = Bundle().apply {
@@ -162,8 +171,6 @@ class MainActivity : ComponentActivity() {
 
                 onDispose { }
             }
-
-            val lazyScroll = rememberLazyListState()
 
             Text(
                 modifier = Modifier
@@ -189,148 +196,23 @@ class MainActivity : ComponentActivity() {
                                 .width(300.dp)
                                 .height(100.dp)
                         ) {
-                            AndroidView(factory = {
-                                widgetView
-                            })
+                            if (widgetView != null)
+                                AndroidView(factory = { widgetView!! })
                         }
                     }
                 }
                 else if (it == 1) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(start = 10.dp, end = 10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(0.4f)
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .width(36.dp)
-                                    .height(30.dp)
-                                    .align(Alignment.BottomEnd)
-                                    .clickable {
-                                        customScope.launch {
-                                            lazyScroll.animateScrollToItem(0)
-                                        }
-                                    },
-                                imageVector = Icons.Rounded.KeyboardArrowUp,
-                                contentDescription = null,
-                                tint = textColor
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .padding(start = 10.dp, end = 10.dp)
-                                .fillMaxWidth()
-                                .fillMaxHeight(0.6f)
-                                .align(Alignment.BottomEnd),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .padding(end = 20.dp),
-                                state = lazyScroll,
-                                horizontalAlignment = Alignment.End
-                            ) {
-                                apps.forEach { app ->
-                                    item {
-                                        Row(
-                                            modifier = Modifier
-                                                .padding(bottom = 20.dp)
-                                                .clickable {
-                                                    launchApp(app.packageName)
-                                                }
-                                        ) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterVertically)
-                                                    .padding(end = 10.dp)
-                                                    .width(300.dp),
-                                                text = "${app.label}",
-                                                color = textColor,
-                                                fontSize = 24.sp,
-                                                fontWeight = FontWeight(weight = 700),
-                                                overflow = TextOverflow.Ellipsis,
-                                                maxLines = 1,
-                                                textAlign = TextAlign.End
-                                            )
-
-                                            Image(
-                                                modifier = Modifier
-                                                    .size(50.dp),
-                                                painter = rememberDrawablePainter(drawable = app.icon),
-                                                contentDescription = null
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            var offsetY by remember { mutableFloatStateOf(0f) }
-                            var selectedLetter by remember { mutableStateOf("") }
-
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxHeight(),
-                                verticalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                alphabet.forEach { letter ->
-                                    Text(
-                                        modifier = Modifier
-                                            .pointerInput(Unit) {
-                                                detectTapGestures(
-                                                    onPress = {
-                                                        try {
-                                                            selectedLetter = letter
-                                                            offsetY = -150f
-                                                            awaitRelease()
-                                                        } finally {
-                                                            scrollToFirstItem(
-                                                                apps,
-                                                                letter,
-                                                                lazyScroll
-                                                            )
-                                                            offsetY = 0f
-                                                            selectedLetter = ""
-                                                        }
-                                                    },
-                                                )
-                                            }
-                                            .offset {
-                                                if (selectedLetter == letter) IntOffset(
-                                                    0,
-                                                    offsetY.roundToInt()
-                                                ) else IntOffset(0, 0)
-                                            }
-                                            .drawBehind {
-                                                if (selectedLetter == letter)
-                                                    drawCircle(
-                                                        radius = 80f,
-                                                        color = Color.Black
-                                                    )
-                                            },
-                                        text = letter,
-                                        color = textColor,
-                                        fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
-                                        fontWeight = FontWeight(600)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    AppDrawer(
+                        alphabet = alphabet,
+                        apps = apps,
+                        customScope = customScope,
+                        launchApp = ::launchApp,
+                        scrollToFirstItem = ::scrollToFirstItem,
+                        textColor = textColor,
+                    )
                 }
             }
         }
-    }
-
-    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      with the appropriate {@link ActivityResultContract} and handling the result in the\n      {@link ActivityResultCallback#onActivityResult(Object) callback}.")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        //TODO check if we can bind the widget
     }
 
     override fun onDestroy() {
@@ -413,5 +295,144 @@ class MainActivity : ComponentActivity() {
         }
 
         return alphabet
+    }
+}
+
+@Composable
+fun AppDrawer(
+    customScope: CoroutineScope,
+    textColor: Color,
+    apps: MutableList<MainActivity.ApplicationInformation>,
+    launchApp: (String?) -> Unit,
+    alphabet: MutableList<String>,
+    scrollToFirstItem: (MutableList<MainActivity.ApplicationInformation>, String, LazyListState) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 10.dp, end = 10.dp)
+    ) {
+        val lazyScroll = rememberLazyListState()
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.4f)
+        ) {
+            Icon(
+                modifier = Modifier
+                    .width(36.dp)
+                    .height(30.dp)
+                    .align(Alignment.BottomEnd)
+                    .clickable {
+                        customScope.launch {
+                            lazyScroll.animateScrollToItem(0)
+                        }
+                    },
+                imageVector = Icons.Rounded.KeyboardArrowUp,
+                contentDescription = null,
+                tint = textColor
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(start = 10.dp, end = 10.dp)
+                .fillMaxWidth()
+                .fillMaxHeight(0.6f)
+                .align(Alignment.BottomEnd),
+            horizontalArrangement = Arrangement.End
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(end = 20.dp),
+                state = lazyScroll,
+                horizontalAlignment = Alignment.End
+            ) {
+                apps.forEach { app ->
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .padding(bottom = 20.dp)
+                                .clickable {
+                                    launchApp(app.packageName)
+                                }
+                        ) {
+                            Text(
+                                modifier = Modifier
+                                    .align(Alignment.CenterVertically)
+                                    .padding(end = 10.dp)
+                                    .width(300.dp),
+                                text = "${app.label}",
+                                color = textColor,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight(weight = 700),
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                textAlign = TextAlign.End
+                            )
+
+                            Image(
+                                modifier = Modifier
+                                    .size(50.dp),
+                                painter = rememberDrawablePainter(drawable = app.icon),
+                                contentDescription = null
+                            )
+                        }
+                    }
+                }
+            }
+
+            var offsetY by remember { mutableFloatStateOf(0f) }
+            var selectedLetter by remember { mutableStateOf("") }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                alphabet.forEach { letter ->
+                    Text(
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = {
+                                        try {
+                                            selectedLetter = letter
+                                            offsetY = -150f
+                                            awaitRelease()
+                                        } finally {
+                                            scrollToFirstItem(
+                                                apps,
+                                                letter,
+                                                lazyScroll
+                                            )
+                                            offsetY = 0f
+                                            selectedLetter = ""
+                                        }
+                                    },
+                                )
+                            }
+                            .offset {
+                                if (selectedLetter == letter) IntOffset(
+                                    0,
+                                    offsetY.roundToInt()
+                                ) else IntOffset(0, 0)
+                            }
+                            .drawBehind {
+                                if (selectedLetter == letter)
+                                    drawCircle(
+                                        radius = 80f,
+                                        color = Color.Black
+                                    )
+                            },
+                        text = letter,
+                        color = textColor,
+                        fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
+                        fontWeight = FontWeight(600)
+                    )
+                }
+            }
+        }
     }
 }
