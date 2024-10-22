@@ -8,13 +8,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -75,7 +73,7 @@ import kotlin.math.roundToInt
 /* TODO
 0. change API version to minimum so more people can use it
 1. Performance. fix pager lag when going back to empty screen
-2. update app list. donno when tho
+2. update app list. don't know when tho
 4. update duolingo widget
 */
 
@@ -104,10 +102,10 @@ class MainActivity : ComponentActivity() {
     private var appWidgetHost: AppWidgetHost? = null
     private var appWidgetManager: AppWidgetManager? = null
 
-    private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    /*private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         //check if I can bind the widget
         println("uri: $uri")
-    }
+    }*/
 
     class ApplicationInformation {
         var label: String? = null
@@ -279,7 +277,7 @@ class MainActivity : ComponentActivity() {
         if (!appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider)) { //info.provider
             val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget!!.provider) //info.provider
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget.provider) //info.provider
             }
             startActivity(intent)
         }
