@@ -74,7 +74,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-1. update duolingo widget
+1. update duolingo widget (do this by making the app a system app. That way I can ask for the permission. probably stated in the og documentation)
 2. change API version to minimum so more people can use it
 3. Performance. fix pager lag when going back to empty screen
 4. update app list. don't know when tho
