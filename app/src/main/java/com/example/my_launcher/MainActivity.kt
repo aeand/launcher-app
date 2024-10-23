@@ -1,5 +1,6 @@
 package com.example.my_launcher
 
+import android.Manifest
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -42,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +64,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,10 +88,14 @@ import kotlin.math.roundToInt
 5. set text color dynamically depending on background color
 6. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
 7. add a notes feature on swipe right or something
+8. make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR
+9. could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
+10. could do something with permission VIBRATE
 */
 
 /* Inspiration
 https://www.youtube.com/watch?v=aVg3RkfNtqE
+https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
 */
 
 /* Resources
@@ -96,6 +103,7 @@ https://developer.android.com/develop/ui/views/appwidgets/host
 https://medium.com/@philipp.cherubim/how-to-display-widgets-inside-your-app-f3885cc27cff
 https://stackoverflow.com/questions/77911492/appwidgethostview-is-not-updating-inside-androidview-composable
 https://stackoverflow.com/questions/14000415/binding-widgets-in-custom-launcher
+https://stackoverflow.com/questions/26847824/android-adding-widgets-to-app-programmatically-warning-message
 */
 
 class MainActivity : ComponentActivity() {
@@ -122,7 +130,14 @@ class MainActivity : ComponentActivity() {
         var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
-        val duolingoWidgetView = getDuolingoWidgetView()
+        val value = getDuolingoWidgetView()
+        val duolingoWidgetView: MutableState<AppWidgetHostView>?
+        if (value != null) {
+             duolingoWidgetView = mutableStateOf(value)
+        }
+        else {
+            duolingoWidgetView = null
+        }
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -167,7 +182,8 @@ class MainActivity : ComponentActivity() {
                                 .width(300.dp)
                                 .height(100.dp)
                         ) {
-                            AndroidView(factory = { duolingoWidgetView })
+                            if (duolingoWidgetView != null)
+                                AndroidView(factory = { duolingoWidgetView.value })
                         }
                     }
                 }
@@ -267,25 +283,57 @@ class MainActivity : ComponentActivity() {
         return alphabet
     }
 
-    private fun getDuolingoWidgetView(): AppWidgetHostView {
+    private fun getDuolingoWidgetView(): AppWidgetHostView? {
         appWidgetHost = AppWidgetHost(applicationContext, 123123123)
         appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         appWidgetHost!!.startListening()
+
+        appWidgetManager!!.installedProviders.forEach {
+            println(it.activityInfo.name)
+        }
 
         val duolingoWidget: AppWidgetProviderInfo? = appWidgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
         val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
 
         if (!appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider)) { //info.provider
+            println("requesting permissions")
+            /*val bindIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
+            bindIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            bindIntent.putExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_PROVIDER,
+                LauncherExperiment.widgetList.get(mParam1).provider
+            )
+            startActivityForResult(bindIntent, com.example.my_launcher.Manifest.permission.)*/
+
             val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget.provider) //info.provider
             }
             startActivity(intent)
+
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.BIND_APPWIDGET,
+                ),
+                0
+            )
+
+            /*val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.componentName)
+                // This is the options bundle described in the preceding section.
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
+            }
+            startActivityForResult(intent, REQUEST_BIND_APPWIDGET)*/
+        }
+        else {
+            return appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
+                setAppWidget(appWidgetId, appWidgetInfo)
+            }
         }
 
-        return appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
-            setAppWidget(appWidgetId, appWidgetInfo)
-        }
+        return null
 
         /*val newOptions = Bundle().apply {
             putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
