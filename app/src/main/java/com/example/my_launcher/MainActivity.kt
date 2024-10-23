@@ -104,6 +104,7 @@ https://medium.com/@philipp.cherubim/how-to-display-widgets-inside-your-app-f388
 https://stackoverflow.com/questions/77911492/appwidgethostview-is-not-updating-inside-androidview-composable
 https://stackoverflow.com/questions/14000415/binding-widgets-in-custom-launcher
 https://stackoverflow.com/questions/26847824/android-adding-widgets-to-app-programmatically-warning-message
+https://stackoverflow.com/questions/77532675/how-to-host-and-draw-installed-app-widgets-in-a-compose-app
 */
 
 class MainActivity : ComponentActivity() {
