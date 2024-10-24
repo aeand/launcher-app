@@ -168,116 +168,99 @@ class MainActivity : ComponentActivity() {
                 fontWeight = FontWeight(600)
             )
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                val screenWidth = 1080f
-                val screenHeight = 2340f
+            val screenWidth = 1080f
+            val screenHeight = 2340f
 
-                val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-                val dragState = remember {
-                    AnchoredDraggableState(
-                        initialValue = Start,
-                        anchors = DraggableAnchors {
-                            Start at 0f
-                            End at -screenWidth
-                        },
-                        positionalThreshold = { d -> d * 0.9f},
-                        velocityThreshold = { Float.POSITIVE_INFINITY },
-                        snapAnimationSpec = tween(),
-                        decayAnimationSpec = decayAnimationSpec
-                    )
-                }
-                val dragState2 = remember {
-                    AnchoredDraggableState(
-                        initialValue = Start,
-                        anchors = DraggableAnchors {
-                            Start at 0f
-                            End at -screenHeight
-                        },
-                        positionalThreshold = { d -> d * 0.9f},
-                        velocityThreshold = { Float.POSITIVE_INFINITY },
-                        snapAnimationSpec = tween(),
-                        decayAnimationSpec = decayAnimationSpec
-                    )
-                }
-
-                val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
-
-                Box(
-                    modifier = Modifier
-                        .anchoredDraggable(
-                            state = dragState,
-                            enabled = appDrawerClosed,
-                            orientation = Orientation.Horizontal
-                        )
-                        .anchoredDraggable(
-                            state = dragState2,
-                            enabled = true,
-                            orientation = Orientation.Vertical
-                        )
-                        .fillMaxSize()
-                        .offset {
-                            IntOffset(
-                                dragState
-                                    .requireOffset()
-                                    .roundToInt(),
-                                dragState2
-                                    .requireOffset()
-                                    .roundToInt()
-                            )
-                        }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .width(300.dp)
-                            .height(100.dp)
-                    ) {
-                        if (duolingoWidgetView.value != null)
-                            AndroidView(factory = { duolingoWidgetView.value!! })
-                    }
-                }
-
-                AppDrawer(
-                    modifier = Modifier
-                        .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
-                    alphabet = alphabet,
-                    apps = apps,
-                    customScope = customScope,
-                    launchApp = ::launchApp,
-                    scrollToFirstItem = ::scrollToFirstItem,
-                    textColor = textColor,
+            val decayAnimationSpec = rememberSplineBasedDecay<Float>()
+            val dragState = remember {
+                AnchoredDraggableState(
+                    initialValue = Start,
+                    anchors = DraggableAnchors {
+                        Start at 0f
+                        End at -screenWidth
+                    },
+                    positionalThreshold = { d -> d * 0.9f},
+                    velocityThreshold = { Float.POSITIVE_INFINITY },
+                    snapAnimationSpec = tween(),
+                    decayAnimationSpec = decayAnimationSpec
                 )
+            }
+            val dragState2 = remember {
+                AnchoredDraggableState(
+                    initialValue = Start,
+                    anchors = DraggableAnchors {
+                        Start at 0f
+                        End at -screenHeight
+                    },
+                    positionalThreshold = { d -> d * 0.9f},
+                    velocityThreshold = { Float.POSITIVE_INFINITY },
+                    snapAnimationSpec = tween(),
+                    decayAnimationSpec = decayAnimationSpec
+                )
+            }
 
+            val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
+
+            Box(
+                modifier = Modifier
+                    .anchoredDraggable(
+                        state = dragState,
+                        enabled = appDrawerClosed,
+                        orientation = Orientation.Horizontal
+                    )
+                    .anchoredDraggable(
+                        state = dragState2,
+                        enabled = true,
+                        orientation = Orientation.Vertical
+                    )
+                    .fillMaxSize()
+                    .offset { IntOffset(dragState.requireOffset().roundToInt(), dragState2.requireOffset().roundToInt()) }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .width(300.dp)
+                        .height(100.dp)
+                ) {
+                    if (duolingoWidgetView.value != null)
+                        AndroidView(factory = { duolingoWidgetView.value!! })
+                }
+            }
+
+            AppDrawer(
+                modifier = Modifier
+                    .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                alphabet = alphabet,
+                apps = apps,
+                customScope = customScope,
+                launchApp = ::launchApp,
+                scrollToFirstItem = ::scrollToFirstItem,
+                textColor = textColor,
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset { IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), 0) }
+            ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .offset {
-                            IntOffset(
-                                dragState
-                                    .requireOffset()
-                                    .roundToInt() + screenWidth.roundToInt(), 0
-                            )
-                        }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(100.dp)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        Color.White,
-                                        Color.Cyan
-                                    )
+                        .align(Alignment.Center)
+                        .size(100.dp)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    Color.White,
+                                    Color.Cyan
                                 )
                             )
-                    )
-                    Text(
-                        modifier = Modifier
-                            .align(Alignment.Center),
-                        text = "Notes page!"
-                    )
-                }
+                        )
+                )
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.Center),
+                    text = "Notes page!"
+                )
             }
         }
     }
