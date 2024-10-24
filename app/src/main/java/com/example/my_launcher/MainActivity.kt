@@ -321,11 +321,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .align(Alignment.Center)
                         .size(100.dp)
-                        .clickable {
-                            customScope.launch {
-                                dragState.settle(dragState.anchors.minAnchor()) // TODO check receiver
-                            }
-                        }
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
