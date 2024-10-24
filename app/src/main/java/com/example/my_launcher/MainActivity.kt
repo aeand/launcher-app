@@ -265,13 +265,7 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .offset {
-                        IntOffset(
-                            dragState
-                                .requireOffset()
-                                .roundToInt() + screenWidth.roundToInt(), 0
-                        )
-                    }
+                    .offset { IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt()) }
             ) {
                 Box(
                     modifier = Modifier
