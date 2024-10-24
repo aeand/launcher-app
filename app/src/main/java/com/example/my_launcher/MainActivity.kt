@@ -152,7 +152,7 @@ class MainActivity : ComponentActivity() {
                     println("ACTION CLOSE SYSTEM DIALOG")
                 }
                 else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) {
-                    println("ACTION DATE CHANGED")
+                    date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 }
             }
         }
@@ -204,12 +204,12 @@ class MainActivity : ComponentActivity() {
                 onDispose { }
             }
 
-            LaunchedEffect(true) {
+            /*LaunchedEffect(true) {
                 delay(3600000)
                 val newDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 if (date != newDate)
                     date = newDate
-            }
+            }*/
 
             BackHandler {
                 //TODO
@@ -346,10 +346,6 @@ class MainActivity : ComponentActivity() {
         widgetHost!!.stopListening()
         if (widgetHost != null)
             widgetHost!!.deleteAppWidgetId(widgetId!!)
-    }
-
-    fun updateDate() {
-        date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
     }
 
     private fun launchApp(packageName: String?) {
