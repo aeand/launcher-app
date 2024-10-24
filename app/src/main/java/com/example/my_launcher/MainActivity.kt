@@ -14,9 +14,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -34,8 +43,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -50,8 +57,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -76,7 +85,6 @@ import kotlin.math.roundToInt
 /* TODO
 1. update duolingo widget (do this by making the app a system app. That way I can ask for the permission. probably stated in the og documentation)
 2. change API version to minimum so more people can use it
-3. Performance. fix pager lag when going back to empty screen
 4. update app list. don't know when tho
 */
 
@@ -168,34 +176,114 @@ class MainActivity : ComponentActivity() {
                 fontWeight = FontWeight(600)
             )
 
-            VerticalPager(
-                modifier = Modifier
-                    .padding(top = 32.dp, bottom = 48.dp),
-                state = rememberPagerState(pageCount = {
-                    2
-                })
-            ) {
-                if (it == 0) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .width(300.dp)
-                                .height(100.dp)
-                        ) {
-                            if (duolingoWidgetView != null)
-                                AndroidView(factory = { duolingoWidgetView.value })
+            Box(modifier = Modifier.fillMaxSize()) {
+                val screenWidth = 1080f
+                val screenHeight = 2340f
+
+                val decayAnimationSpec = rememberSplineBasedDecay<Float>()
+                val dragState = remember {
+                    AnchoredDraggableState(
+                        initialValue = Start,
+                        anchors = DraggableAnchors {
+                            Start at 0f
+                            End at -screenWidth
+                        },
+                        positionalThreshold = { d -> d * 0.9f},
+                        velocityThreshold = { Float.POSITIVE_INFINITY },
+                        snapAnimationSpec = tween(),
+                        decayAnimationSpec = decayAnimationSpec
+                    )
+                }
+                val dragState2 = remember {
+                    AnchoredDraggableState(
+                        initialValue = Start,
+                        anchors = DraggableAnchors {
+                            Start at 0f
+                            End at -screenHeight
+                        },
+                        positionalThreshold = { d -> d * 0.9f},
+                        velocityThreshold = { Float.POSITIVE_INFINITY },
+                        snapAnimationSpec = tween(),
+                        decayAnimationSpec = decayAnimationSpec
+                    )
+                }
+
+                val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
+
+                Box(
+                    modifier = Modifier
+                        .anchoredDraggable(
+                            state = dragState,
+                            enabled = appDrawerClosed,
+                            orientation = Orientation.Horizontal
+                        )
+                        .anchoredDraggable(
+                            state = dragState2,
+                            enabled = true,
+                            orientation = Orientation.Vertical
+                        )
+                        .fillMaxSize()
+                        .offset {
+                            IntOffset(
+                                dragState
+                                    .requireOffset()
+                                    .roundToInt(),
+                                dragState2
+                                    .requireOffset()
+                                    .roundToInt()
+                            )
                         }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .width(300.dp)
+                            .height(100.dp)
+                    ) {
+                        if (duolingoWidgetView != null)
+                            AndroidView(factory = { duolingoWidgetView.value })
                     }
                 }
-                else if (it == 1) {
-                    AppDrawer(
-                        alphabet = alphabet,
-                        apps = apps,
-                        customScope = customScope,
-                        launchApp = ::launchApp,
-                        scrollToFirstItem = ::scrollToFirstItem,
-                        textColor = textColor,
+
+                AppDrawer(
+                    modifier = Modifier
+                        .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                    alphabet = alphabet,
+                    apps = apps,
+                    customScope = customScope,
+                    launchApp = ::launchApp,
+                    scrollToFirstItem = ::scrollToFirstItem,
+                    textColor = textColor,
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset {
+                            IntOffset(
+                                dragState
+                                    .requireOffset()
+                                    .roundToInt() + screenWidth.roundToInt(), 0
+                            )
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Center)
+                            .size(100.dp)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        Color.White,
+                                        Color.Cyan
+                                    )
+                                )
+                            )
+                    )
+                    Text(
+                        modifier = Modifier
+                            .align(Center),
+                        text = "Notes page!"
                     )
                 }
             }
@@ -350,6 +438,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppDrawer(
+    modifier: Modifier,
     customScope: CoroutineScope,
     textColor: Color,
     apps: MutableList<MainActivity.ApplicationInformation>,
@@ -358,7 +447,7 @@ fun AppDrawer(
     scrollToFirstItem: (MutableList<MainActivity.ApplicationInformation>, String, LazyListState) -> Unit
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(start = 10.dp, end = 10.dp)
     ) {
