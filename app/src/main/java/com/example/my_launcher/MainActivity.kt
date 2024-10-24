@@ -130,7 +130,6 @@ class MainActivity : ComponentActivity() {
     private var options: Bundle? = null
     private var hostView: AppWidgetHostView? = null
 
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
@@ -171,28 +170,19 @@ class MainActivity : ComponentActivity() {
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
-        //widgetManager!!.updateAppWidgetOptions(widgetId!!, options)
 
         val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget!!.provider)
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
 
-        hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
-        hostView!!.setAppWidget(widgetId!!, duoWidget)
-
-        println("valid: ${ widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider) }")
-        if (widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider)) {
-            hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
-            hostView!!.setAppWidget(widgetId!!, duoWidget)
-
-            // Add it to your layout
-            /*val ll = findViewById<View>(R.id.ll) as LinearLayout
-            ll.addView(hostView)*/
-        }
-        else {
+        if (!widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider)) {
+            println("invalid")
             requestWidgetPermissionsLauncher.launch(intent)
         }
+
+        hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
+        hostView!!.setAppWidget(widgetId!!, duoWidget)
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -278,16 +268,7 @@ class MainActivity : ComponentActivity() {
                                 .roundToInt()
                         )
                     }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .width(500.dp)
-                        .height(269.dp)
-                ) {
-                    AndroidView(factory = { hostView!! })
-                }
-            }
+            )
 
             if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
                 val i = Intent(Intent.ACTION_MAIN, null)
@@ -303,6 +284,7 @@ class MainActivity : ComponentActivity() {
             AppDrawer(
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                hostView = hostView,
                 alphabet = alphabet,
                 apps = apps,
                 customScope = customScope,
@@ -448,6 +430,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppDrawer(
     modifier: Modifier,
+    hostView: AppWidgetHostView?,
     customScope: CoroutineScope,
     textColor: Color,
     apps: MutableList<MainActivity.ApplicationInformation>,
@@ -467,6 +450,14 @@ fun AppDrawer(
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
         ) {
+            AndroidView(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .width(500.dp)
+                    .height(269.dp),
+                factory = { hostView!! }
+            )
+
             Icon(
                 modifier = Modifier
                     .width(36.dp)
