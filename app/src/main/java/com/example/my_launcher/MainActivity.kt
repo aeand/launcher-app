@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -142,7 +143,7 @@ class MainActivity : ComponentActivity() {
         var packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
         var apps = createAppList()
         var alphabet = createAlphabetList(apps)
-        val duolingoWidgetView: MutableState<AppWidgetHostView?> = mutableStateOf(getDuolingoWidgetView())
+        var duolingoWidgetView: MutableState<AppWidgetHostView?> = mutableStateOf(getDuolingoWidgetView())
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -235,6 +236,17 @@ class MainActivity : ComponentActivity() {
                         .width(300.dp)
                         .height(100.dp)
                 ) {
+                    Button(
+                        modifier = Modifier
+                            .size(100.dp),
+                        onClick = {
+                            println("try update duo")
+                            duolingoWidgetView = mutableStateOf(getDuolingoWidgetView())
+                        }
+                    ) {
+                        Text(text = "help!")
+                    }
+
                     if (duolingoWidgetView.value != null)
                         AndroidView(factory = { duolingoWidgetView.value!! })
                 }
@@ -265,7 +277,16 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .offset { IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt()) }
+                    .offset {
+                        IntOffset(
+                            dragState
+                                .requireOffset()
+                                .roundToInt() + screenWidth.roundToInt(),
+                            dragState2
+                                .requireOffset()
+                                .roundToInt()
+                        )
+                    }
             ) {
                 Box(
                     modifier = Modifier
