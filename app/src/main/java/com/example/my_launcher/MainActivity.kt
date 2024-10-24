@@ -3,9 +3,7 @@ package com.example.my_launcher
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
-import android.R.attr.minWidth
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -129,7 +127,7 @@ class MainActivity : ComponentActivity() {
     private var options: Bundle? = null
     private var hostView: AppWidgetHostView? = null
 
-    var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
             println("onActivityResult: ${widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider, options)}")
@@ -194,7 +192,7 @@ class MainActivity : ComponentActivity() {
             ll.addView(hostView)*/
         }
         else {
-            resultLauncher.launch(intent)
+            requestWidgetPermissionsLauncher.launch(intent)
         }
 
         setContent {
@@ -292,7 +290,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .size(100.dp),
                         onClick = {
-                            resultLauncher.launch(intent)
+                            requestWidgetPermissionsLauncher.launch(intent)
                         }
                     ) {
                         Text(text = "help!")
