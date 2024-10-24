@@ -85,8 +85,6 @@ import kotlin.math.roundToInt
 
 /* TODO
 1. update duolingo widget (do this by making the app a system app. That way I can ask for the permission. probably stated in the og documentation)
-2. change API version to minimum so more people can use it
-4. update app list. don't know when tho
 */
 
 /* Features
@@ -139,8 +137,11 @@ class MainActivity : ComponentActivity() {
 
         val textColor = Color.White
         var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-        val apps = createAppList()
-        val alphabet = createAlphabetList(apps)
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        var packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+        var apps = createAppList()
+        var alphabet = createAlphabetList(apps)
         val duolingoWidgetView: MutableState<AppWidgetHostView?> = mutableStateOf(getDuolingoWidgetView())
 
         setContent {
@@ -236,6 +237,17 @@ class MainActivity : ComponentActivity() {
                 ) {
                     if (duolingoWidgetView.value != null)
                         AndroidView(factory = { duolingoWidgetView.value!! })
+                }
+            }
+
+            if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+                val i = Intent(Intent.ACTION_MAIN, null)
+                i.addCategory(Intent.CATEGORY_LAUNCHER)
+                val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
+                if (packages.size == pk.size && packages.toSet() == pk.toSet()) {
+                    apps = createAppList()
+                    alphabet = createAlphabetList(apps)
+                    packages = pk
                 }
             }
 
@@ -437,7 +449,6 @@ class MainActivity : ComponentActivity() {
             val method: Method = statusBarManager.getMethod(methodName)
             method.invoke(statusBarService)
         } catch (e: Exception) {
-            println("ERROR")
             e.printStackTrace()
         }
     }
