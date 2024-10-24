@@ -1,7 +1,11 @@
 package com.example.my_launcher
 
-import android.Manifest
+import android.R.attr.maxHeight
+import android.R.attr.maxWidth
+import android.R.attr.minHeight
+import android.R.attr.minWidth
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -15,6 +19,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
 import androidx.compose.animation.core.tween
@@ -52,7 +57,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -74,7 +78,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -83,6 +86,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+
 
 /* TODO
 1. update duolingo widget (do this by making the app a system app. That way I can ask for the permission. probably stated in the og documentation)
@@ -118,13 +122,23 @@ https://stackoverflow.com/questions/77532675/how-to-host-and-draw-installed-app-
 
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
-    private var appWidgetHost: AppWidgetHost? = null
-    private var appWidgetManager: AppWidgetManager? = null
+    private var widgetHost: AppWidgetHost? = null
+    private var widgetManager: AppWidgetManager? = null
+    private var widgetId: Int? = null
+    private var duoWidget: AppWidgetProviderInfo? = null
+    private var options: Bundle? = null
+    private var hostView: AppWidgetHostView? = null
 
-    /*private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        //check if I can bind the widget
-        println("uri: $uri")
-    }*/
+    var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        println(result)
+        if (result.resultCode == RESULT_OK) {
+            println("onActivityResult: ${widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider, options)}")
+            if (widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider, options)) {
+                hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
+                hostView!!.setAppWidget(widgetId!!, duoWidget)
+            }
+        }
+    }
 
     class ApplicationInformation {
         var label: String? = null
@@ -138,12 +152,50 @@ class MainActivity : ComponentActivity() {
 
         val textColor = Color.White
         var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        var packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+        val packageIntent = Intent(Intent.ACTION_MAIN, null)
+        packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+        var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
         var apps = createAppList()
         var alphabet = createAlphabetList(apps)
-        var duolingoWidgetView: MutableState<AppWidgetHostView?> = mutableStateOf(getDuolingoWidgetView())
+
+
+        widgetHost = AppWidgetHost(applicationContext, 0)
+        widgetHost!!.startListening()
+        widgetManager = AppWidgetManager.getInstance(applicationContext)
+        duoWidget = widgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
+        widgetId = widgetHost!!.allocateAppWidgetId()
+        println("id: $widgetId")
+
+        options = Bundle()
+        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, maxWidth)
+        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
+        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
+        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
+        /*val newOptions = Bundle().apply {
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, minWidth)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
+        }
+        widgetManager!!.updateAppWidgetOptions(widgetId!!, newOptions)*/
+
+        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget!!.provider)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
+
+        println("valid: ${ !widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider) }")
+        if (widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider)) {
+            hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
+            hostView!!.setAppWidget(widgetId!!, duoWidget)
+
+            // Add it to your layout
+            /*val ll = findViewById<View>(R.id.ll) as LinearLayout
+            ll.addView(hostView)*/
+        }
+        else {
+            resultLauncher.launch(intent)
+        }
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -240,15 +292,14 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .size(100.dp),
                         onClick = {
-                            println("try update duo")
-                            duolingoWidgetView = mutableStateOf(getDuolingoWidgetView())
+                            resultLauncher.launch(intent)
                         }
                     ) {
                         Text(text = "help!")
                     }
 
-                    if (duolingoWidgetView.value != null)
-                        AndroidView(factory = { duolingoWidgetView.value!! })
+                    if (hostView != null)
+                        AndroidView(factory = { hostView!! })
                 }
             }
 
@@ -312,7 +363,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        appWidgetHost!!.stopListening()
+        widgetHost!!.stopListening()
+        if (widgetHost != null)
+            widgetHost!!.deleteAppWidgetId(widgetId!!)
     }
 
     private fun launchApp(packageName: String?) {
@@ -390,69 +443,6 @@ class MainActivity : ComponentActivity() {
         }
 
         return alphabet
-    }
-
-    private fun getDuolingoWidgetView(): AppWidgetHostView? {
-        appWidgetHost = AppWidgetHost(applicationContext, 123123123)
-        appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-        appWidgetHost!!.startListening()
-
-        /*appWidgetManager!!.installedProviders.forEach {
-            println(it.activityInfo.name)
-        }*/
-
-        val duolingoWidget: AppWidgetProviderInfo? = appWidgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
-        val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
-
-        if (!appWidgetManager!!.bindAppWidgetIdIfAllowed(appWidgetId, duolingoWidget!!.provider)) { //info.provider
-            println("requesting permissions")
-            /*val bindIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
-            bindIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            bindIntent.putExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_PROVIDER,
-                LauncherExperiment.widgetList.get(mParam1).provider
-            )
-            startActivityForResult(bindIntent, com.example.my_launcher.Manifest.permission.)*/
-
-            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duolingoWidget.provider) //info.provider
-            }
-            startActivity(intent)
-
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.BIND_APPWIDGET,
-                ),
-                0
-            )
-
-            /*val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.componentName)
-                // This is the options bundle described in the preceding section.
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
-            }
-            startActivityForResult(intent, REQUEST_BIND_APPWIDGET)*/
-        }
-        else {
-            return appWidgetHost!!.createView(applicationContext, appWidgetId, duolingoWidget).apply {
-                setAppWidget(appWidgetId, appWidgetInfo)
-            }
-        }
-
-        return null
-
-        /*val newOptions = Bundle().apply {
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, height)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height)
-        }
-        appWidgetManager.updateAppWidgetOptions(appWidgetId, newOptions)*/
-
-        //appWidgetHost.deleteAppWidgetId(appWidgetId)
     }
 
     @SuppressLint("WrongConstant")
