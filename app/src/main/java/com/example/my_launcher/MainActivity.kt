@@ -8,13 +8,17 @@ import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,10 +90,6 @@ import kotlin.math.roundToInt
 
 
 /* TODO
-
-*/
-
-/* Features
 1. blur background when list is open
 2. make home button default to top of app list and open the wallpaper view
 3. make alpha list letter follow when dragging
@@ -108,17 +108,12 @@ https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
 */
 
-/* Resources
-https://developer.android.com/develop/ui/views/appwidgets/host
-https://medium.com/@philipp.cherubim/how-to-display-widgets-inside-your-app-f3885cc27cff
-https://stackoverflow.com/questions/77911492/appwidgethostview-is-not-updating-inside-androidview-composable
-https://stackoverflow.com/questions/14000415/binding-widgets-in-custom-launcher
-https://stackoverflow.com/questions/26847824/android-adding-widgets-to-app-programmatically-warning-message
-https://stackoverflow.com/questions/77532675/how-to-host-and-draw-installed-app-widgets-in-a-compose-app
-*/
-
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
+    private var receiver: BroadcastReceiver? = null
+
+    private var date: String = ""
+
     private var widgetHost: AppWidgetHost? = null
     private var widgetManager: AppWidgetManager? = null
     private var widgetId: Int? = null
@@ -147,8 +142,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val filters = IntentFilter()
+        filters.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+        filters.addAction(Intent.ACTION_DATE_CHANGED)
+
+        receiver = object:BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
+                    println("ACTION CLOSE SYSTEM DIALOG")
+                }
+                else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) {
+                    println("ACTION DATE CHANGED")
+                }
+            }
+        }
+
+        registerReceiver(receiver, filters, RECEIVER_NOT_EXPORTED)
+
         val textColor = Color.White
-        var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
+        date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val packageIntent = Intent(Intent.ACTION_MAIN, null)
         packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
@@ -197,6 +209,10 @@ class MainActivity : ComponentActivity() {
                 val newDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 if (date != newDate)
                     date = newDate
+            }
+
+            BackHandler {
+                //TODO
             }
 
             Text(
@@ -330,6 +346,10 @@ class MainActivity : ComponentActivity() {
         widgetHost!!.stopListening()
         if (widgetHost != null)
             widgetHost!!.deleteAppWidgetId(widgetId!!)
+    }
+
+    fun updateDate() {
+        date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
     }
 
     private fun launchApp(packageName: String?) {
