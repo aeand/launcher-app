@@ -3,6 +3,7 @@ package com.example.my_launcher
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
+import android.R.attr.minWidth
 import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
@@ -13,10 +14,12 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
@@ -127,6 +130,7 @@ class MainActivity : ComponentActivity() {
     private var options: Bundle? = null
     private var hostView: AppWidgetHostView? = null
 
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
@@ -156,33 +160,28 @@ class MainActivity : ComponentActivity() {
         var apps = createAppList()
         var alphabet = createAlphabetList(apps)
 
-
         widgetHost = AppWidgetHost(applicationContext, 0)
         widgetHost!!.startListening()
         widgetManager = AppWidgetManager.getInstance(applicationContext)
         duoWidget = widgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
         widgetId = widgetHost!!.allocateAppWidgetId()
-        println("id: $widgetId")
 
         options = Bundle()
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, maxWidth)
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
         options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
-        /*val newOptions = Bundle().apply {
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, minWidth)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
-            putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
-        }
-        widgetManager!!.updateAppWidgetOptions(widgetId!!, newOptions)*/
+        //widgetManager!!.updateAppWidgetOptions(widgetId!!, options)
 
         val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget!!.provider)
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
 
-        println("valid: ${ !widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider) }")
+        hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
+        hostView!!.setAppWidget(widgetId!!, duoWidget)
+
+        println("valid: ${ widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider) }")
         if (widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider)) {
             hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
             hostView!!.setAppWidget(widgetId!!, duoWidget)
@@ -283,21 +282,10 @@ class MainActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .width(300.dp)
-                        .height(100.dp)
+                        .width(500.dp)
+                        .height(269.dp)
                 ) {
-                    Button(
-                        modifier = Modifier
-                            .size(100.dp),
-                        onClick = {
-                            requestWidgetPermissionsLauncher.launch(intent)
-                        }
-                    ) {
-                        Text(text = "help!")
-                    }
-
-                    if (hostView != null)
-                        AndroidView(factory = { hostView!! })
+                    AndroidView(factory = { hostView!! })
                 }
             }
 
