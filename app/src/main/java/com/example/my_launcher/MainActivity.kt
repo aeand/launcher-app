@@ -57,7 +57,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -80,7 +79,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
@@ -113,6 +111,7 @@ class MainActivity : ComponentActivity() {
     private var receiver: BroadcastReceiver? = null
 
     private var date: String = ""
+    private var lazyScroll: LazyListState? = null
 
     private var widgetHost: AppWidgetHost? = null
     private var widgetManager: AppWidgetManager? = null
@@ -149,7 +148,10 @@ class MainActivity : ComponentActivity() {
         receiver = object:BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
-                    println("ACTION CLOSE SYSTEM DIALOG")
+                    customScope.launch {
+                        lazyScroll?.scrollToItem(0)
+                        //TODO also make this scroll the anchorDraggable back to start
+                    }
                 }
                 else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) {
                     date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
@@ -203,13 +205,6 @@ class MainActivity : ComponentActivity() {
 
                 onDispose { }
             }
-
-            /*LaunchedEffect(true) {
-                delay(3600000)
-                val newDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-                if (date != newDate)
-                    date = newDate
-            }*/
 
             BackHandler {
                 //TODO
@@ -293,9 +288,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            lazyScroll = rememberLazyListState()
+
             AppDrawer(
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                lazyScroll = lazyScroll!!,
                 hostView = hostView,
                 alphabet = alphabet,
                 apps = apps,
@@ -323,6 +321,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .align(Alignment.Center)
                         .size(100.dp)
+                        .clickable {
+                            customScope.launch {
+                                dragState.settle(dragState.anchors.minAnchor()) // TODO check receiver
+                            }
+                        }
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
@@ -442,6 +445,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppDrawer(
     modifier: Modifier,
+    lazyScroll: LazyListState,
     hostView: AppWidgetHostView?,
     customScope: CoroutineScope,
     textColor: Color,
@@ -455,8 +459,6 @@ fun AppDrawer(
             .fillMaxSize()
             .padding(start = 10.dp, end = 10.dp)
     ) {
-        val lazyScroll = rememberLazyListState()
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
