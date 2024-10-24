@@ -57,7 +57,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
@@ -139,14 +138,7 @@ class MainActivity : ComponentActivity() {
         var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         val apps = createAppList()
         val alphabet = createAlphabetList(apps)
-        val value = getDuolingoWidgetView()
-        val duolingoWidgetView: MutableState<AppWidgetHostView>?
-        if (value != null) {
-             duolingoWidgetView = mutableStateOf(value)
-        }
-        else {
-            duolingoWidgetView = null
-        }
+        val duolingoWidgetView: MutableState<AppWidgetHostView?> = mutableStateOf(getDuolingoWidgetView())
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -160,7 +152,7 @@ class MainActivity : ComponentActivity() {
                 onDispose { }
             }
             
-            LaunchedEffect(key1 = true) {
+            LaunchedEffect(true) {
                 delay(3600000)
                 val newDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 if (date != newDate)
@@ -240,8 +232,8 @@ class MainActivity : ComponentActivity() {
                             .width(300.dp)
                             .height(100.dp)
                     ) {
-                        if (duolingoWidgetView != null)
-                            AndroidView(factory = { duolingoWidgetView.value })
+                        if (duolingoWidgetView.value != null)
+                            AndroidView(factory = { duolingoWidgetView.value!! })
                     }
                 }
 
@@ -269,7 +261,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Box(
                         modifier = Modifier
-                            .align(Center)
+                            .align(Alignment.Center)
                             .size(100.dp)
                             .background(
                                 Brush.linearGradient(
@@ -282,7 +274,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Text(
                         modifier = Modifier
-                            .align(Center),
+                            .align(Alignment.Center),
                         text = "Notes page!"
                     )
                 }
