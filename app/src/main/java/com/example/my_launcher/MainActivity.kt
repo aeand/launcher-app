@@ -1,6 +1,7 @@
 package com.example.my_launcher
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -76,6 +77,7 @@ import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,9 +97,10 @@ import kotlin.math.roundToInt
 5. set text color dynamically depending on background color
 6. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
 7. add a notes feature on swipe right or something
-8. make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR
+8. make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 9. could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
 10. could do something with permission VIBRATE
+11. enforce portrait orientation with permissions
 */
 
 /* Inspiration
@@ -151,7 +154,7 @@ class MainActivity : ComponentActivity() {
 
                 onDispose { }
             }
-            
+
             LaunchedEffect(true) {
                 delay(3600000)
                 val newDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
@@ -214,7 +217,16 @@ class MainActivity : ComponentActivity() {
                         orientation = Orientation.Vertical
                     )
                     .fillMaxSize()
-                    .offset { IntOffset(dragState.requireOffset().roundToInt(), dragState2.requireOffset().roundToInt()) }
+                    .offset {
+                        IntOffset(
+                            dragState
+                                .requireOffset()
+                                .roundToInt(),
+                            dragState2
+                                .requireOffset()
+                                .roundToInt()
+                        )
+                    }
             ) {
                 Column(
                     modifier = Modifier
@@ -241,7 +253,13 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .offset { IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), 0) }
+                    .offset {
+                        IntOffset(
+                            dragState
+                                .requireOffset()
+                                .roundToInt() + screenWidth.roundToInt(), 0
+                        )
+                    }
             ) {
                 Box(
                     modifier = Modifier
@@ -352,9 +370,9 @@ class MainActivity : ComponentActivity() {
         appWidgetManager = AppWidgetManager.getInstance(applicationContext)
         appWidgetHost!!.startListening()
 
-        appWidgetManager!!.installedProviders.forEach {
+        /*appWidgetManager!!.installedProviders.forEach {
             println(it.activityInfo.name)
-        }
+        }*/
 
         val duolingoWidget: AppWidgetProviderInfo? = appWidgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
         val appWidgetId = appWidgetHost!!.allocateAppWidgetId()
@@ -408,6 +426,20 @@ class MainActivity : ComponentActivity() {
         appWidgetManager.updateAppWidgetOptions(appWidgetId, newOptions)*/
 
         //appWidgetHost.deleteAppWidgetId(appWidgetId)
+    }
+
+    @SuppressLint("WrongConstant")
+    private fun setExpandNotificationDrawer(expand: Boolean) {
+        try {
+            val statusBarService = applicationContext.getSystemService("statusbar")
+            val methodName = if (expand) "expandNotificationsPanel" else "collapsePanels"
+            val statusBarManager: Class<*> = Class.forName("android.app.StatusBarManager")
+            val method: Method = statusBarManager.getMethod(methodName)
+            method.invoke(statusBarService)
+        } catch (e: Exception) {
+            println("ERROR")
+            e.printStackTrace()
+        }
     }
 }
 
