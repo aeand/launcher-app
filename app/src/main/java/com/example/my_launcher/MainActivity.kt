@@ -80,6 +80,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -610,7 +611,7 @@ fun AppDrawer(
                                     Text(
                                         modifier = Modifier
                                             .padding(end = 10.dp),
-                                        text = app.label?.first().toString(),
+                                        text = app.label?.first()?.uppercaseChar().toString(),
                                         color = textColor,
                                         fontSize = 20.sp
                                     )
@@ -725,7 +726,7 @@ fun AppDrawer(
                                         color = Color.Black
                                     )
                             },
-                        text = letter,
+                        text = letter.uppercase(),
                         color = textColor,
                         fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
                         fontWeight = FontWeight(600)
