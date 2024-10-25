@@ -547,11 +547,12 @@ fun AppDrawer(
                 tint = textColor
             )
 
-            AndroidView( // TODO check if hitbox is larger than view
+            AndroidView(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .width(500.dp)
-                    .height(269.dp),
+                    .offset(0.dp, -50.dp)
+                    .width(350.dp)
+                    .height(200.dp),
                 factory = { hostView!! }
             )
 
