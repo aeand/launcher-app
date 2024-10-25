@@ -99,7 +99,6 @@ import kotlin.math.roundToInt
 - make home button open the wallpaper view
 - add a notes feature on swipe right
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
-- could do something with permission VIBRATE
 */
 
 /* Inspiration
