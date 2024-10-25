@@ -90,7 +90,6 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-- add to app list: a letter at the top of the section for that letter. And a line. to improve readability
 - set text color dynamically depending on background color
 - blur background when list is open
 - make home button open the wallpaper view
