@@ -363,7 +363,6 @@ class MainActivity : ComponentActivity() {
                 launchApp = ::launchApp,
                 hideApp = ::hideApp,
                 uninstallApp = ::uninstallApp,
-                scrollToFirstItem = ::scrollToFirstItem,
                 textColor = textColor,
             )
 
@@ -439,19 +438,16 @@ class MainActivity : ComponentActivity() {
         startActivity(intent)
     }
 
-    private fun scrollToFirstItem(apps: MutableList<ApplicationInformation>, letter: String, lazyScroll: LazyListState) {
-        customScope.launch {
-            var i = 0
-            var found = false
-
-            apps.forEachIndexed { index, app ->
-                if (!found && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                    i = index
-                    found = true
-                }
-            }
-
-            lazyScroll.animateScrollToItem(i)
+    @SuppressLint("WrongConstant")
+    private fun setExpandNotificationDrawer(expand: Boolean) {
+        try {
+            val statusBarService = applicationContext.getSystemService("statusbar")
+            val methodName = if (expand) "expandNotificationsPanel" else "collapsePanels"
+            val statusBarManager: Class<*> = Class.forName("android.app.StatusBarManager")
+            val method: Method = statusBarManager.getMethod(methodName)
+            method.invoke(statusBarService)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -540,19 +536,6 @@ class MainActivity : ComponentActivity() {
         hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
         hostView.setAppWidget(widgetId, duoWidget)
     }
-
-    @SuppressLint("WrongConstant")
-    private fun setExpandNotificationDrawer(expand: Boolean) {
-        try {
-            val statusBarService = applicationContext.getSystemService("statusbar")
-            val methodName = if (expand) "expandNotificationsPanel" else "collapsePanels"
-            val statusBarManager: Class<*> = Class.forName("android.app.StatusBarManager")
-            val method: Method = statusBarManager.getMethod(methodName)
-            method.invoke(statusBarService)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 }
 
 @SuppressLint("UseOfNonLambdaOffsetOverload")
@@ -569,7 +552,6 @@ fun AppDrawer(
     hideApp: (String?) -> Unit,
     uninstallApp: (String?) -> Unit,
     alphabet: MutableList<String>,
-    scrollToFirstItem: (MutableList<MainActivity.ApplicationInformation>, String, LazyListState) -> Unit
 ) {
     val showAllApps = remember { mutableStateOf(false) }
 
@@ -754,11 +736,20 @@ fun AppDrawer(
                                             offsetY = -150f
                                             awaitRelease()
                                         } finally {
-                                            scrollToFirstItem(
-                                                apps,
-                                                letter,
-                                                lazyScroll
-                                            )
+                                            customScope.launch {
+                                                var i = 0
+                                                var found = false
+
+                                                apps.forEachIndexed { index, app ->
+                                                    if (!found && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                                                        i = index
+                                                        found = true
+                                                    }
+                                                }
+
+                                                lazyScroll.animateScrollToItem(i)
+                                            }
+
                                             offsetY = 0f
                                             selectedLetter = ""
                                         }
