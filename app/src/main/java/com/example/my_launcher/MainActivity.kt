@@ -16,6 +16,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -31,6 +32,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -54,6 +56,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,13 +92,13 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
+- refresh app list after uninstall and install
 - set text color dynamically depending on background color
 - blur background when list is open
 - make home button open the wallpaper view
 - add settings. I wanna hide specific apps
 - add a notes feature on swipe right
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
-- could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
 - could do something with permission VIBRATE
 */
 
@@ -108,6 +112,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var receiver: BroadcastReceiver
 
     private var date: String = ""
+    private lateinit var apps: MutableList<ApplicationInformation>
     private lateinit var lazyScroll: LazyListState
 
     private lateinit var widgetHost: AppWidgetHost
@@ -143,6 +148,13 @@ class MainActivity : ComponentActivity() {
         val filters = IntentFilter()
         filters.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
         filters.addAction(Intent.ACTION_DATE_CHANGED)
+        filters.addAction(Intent.ACTION_PACKAGE_ADDED)
+        filters.addAction(Intent.ACTION_UNINSTALL_PACKAGE)
+        filters.addAction(Intent.ACTION_PACKAGE_ADDED)
+        filters.addAction(Intent.ACTION_INSTALL_PACKAGE)
+        filters.addAction(Intent.ACTION_PACKAGE_REMOVED)
+        filters.addAction(Intent.ACTION_PACKAGE_REPLACED)
+        filters.addAction(Intent.ACTION_PACKAGE_INSTALL)
 
         receiver = object:BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -155,6 +167,28 @@ class MainActivity : ComponentActivity() {
                 else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) {
                     date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 }
+                else if (intent.action.equals(Intent.ACTION_DELETE)) {
+                    println("REOIADNFOAEUGB")
+                    createAppList()
+                }
+                else if (intent.action.equals(Intent.ACTION_UNINSTALL_PACKAGE)) {
+                    println("ACTION_UNINSTALL_PACKAGE")
+                }
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+                    println("ACTION_PACKAGE_ADDED")
+                }
+                else if (intent.action.equals(Intent.ACTION_INSTALL_PACKAGE)) {
+                    println("ACTION_INSTALL_PACKAGE")
+                }
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
+                    println("ACTION_PACKAGE_REMOVED")
+                }
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_REPLACED)) {
+                    println("ACTION_PACKAGE_REPLACED")
+                }
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_INSTALL)) {
+                    println("ACTION_PACKAGE_INSTALL")
+                }
             }
         }
 
@@ -165,7 +199,7 @@ class MainActivity : ComponentActivity() {
         val packageIntent = Intent(Intent.ACTION_MAIN, null)
         packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
-        var apps = createAppList()
+        createAppList()
         var alphabet = createAlphabetList(apps)
         createDuolingoWidget()
 
@@ -257,7 +291,7 @@ class MainActivity : ComponentActivity() {
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
                 if (packages.size == pk.size && packages.toSet() == pk.toSet()) {
-                    apps = createAppList()
+                    createAppList()
                     alphabet = createAlphabetList(apps)
                     packages = pk
                 }
@@ -274,6 +308,7 @@ class MainActivity : ComponentActivity() {
                 apps = apps,
                 customScope = customScope,
                 launchApp = ::launchApp,
+                uninstallApp = ::uninstallApp,
                 scrollToFirstItem = ::scrollToFirstItem,
                 textColor = textColor,
             )
@@ -328,6 +363,23 @@ class MainActivity : ComponentActivity() {
         startActivity(launchIntent)
     }
 
+    private fun uninstallApp(packageName: String?) {
+        if (packageName == null)
+            return
+
+        val packageIntent = Intent(Intent.ACTION_MAIN, null)
+        packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
+        val app = packages.find { it.activityInfo.packageName.lowercase() == packageName.lowercase() }
+
+        if (app == null)
+            return
+
+        val intent = Intent(Intent.ACTION_DELETE)
+        intent.data = Uri.parse("package:${app.activityInfo.packageName}")
+        startActivity(intent)
+    }
+
     private fun scrollToFirstItem(apps: MutableList<ApplicationInformation>, letter: String, lazyScroll: LazyListState) {
         customScope.launch {
             var i = 0
@@ -344,24 +396,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createAppList(): MutableList<ApplicationInformation> {
+    private fun createAppList() {
         val intent = Intent(Intent.ACTION_MAIN, null)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
         val packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
 
-        val apps = mutableListOf<ApplicationInformation>()
+        val appList = mutableListOf<ApplicationInformation>()
         for (app in packages) {
             val appInfo = ApplicationInformation()
             appInfo.label = app.loadLabel(packageManager).toString()
             appInfo.packageName = app.activityInfo.packageName
             appInfo.icon = app.loadIcon(packageManager)
-            apps.add(appInfo)
+            appList.add(appInfo)
         }
-        apps.sortWith { a, b ->
+        appList.sortWith { a, b ->
             a.label?.uppercase()!!.compareTo(b.label?.uppercase()!!)
         }
 
-        return apps
+        apps = appList
     }
 
     private fun createAlphabetList(apps: MutableList<ApplicationInformation>): MutableList<String> {
@@ -438,6 +490,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppDrawer(
     modifier: Modifier,
@@ -447,6 +500,7 @@ fun AppDrawer(
     textColor: Color,
     apps: MutableList<MainActivity.ApplicationInformation>,
     launchApp: (String?) -> Unit,
+    uninstallApp: (String?) -> Unit,
     alphabet: MutableList<String>,
     scrollToFirstItem: (MutableList<MainActivity.ApplicationInformation>, String, LazyListState) -> Unit
 ) {
@@ -500,8 +554,11 @@ fun AppDrawer(
             ) {
                 apps.forEach { app ->
                     item {
+                        val showOptions = remember { mutableStateOf(false) }
                         val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
-                        if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase())
+
+                        if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
+
                             Row(
                                 modifier = Modifier
                                     .padding(bottom = 4.dp),
@@ -524,13 +581,45 @@ fun AppDrawer(
                                     fontSize = 20.sp
                                 )
                             }
+                        }
+
+                        if (showOptions.value) {
+                            AlertDialog(
+                                icon = {  },
+                                title = { Text(text = "Uninstall") },
+                                text = { Text(text = "Uninstall ${app.label}?") },
+                                onDismissRequest = {
+                                    showOptions.value = false
+                                },
+                                confirmButton = {
+                                    Button(onClick = {
+                                        uninstallApp(app.packageName)
+                                        showOptions.value = false
+                                    }) {
+                                        Text("Confirm")
+                                    }
+                                },
+                                dismissButton = {
+                                    Button(onClick = {
+                                        showOptions.value = false
+                                    }) {
+                                        Text("Dismiss")
+                                    }
+                                }
+                            )
+                        }
 
                         Row(
                             modifier = Modifier
                                 .padding(bottom = 20.dp)
-                                .clickable {
-                                    launchApp(app.packageName)
-                                }
+                                .combinedClickable(
+                                    onClick = {
+                                        launchApp(app.packageName)
+                                    },
+                                    onLongClick = {
+                                        showOptions.value = true
+                                    },
+                                )
                         ) {
                             Text(
                                 modifier = Modifier
