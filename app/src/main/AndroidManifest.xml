@@ -14,8 +14,6 @@
     <uses-permission android:name="android.permission.STATUS_BAR"/>
     <uses-permission android:name="android.permission.STATUS_BAR_SERVICE"/>
     <!--<uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />-->
-    <!--<uses-permission android:name="android.permission.SET_ORIENTATION"/>-->
-
 
     <!-- Useful permissions lists
     https://stuff.mit.edu/afs/sipb/project/android/docs/reference/android/Manifest.permission.html#BIND_ACCESSIBILITY_SERVICE
