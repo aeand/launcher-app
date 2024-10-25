@@ -576,7 +576,8 @@ fun AppDrawer(
                 .padding(start = 10.dp, end = 10.dp)
                 .fillMaxWidth()
                 .fillMaxHeight(0.6f)
-                .align(Alignment.BottomEnd),
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 48.dp),
             horizontalArrangement = Arrangement.End
         ) {
             LazyColumn(
