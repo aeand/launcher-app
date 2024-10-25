@@ -95,6 +95,7 @@ import kotlin.math.roundToInt
 
 /* TODO
 - refresh app list after uninstall and install
+- Fix app select background (currently grey)
 - set text color dynamically depending on background color
 - blur background when list is open
 - make home button open the wallpaper view
