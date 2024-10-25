@@ -727,6 +727,7 @@ fun AppDrawer(
                 alphabet.forEach { letter ->
                     Text(
                         modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onPress = {
