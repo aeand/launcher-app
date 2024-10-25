@@ -1,5 +1,6 @@
 package com.example.my_launcher
 
+import android.R.attr.fontStyle
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
@@ -53,6 +54,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -499,6 +502,31 @@ fun AppDrawer(
             ) {
                 apps.forEach { app ->
                     item {
+                        val a = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
+                        if (app.label?.uppercase() == a.label?.uppercase())
+                            Row(
+                                modifier = Modifier
+                                    .padding(bottom = 4.dp),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(150.dp)
+                                        .height(1.dp)
+                                        .padding(end = 10.dp)
+                                        .offset(0.dp, 2.dp)
+                                        .background(Color.White)
+                                )
+                                Text(
+                                    modifier = Modifier
+                                        .padding(end = 10.dp),
+                                    text = app.label?.first().toString(),
+                                    color = textColor,
+                                    fontSize = 20.sp
+                                )
+                            }
+
                         Row(
                             modifier = Modifier
                                 .padding(bottom = 20.dp)
