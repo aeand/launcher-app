@@ -502,8 +502,8 @@ fun AppDrawer(
             ) {
                 apps.forEach { app ->
                     item {
-                        val a = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
-                        if (app.label?.uppercase() == a.label?.uppercase())
+                        val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
+                        if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase())
                             Row(
                                 modifier = Modifier
                                     .padding(bottom = 4.dp),
