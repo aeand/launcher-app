@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -96,7 +97,6 @@ import kotlin.math.roundToInt
 - set text color dynamically depending on background color
 - blur background when list is open
 - make home button open the wallpaper view
-- add settings. I wanna hide specific apps
 - add a notes feature on swipe right
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - could do something with permission VIBRATE
@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var receiver: BroadcastReceiver
 
     private var date: String = ""
-    private lateinit var apps: MutableList<ApplicationInformation>
+    private var apps: MutableList<ApplicationInformation>? = null
     private lateinit var lazyScroll: LazyListState
 
     private lateinit var widgetHost: AppWidgetHost
@@ -137,6 +137,7 @@ class MainActivity : ComponentActivity() {
         var label: String? = null
         var packageName: String? = null
         var icon: Drawable? = null
+        var hidden: Boolean? = null
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -200,7 +201,7 @@ class MainActivity : ComponentActivity() {
         packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
         createAppList()
-        var alphabet = createAlphabetList(apps)
+        var alphabet = createAlphabetList(apps!!)
         createDuolingoWidget()
 
         setContent {
@@ -292,7 +293,7 @@ class MainActivity : ComponentActivity() {
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
                 if (packages.size == pk.size && packages.toSet() == pk.toSet()) {
                     createAppList()
-                    alphabet = createAlphabetList(apps)
+                    alphabet = createAlphabetList(apps!!)
                     packages = pk
                 }
             }
@@ -305,9 +306,10 @@ class MainActivity : ComponentActivity() {
                 lazyScroll = lazyScroll,
                 hostView = hostView,
                 alphabet = alphabet,
-                apps = apps,
+                apps = apps!!,
                 customScope = customScope,
                 launchApp = ::launchApp,
+                hideApp = ::hideApp,
                 uninstallApp = ::uninstallApp,
                 scrollToFirstItem = ::scrollToFirstItem,
                 textColor = textColor,
@@ -363,6 +365,11 @@ class MainActivity : ComponentActivity() {
         startActivity(launchIntent)
     }
 
+    private fun hideApp(packageName: String?) {
+        val app = apps?.find { it.packageName?.lowercase() == packageName?.lowercase() }
+        apps?.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden = !app?.hidden!!
+    }
+
     private fun uninstallApp(packageName: String?) {
         if (packageName == null)
             return
@@ -402,11 +409,17 @@ class MainActivity : ComponentActivity() {
         val packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
 
         val appList = mutableListOf<ApplicationInformation>()
-        for (app in packages) {
+        packages.forEach { app ->
             val appInfo = ApplicationInformation()
             appInfo.label = app.loadLabel(packageManager).toString()
             appInfo.packageName = app.activityInfo.packageName
             appInfo.icon = app.loadIcon(packageManager)
+            val previousApp = apps?.find { it.packageName?.lowercase() == appInfo.packageName!!.lowercase() }
+            if (previousApp != null)
+                appInfo.hidden = previousApp.hidden
+            else
+                appInfo.hidden = false
+
             appList.add(appInfo)
         }
         appList.sortWith { a, b ->
@@ -490,6 +503,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("UseOfNonLambdaOffsetOverload")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppDrawer(
@@ -500,10 +514,13 @@ fun AppDrawer(
     textColor: Color,
     apps: MutableList<MainActivity.ApplicationInformation>,
     launchApp: (String?) -> Unit,
+    hideApp: (String?) -> Unit,
     uninstallApp: (String?) -> Unit,
     alphabet: MutableList<String>,
     scrollToFirstItem: (MutableList<MainActivity.ApplicationInformation>, String, LazyListState) -> Unit
 ) {
+    val showAllApps = remember { mutableStateOf(false) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -514,7 +531,23 @@ fun AppDrawer(
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
         ) {
-            AndroidView(
+            Icon(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(if (showAllApps.value) 30.dp else 20.dp)
+                    .offset(
+                        x = if (showAllApps.value) -35.dp else -40.dp,
+                        y = if (showAllApps.value) -1.dp else -5.dp
+                    )
+                    .clickable {
+                        showAllApps.value = !showAllApps.value
+                    },
+                painter = painterResource(id = if (showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
+                contentDescription = null,
+                tint = textColor
+            )
+
+            AndroidView( // TODO check if hitbox is larger than view
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .width(500.dp)
@@ -554,93 +587,95 @@ fun AppDrawer(
             ) {
                 apps.forEach { app ->
                     item {
-                        val showOptions = remember { mutableStateOf(false) }
-                        val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
+                        if (showAllApps.value || !app.hidden!!) {
+                            val showOptions = remember { mutableStateOf(false) }
+                            val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
 
-                        if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
+                            if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(bottom = 4.dp),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(150.dp)
+                                            .height(1.dp)
+                                            .padding(end = 10.dp)
+                                            .offset(0.dp, 2.dp)
+                                            .background(Color.White)
+                                    )
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(end = 10.dp),
+                                        text = app.label?.first().toString(),
+                                        color = textColor,
+                                        fontSize = 20.sp
+                                    )
+                                }
+                            }
+
+                            if (showOptions.value) {
+                                AlertDialog(
+                                    icon = {  },
+                                    title = { Text(text = "ACTION") },
+                                    text = { Text(text = "What to do with ${app.label}?") },
+                                    onDismissRequest = {
+                                        showOptions.value = false
+                                    },
+                                    confirmButton = {
+                                        Button(onClick = {
+                                            uninstallApp(app.packageName)
+                                            showOptions.value = false
+                                        }) {
+                                            Text("uninstall")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        Button(onClick = {
+                                            showOptions.value = false
+                                            hideApp(app.packageName)
+                                        }) {
+                                            Text(if (app.hidden != null && app.hidden!!) "show" else "hide")
+                                        }
+                                    }
+                                )
+                            }
 
                             Row(
                                 modifier = Modifier
-                                    .padding(bottom = 4.dp),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(bottom = 20.dp)
+                                    .combinedClickable(
+                                        onClick = {
+                                            launchApp(app.packageName)
+                                        },
+                                        onLongClick = {
+                                            showOptions.value = true
+                                        },
+                                    )
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(150.dp)
-                                        .height(1.dp)
-                                        .padding(end = 10.dp)
-                                        .offset(0.dp, 2.dp)
-                                        .background(Color.White)
-                                )
                                 Text(
                                     modifier = Modifier
-                                        .padding(end = 10.dp),
-                                    text = app.label?.first().toString(),
+                                        .align(Alignment.CenterVertically)
+                                        .padding(end = 10.dp)
+                                        .width(300.dp),
+                                    text = "${app.label}",
                                     color = textColor,
-                                    fontSize = 20.sp
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight(weight = 700),
+                                    overflow = TextOverflow.Ellipsis,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.End
+                                )
+
+                                Image(
+                                    modifier = Modifier
+                                        .size(50.dp),
+                                    painter = rememberDrawablePainter(drawable = app.icon),
+                                    contentDescription = null
                                 )
                             }
-                        }
-
-                        if (showOptions.value) {
-                            AlertDialog(
-                                icon = {  },
-                                title = { Text(text = "Uninstall") },
-                                text = { Text(text = "Uninstall ${app.label}?") },
-                                onDismissRequest = {
-                                    showOptions.value = false
-                                },
-                                confirmButton = {
-                                    Button(onClick = {
-                                        uninstallApp(app.packageName)
-                                        showOptions.value = false
-                                    }) {
-                                        Text("Confirm")
-                                    }
-                                },
-                                dismissButton = {
-                                    Button(onClick = {
-                                        showOptions.value = false
-                                    }) {
-                                        Text("Dismiss")
-                                    }
-                                }
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .padding(bottom = 20.dp)
-                                .combinedClickable(
-                                    onClick = {
-                                        launchApp(app.packageName)
-                                    },
-                                    onLongClick = {
-                                        showOptions.value = true
-                                    },
-                                )
-                        ) {
-                            Text(
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                                    .padding(end = 10.dp)
-                                    .width(300.dp),
-                                text = "${app.label}",
-                                color = textColor,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight(weight = 700),
-                                overflow = TextOverflow.Ellipsis,
-                                maxLines = 1,
-                                textAlign = TextAlign.End
-                            )
-
-                            Image(
-                                modifier = Modifier
-                                    .size(50.dp),
-                                painter = rememberDrawablePainter(drawable = app.icon),
-                                contentDescription = null
-                            )
                         }
                     }
                 }
