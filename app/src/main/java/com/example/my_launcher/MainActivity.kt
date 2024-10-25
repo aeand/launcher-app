@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
@@ -95,7 +96,6 @@ import kotlin.math.roundToInt
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
 - could do something with permission VIBRATE
-- enforce portrait orientation with permissions
 */
 
 /* Inspiration
@@ -137,6 +137,8 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         val filters = IntentFilter()
         filters.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
