@@ -86,7 +86,6 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-
 /* TODO
 1. blur background when list is open
 2. make home button default to top of app list and open the wallpaper view
@@ -108,25 +107,25 @@ https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-ne
 
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
-    private var receiver: BroadcastReceiver? = null
+    private lateinit var receiver: BroadcastReceiver
 
     private var date: String = ""
-    private var lazyScroll: LazyListState? = null
+    private lateinit var lazyScroll: LazyListState
 
-    private var widgetHost: AppWidgetHost? = null
-    private var widgetManager: AppWidgetManager? = null
-    private var widgetId: Int? = null
-    private var duoWidget: AppWidgetProviderInfo? = null
-    private var options: Bundle? = null
-    private var hostView: AppWidgetHostView? = null
+    private lateinit var widgetHost: AppWidgetHost
+    private lateinit var widgetManager: AppWidgetManager
+    private var widgetId: Int = 0
+    private lateinit var duoWidget: AppWidgetProviderInfo
+    private lateinit var options: Bundle
+    private lateinit var hostView: AppWidgetHostView
 
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
-            println("onActivityResult: ${widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider, options)}")
-            if (widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider, options)) {
-                hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
-                hostView!!.setAppWidget(widgetId!!, duoWidget)
+            println("onActivityResult: ${widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)}")
+            if (widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)) {
+                hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
+                hostView.setAppWidget(widgetId, duoWidget)
             }
         }
     }
@@ -149,7 +148,7 @@ class MainActivity : ComponentActivity() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
                     customScope.launch {
-                        lazyScroll?.scrollToItem(0)
+                        lazyScroll.scrollToItem(0)
                         //TODO also make this scroll the anchorDraggable back to start
                     }
                 }
@@ -168,31 +167,7 @@ class MainActivity : ComponentActivity() {
         var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
         var apps = createAppList()
         var alphabet = createAlphabetList(apps)
-
-        widgetHost = AppWidgetHost(applicationContext, 0)
-        widgetHost!!.startListening()
-        widgetManager = AppWidgetManager.getInstance(applicationContext)
-        duoWidget = widgetManager!!.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }
-        widgetId = widgetHost!!.allocateAppWidgetId()
-
-        options = Bundle()
-        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, maxWidth)
-        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
-        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
-        options!!.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
-
-        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget!!.provider)
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
-
-        if (!widgetManager!!.bindAppWidgetIdIfAllowed(widgetId!!, duoWidget!!.provider)) {
-            println("invalid")
-            requestWidgetPermissionsLauncher.launch(intent)
-        }
-
-        hostView = widgetHost!!.createView(applicationContext, widgetId!!, duoWidget)
-        hostView!!.setAppWidget(widgetId!!, duoWidget)
+        createDuolingoWidget()
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -293,7 +268,7 @@ class MainActivity : ComponentActivity() {
             AppDrawer(
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
-                lazyScroll = lazyScroll!!,
+                lazyScroll = lazyScroll,
                 hostView = hostView,
                 alphabet = alphabet,
                 apps = apps,
@@ -341,9 +316,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        widgetHost!!.stopListening()
-        if (widgetHost != null)
-            widgetHost!!.deleteAppWidgetId(widgetId!!)
+        widgetHost.stopListening()
+        widgetHost.deleteAppWidgetId(widgetId)
     }
 
     private fun launchApp(packageName: String?) {
@@ -421,6 +395,33 @@ class MainActivity : ComponentActivity() {
         }
 
         return alphabet
+    }
+
+    private fun createDuolingoWidget() {
+        widgetHost = AppWidgetHost(applicationContext, 0)
+        widgetHost.startListening()
+        widgetManager = AppWidgetManager.getInstance(applicationContext)
+        duoWidget = widgetManager.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }!!
+        widgetId = widgetHost.allocateAppWidgetId()
+
+        options = Bundle()
+        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, maxWidth)
+        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
+        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
+        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
+
+        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget.provider)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
+
+        if (!widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider)) {
+            println("invalid")
+            requestWidgetPermissionsLauncher.launch(intent)
+        }
+
+        hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
+        hostView.setAppWidget(widgetId, duoWidget)
     }
 
     @SuppressLint("WrongConstant")
