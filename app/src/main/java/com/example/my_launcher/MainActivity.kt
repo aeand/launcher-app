@@ -17,6 +17,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -24,6 +26,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
 import androidx.compose.animation.core.tween
@@ -62,6 +65,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -114,6 +118,7 @@ class MainActivity : ComponentActivity() {
     private var date: String = ""
     private var apps: MutableList<ApplicationInformation>? = null
     private lateinit var lazyScroll: LazyListState
+    private lateinit var isCharging: MutableState<Boolean>
 
     private lateinit var widgetHost: AppWidgetHost
     private lateinit var widgetManager: AppWidgetManager
@@ -140,6 +145,7 @@ class MainActivity : ComponentActivity() {
         var hidden: Boolean? = null
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,6 +162,9 @@ class MainActivity : ComponentActivity() {
         filters.addAction(Intent.ACTION_PACKAGE_REMOVED)
         filters.addAction(Intent.ACTION_PACKAGE_REPLACED)
         filters.addAction(Intent.ACTION_PACKAGE_INSTALL)
+        filters.addAction(Intent.ACTION_BATTERY_CHANGED)
+        filters.addAction(Intent.ACTION_BATTERY_LOW)
+        filters.addAction(Intent.ACTION_BATTERY_OKAY)
 
         receiver = object:BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -190,6 +199,17 @@ class MainActivity : ComponentActivity() {
                 else if (intent.action.equals(Intent.ACTION_PACKAGE_INSTALL)) {
                     println("ACTION_PACKAGE_INSTALL")
                 }
+                else if (intent.action.equals(Intent.ACTION_BATTERY_CHANGED)) {
+                    println("ACTION_BATTERY_CHANGED")
+                    val batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
+                    isCharging.value = batteryManager.isCharging
+                }
+                else if (intent.action.equals(Intent.ACTION_BATTERY_LOW)) {
+                    println("ACTION_BATTERY_LOW")
+                }
+                else if (intent.action.equals(Intent.ACTION_BATTERY_OKAY)) {
+                    println("ACTION_BATTERY_OKAY")
+                }
             }
         }
 
@@ -203,6 +223,11 @@ class MainActivity : ComponentActivity() {
         createAppList()
         var alphabet = createAlphabetList(apps!!)
         createDuolingoWidget()
+
+        val batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
+        val batLevel: Int = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        isCharging = mutableStateOf(false)
+        isCharging.value = batteryManager.isCharging
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -220,14 +245,41 @@ class MainActivity : ComponentActivity() {
                 //TODO
             }
 
-            Text(
+            Box(
                 modifier = Modifier
-                    .padding(start = 19.dp, top = 30.dp),
-                text = date,
-                color = textColor,
-                fontSize = 11.sp,
-                fontWeight = FontWeight(600)
-            )
+                    .fillMaxSize(),
+            ) {
+                Text(
+                    modifier = Modifier
+                        .padding(start = 19.dp, top = 30.dp),
+                    text = date,
+                    color = textColor,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight(600)
+                )
+
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 19.dp, top = 30.dp),
+                    text = batLevel.toString(),
+                    color = textColor,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight(600)
+                )
+
+                if (isCharging.value) {
+                    Icon(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(50.dp)
+                            .padding(end = 40.dp, top = 30.dp),
+                        painter = painterResource(id = R.drawable.lightning),
+                        contentDescription = null,
+                        tint = textColor
+                    )
+                }
+            }
 
             val screenWidth = 1080f
             val screenHeight = 2340f
