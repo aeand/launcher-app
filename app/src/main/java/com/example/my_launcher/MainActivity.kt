@@ -118,6 +118,7 @@ class MainActivity : ComponentActivity() {
     private var date: String = ""
     private var apps: MutableList<ApplicationInformation>? = null
     private lateinit var lazyScroll: LazyListState
+    private lateinit var batteryManager: BatteryManager
     private lateinit var isCharging: MutableState<Boolean>
 
     private lateinit var widgetHost: AppWidgetHost
@@ -201,7 +202,6 @@ class MainActivity : ComponentActivity() {
                 }
                 else if (intent.action.equals(Intent.ACTION_BATTERY_CHANGED)) {
                     println("ACTION_BATTERY_CHANGED")
-                    val batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
                     isCharging.value = batteryManager.isCharging
                 }
                 else if (intent.action.equals(Intent.ACTION_BATTERY_LOW)) {
@@ -224,7 +224,7 @@ class MainActivity : ComponentActivity() {
         var alphabet = createAlphabetList(apps!!)
         createDuolingoWidget()
 
-        val batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
+        batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
         val batLevel: Int = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         isCharging = mutableStateOf(false)
         isCharging.value = batteryManager.isCharging
