@@ -1,6 +1,5 @@
 package com.example.my_launcher
 
-import android.R.attr.fontStyle
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
@@ -54,7 +53,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -77,7 +75,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -94,7 +91,7 @@ import kotlin.math.roundToInt
 - blur background when list is open
 - make home button open the wallpaper view
 - add settings. I wanna hide specific apps
-- add a notes feature on swipe right or something
+- add a notes feature on swipe right
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
 - could do something with permission VIBRATE
