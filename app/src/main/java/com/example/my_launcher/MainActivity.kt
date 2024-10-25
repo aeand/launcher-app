@@ -121,6 +121,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var lazyScroll: LazyListState
     private lateinit var batteryManager: BatteryManager
     private lateinit var isCharging: MutableState<Boolean>
+    private lateinit var batteryTextColor: MutableState<Color>
 
     private lateinit var widgetHost: AppWidgetHost
     private lateinit var widgetManager: AppWidgetManager
@@ -206,9 +207,11 @@ class MainActivity : ComponentActivity() {
                 }
                 else if (intent.action.equals(Intent.ACTION_BATTERY_LOW)) {
                     println("ACTION_BATTERY_LOW")
+                    batteryTextColor.value = Color.Red
                 }
                 else if (intent.action.equals(Intent.ACTION_BATTERY_OKAY)) {
                     println("ACTION_BATTERY_OKAY")
+                    batteryTextColor.value = Color.White
                 }
             }
         }
@@ -224,6 +227,7 @@ class MainActivity : ComponentActivity() {
         var alphabet = createAlphabetList(apps!!)
         createDuolingoWidget()
 
+        batteryTextColor = mutableStateOf(Color.White)
         batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
         val batLevel: Int = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         isCharging = mutableStateOf(false)
