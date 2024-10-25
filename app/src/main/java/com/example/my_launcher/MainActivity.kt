@@ -97,6 +97,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
+- duo widget doesn't always get the update connection
 - refresh app list after uninstall and install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
