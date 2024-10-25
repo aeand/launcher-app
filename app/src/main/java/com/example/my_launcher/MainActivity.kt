@@ -87,17 +87,16 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-1. blur background when list is open
-2. make home button default to top of app list and open the wallpaper view
-3. make alpha list letter follow when dragging
-4. add settings. I wanna hide specific apps
-5. set text color dynamically depending on background color
-6. add to app list: a letter at the top of the section for that letter. And a line. to improve readability
-7. add a notes feature on swipe right or something
-8. make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
-9. could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
-10. could do something with permission VIBRATE
-11. enforce portrait orientation with permissions
+- add to app list: a letter at the top of the section for that letter. And a line. to improve readability
+- set text color dynamically depending on background color
+- blur background when list is open
+- make home button open the wallpaper view
+- add settings. I wanna hide specific apps
+- add a notes feature on swipe right or something
+- make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
+- could add that I can delete packages from list with REQUEST_DELETE_PACKAGES
+- could do something with permission VIBRATE
+- enforce portrait orientation with permissions
 */
 
 /* Inspiration
