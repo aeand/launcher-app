@@ -97,7 +97,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-- duo widget doesn't always get the update connection
+- duo widget doesn't always get the update connection. Or doesn't update on new images and such
 - refresh app list after uninstall and install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
@@ -105,6 +105,7 @@ import kotlin.math.roundToInt
 - make home button open the wallpaper view
 - add a notes feature on swipe right
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
+- Handle back button event, BackHandler { }
 */
 
 /* Inspiration
@@ -243,10 +244,6 @@ class MainActivity : ComponentActivity() {
                 )
 
                 onDispose { }
-            }
-
-            BackHandler {
-                //TODO
             }
 
             Box(
