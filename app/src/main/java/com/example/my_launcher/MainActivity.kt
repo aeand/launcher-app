@@ -54,10 +54,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,6 +70,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -146,6 +147,7 @@ class MainActivity : ComponentActivity() {
         var hidden: Boolean? = null
     }
 
+    @SuppressLint("SourceLockedOrientationActivity")
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -169,16 +171,18 @@ class MainActivity : ComponentActivity() {
         receiver = object:BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
+                    println("ACTION_CLOSE_SYSTEM_DIALOGS")
                     customScope.launch {
                         lazyScroll.scrollToItem(0)
                         //TODO also make this scroll the anchorDraggable back to start
                     }
                 }
                 else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) {
+                    println("ACTION_DATE_CHANGED")
                     date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 }
                 else if (intent.action.equals(Intent.ACTION_DELETE)) {
-                    println("REOIADNFOAEUGB")
+                    println("ACTION_DELETE")
                     createAppList()
                 }
                 else if (intent.action.equals(Intent.ACTION_UNINSTALL_PACKAGE)) {
@@ -349,7 +353,7 @@ class MainActivity : ComponentActivity() {
             }
 
             lazyScroll = rememberLazyListState()
-            
+
             AppDrawer(
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
@@ -568,8 +572,8 @@ fun AppDrawer(
                     .align(Alignment.BottomEnd)
                     .size(if (showAllApps.value) 30.dp else 20.dp)
                     .offset(
-                        x = if (showAllApps.value) -35.dp else -40.dp,
-                        y = if (showAllApps.value) -1.dp else -5.dp
+                        x = if (showAllApps.value) (-35).dp else (-40).dp,
+                        y = if (showAllApps.value) (-1).dp else (-5).dp
                     )
                     .clickable {
                         showAllApps.value = !showAllApps.value
@@ -582,7 +586,7 @@ fun AppDrawer(
             AndroidView(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(0.dp, -50.dp)
+                    .offset(0.dp, (-50).dp)
                     .width(350.dp)
                     .height(200.dp),
                 factory = { hostView!! }
@@ -652,26 +656,52 @@ fun AppDrawer(
 
                             if (showOptions.value) {
                                 AlertDialog(
-                                    icon = {  },
+                                    //icon = {  },
                                     title = { Text(text = "ACTION") },
                                     text = { Text(text = "What to do with ${app.label}?") },
                                     onDismissRequest = {
                                         showOptions.value = false
                                     },
                                     confirmButton = {
-                                        Button(onClick = {
-                                            uninstallApp(app.packageName)
-                                            showOptions.value = false
-                                        }) {
-                                            Text("uninstall")
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(end = 10.dp)
+                                                .width(100.dp)
+                                                .height(40.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(Color.DarkGray)
+                                        ) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .clickable {
+                                                        uninstallApp(app.packageName)
+                                                        showOptions.value = false
+                                                    },
+                                                text = "uninstall",
+                                                color = textColor
+                                            )
                                         }
                                     },
                                     dismissButton = {
-                                        Button(onClick = {
-                                            showOptions.value = false
-                                            hideApp(app.packageName)
-                                        }) {
-                                            Text(if (app.hidden != null && app.hidden!!) "show" else "hide")
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(start = 10.dp)
+                                                .width(100.dp)
+                                                .height(40.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(Color.DarkGray)
+                                        ) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .clickable {
+                                                        showOptions.value = false
+                                                        hideApp(app.packageName)
+                                                    },
+                                                text = if (app.hidden != null && app.hidden!!) "show" else "hide",
+                                                color = textColor
+                                            )
                                         }
                                     }
                                 )
