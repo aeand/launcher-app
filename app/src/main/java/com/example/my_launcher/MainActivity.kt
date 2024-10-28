@@ -170,48 +170,48 @@ class MainActivity : ComponentActivity() {
 
         receiver = object:BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
+                if (intent.action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) { // This is broadcast when a user action should request a temporary system dialog to dismiss.
                     println("ACTION_CLOSE_SYSTEM_DIALOGS")
                     customScope.launch {
                         lazyScroll.scrollToItem(0)
                         //TODO also make this scroll the anchorDraggable back to start
                     }
                 }
-                else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) {
+                else if (intent.action.equals(Intent.ACTION_DATE_CHANGED)) { // date has changed
                     println("ACTION_DATE_CHANGED")
                     date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                 }
-                else if (intent.action.equals(Intent.ACTION_DELETE)) {
+                else if (intent.action.equals(Intent.ACTION_DELETE)) { // delete the given data from its container
                     println("ACTION_DELETE")
                     createAppList()
                 }
-                else if (intent.action.equals(Intent.ACTION_UNINSTALL_PACKAGE)) {
+                else if (intent.action.equals(Intent.ACTION_UNINSTALL_PACKAGE)) { // launch app uninstaller
                     println("ACTION_UNINSTALL_PACKAGE")
                 }
-                else if (intent.action.equals(Intent.ACTION_PACKAGE_ADDED)) {
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_ADDED)) { // new app installed
                     println("ACTION_PACKAGE_ADDED")
                 }
-                else if (intent.action.equals(Intent.ACTION_INSTALL_PACKAGE)) {
+                else if (intent.action.equals(Intent.ACTION_INSTALL_PACKAGE)) { // launch app installer
                     println("ACTION_INSTALL_PACKAGE")
                 }
-                else if (intent.action.equals(Intent.ACTION_PACKAGE_REMOVED)) {
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_REMOVED)) { // app has been uninstalled
                     println("ACTION_PACKAGE_REMOVED")
                 }
-                else if (intent.action.equals(Intent.ACTION_PACKAGE_REPLACED)) {
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_REPLACED)) { // app has been replaced with a new version
                     println("ACTION_PACKAGE_REPLACED")
                 }
-                else if (intent.action.equals(Intent.ACTION_PACKAGE_INSTALL)) {
+                else if (intent.action.equals(Intent.ACTION_PACKAGE_INSTALL)) { // trigger for downloading and installing app
                     println("ACTION_PACKAGE_INSTALL")
                 }
-                else if (intent.action.equals(Intent.ACTION_BATTERY_CHANGED)) {
+                else if (intent.action.equals(Intent.ACTION_BATTERY_CHANGED)) { // sticky broadcast. Has charging state, level, and more info
                     println("ACTION_BATTERY_CHANGED")
                     isCharging.value = batteryManager.isCharging
                 }
-                else if (intent.action.equals(Intent.ACTION_BATTERY_LOW)) {
+                else if (intent.action.equals(Intent.ACTION_BATTERY_LOW)) { // battery is low
                     println("ACTION_BATTERY_LOW")
                     batteryTextColor.value = Color.Red
                 }
-                else if (intent.action.equals(Intent.ACTION_BATTERY_OKAY)) {
+                else if (intent.action.equals(Intent.ACTION_BATTERY_OKAY)) { // battery is okay after being low
                     println("ACTION_BATTERY_OKAY")
                     batteryTextColor.value = Color.White
                 }
