@@ -17,14 +17,12 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
 import androidx.compose.animation.core.tween
@@ -137,8 +135,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var receiver: BroadcastReceiver
 
     private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-    private var apps: List<ApplicationInformation>? = null
-    private var alphabet: List<String>? = mutableListOf()
+    private var apps: List<ApplicationInformation> = listOf()
+    private var alphabet: List<String> = mutableListOf()
     private lateinit var lazyScroll: LazyListState
 
     private lateinit var widgetHost: AppWidgetHost
@@ -166,8 +164,6 @@ class MainActivity : ComponentActivity() {
         var hidden: Boolean? = null
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    @SuppressLint("SourceLockedOrientationActivity")
     @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -288,7 +284,7 @@ class MainActivity : ComponentActivity() {
                     Intent.ACTION_PACKAGE_REPLACED,
                     Intent.ACTION_UID_REMOVED -> {
                         createAppList()
-                        createAlphabetList(apps!!)
+                        createAlphabetList(apps)
                     }
 
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
@@ -310,7 +306,7 @@ class MainActivity : ComponentActivity() {
         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         var packages = getPackages()
         createAppList()
-        createAlphabetList(apps!!)
+        createAlphabetList(apps)
         createDuolingoWidget()
 
         setContent {
@@ -342,7 +338,7 @@ class MainActivity : ComponentActivity() {
                 fontSize = 11.sp,
                 fontWeight = FontWeight(600)
             )
-            
+
             val screenWidth = 1080f
             val screenHeight = 2340f
 
@@ -408,7 +404,7 @@ class MainActivity : ComponentActivity() {
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
                 if (packages.size == pk.size && packages.toSet() == pk.toSet()) {
                     createAppList()
-                    createAlphabetList(apps!!)
+                    createAlphabetList(apps)
                     packages = pk
                 }
             }
@@ -420,8 +416,8 @@ class MainActivity : ComponentActivity() {
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = lazyScroll,
                 hostView = hostView.value,
-                alphabet = alphabet!!,
-                apps = apps!!,
+                alphabet = alphabet,
+                apps = apps,
                 customScope = customScope,
                 launchApp = ::launchApp,
                 hideApp = ::hideApp,
@@ -480,8 +476,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun hideApp(packageName: String?) {
-        val app = apps?.find { it.packageName?.lowercase() == packageName?.lowercase() }
-        apps?.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden = !app?.hidden!!
+        val app = apps.find { it.packageName?.lowercase() == packageName?.lowercase() }
+        apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden = !app?.hidden!!
     }
 
     private fun uninstallApp(packageName: String?) {
@@ -529,7 +525,7 @@ class MainActivity : ComponentActivity() {
             appInfo.label = app.loadLabel(packageManager).toString()
             appInfo.packageName = app.activityInfo.packageName
             appInfo.icon = app.loadIcon(packageManager)
-            val previousApp = apps?.find { it.packageName?.lowercase() == appInfo.packageName!!.lowercase() }
+            val previousApp = apps.find { it.packageName?.lowercase() == appInfo.packageName!!.lowercase() }
             if (previousApp != null)
                 appInfo.hidden = previousApp.hidden
             else
