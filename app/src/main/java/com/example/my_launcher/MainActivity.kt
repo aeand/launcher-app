@@ -63,8 +63,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -135,8 +137,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var receiver: BroadcastReceiver
 
     private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-    private var apps: List<ApplicationInformation> = listOf()
-    private var alphabet: List<String> = mutableListOf()
+    private var apps = mutableStateListOf<ApplicationInformation>()
+    private var alphabet = mutableStateListOf<String>()
     private lateinit var lazyScroll: LazyListState
 
     private lateinit var widgetHost: AppWidgetHost
@@ -398,11 +400,11 @@ class MainActivity : ComponentActivity() {
             )
 
             // create app list and alphabet list when scrolled down to bottom
-            if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+            LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
                 val i = Intent(Intent.ACTION_MAIN, null)
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
-                if (packages.size == pk.size && packages.toSet() == pk.toSet()) {
+                if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
                     createAppList()
                     createAlphabetList(apps)
                     packages = pk
@@ -517,6 +519,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun createAppList() {
+        println("create app list")
         val packages = getPackages()
 
         val appList = mutableListOf<ApplicationInformation>()
@@ -537,10 +540,15 @@ class MainActivity : ComponentActivity() {
             a.label?.uppercase()!!.compareTo(b.label?.uppercase()!!)
         }
 
-        apps = appList
+        apps.clear()
+        appList.forEach {
+            apps.add(it)
+        }
     }
 
     private fun createAlphabetList(apps: List<ApplicationInformation>) {
+        println("create alphabet list")
+
         val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
         val alphabetList = tempAlphabet.subList(1, tempAlphabet.size)
         alphabetList.sortWith { a, b ->
@@ -570,7 +578,10 @@ class MainActivity : ComponentActivity() {
             alphabetList.remove(letter)
         }
 
-        alphabet = alphabetList
+        alphabet.clear()
+        alphabetList.forEach {
+            alphabet.add(it)
+        }
     }
 
     private fun createDuolingoWidget() {
