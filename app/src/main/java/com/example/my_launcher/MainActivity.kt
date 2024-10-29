@@ -519,7 +519,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun createAppList() {
-        println("create app list")
         val packages = getPackages()
 
         val appList = mutableListOf<ApplicationInformation>()
@@ -547,8 +546,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun createAlphabetList(apps: List<ApplicationInformation>) {
-        println("create alphabet list")
-
         val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
         val alphabetList = tempAlphabet.subList(1, tempAlphabet.size)
         alphabetList.sortWith { a, b ->
