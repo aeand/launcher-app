@@ -141,9 +141,6 @@ class MainActivity : ComponentActivity() {
     private var apps: List<ApplicationInformation>? = null
     private var alphabet: List<String>? = mutableListOf()
     private lateinit var lazyScroll: LazyListState
-    private lateinit var batteryManager: BatteryManager
-    private lateinit var isCharging: MutableState<Boolean>
-    private lateinit var batteryTextColor: MutableState<Color>
 
     private lateinit var widgetHost: AppWidgetHost
     private lateinit var widgetManager: AppWidgetManager
@@ -295,18 +292,6 @@ class MainActivity : ComponentActivity() {
                         createAlphabetList(apps!!)
                     }
 
-                    Intent.ACTION_BATTERY_CHANGED -> {
-                        isCharging.value = batteryManager.isCharging
-                    }
-
-                    Intent.ACTION_BATTERY_LOW -> {
-                        batteryTextColor.value = Color.Red
-                    }
-
-                    Intent.ACTION_BATTERY_OKAY -> {
-                        batteryTextColor.value = Color.White
-                    }
-
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
                         customScope.launch {
                             lazyScroll.scrollToItem(0)
@@ -331,12 +316,6 @@ class MainActivity : ComponentActivity() {
         createAlphabetList(apps!!)
         createDuolingoWidget()
 
-        batteryTextColor = mutableStateOf(Color.White)
-        batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
-        val batLevel: Int = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        isCharging = mutableStateOf(false)
-        isCharging.value = batteryManager.isCharging
-
         setContent {
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
@@ -358,41 +337,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            Box(
+            Text(
                 modifier = Modifier
-                    .fillMaxSize(),
-            ) {
-                Text(
-                    modifier = Modifier
-                        .padding(start = 19.dp, top = 30.dp),
-                    text = date,
-                    color = textColor,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight(600)
-                )
-
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 19.dp, top = 30.dp),
-                    text = batLevel.toString(),
-                    color = textColor,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight(600)
-                )
-
-                if (isCharging.value) {
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(50.dp)
-                            .padding(end = 40.dp, top = 30.dp),
-                        painter = painterResource(id = R.drawable.lightning),
-                        contentDescription = null,
-                        tint = textColor
-                    )
-                }
-            }
+                    .padding(start = 19.dp, top = 30.dp),
+                text = date,
+                color = textColor,
+                fontSize = 11.sp,
+                fontWeight = FontWeight(600)
+            )
 
             val screenWidth = 1080f
             val screenHeight = 2340f
