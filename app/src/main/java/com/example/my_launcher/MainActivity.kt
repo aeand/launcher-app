@@ -99,7 +99,6 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-- duo widget doesn't always get the update connection. Or doesn't update on new images and such
 - refresh app list after uninstall and install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
@@ -284,7 +283,12 @@ class MainActivity : ComponentActivity() {
                 }
 
                 when (intent.action) {
-                    Intent.ACTION_APPLICATION_LOCALE_CHANGED -> {
+                    Intent.ACTION_APPLICATION_LOCALE_CHANGED,
+                    Intent.ACTION_MY_PACKAGE_REPLACED,
+                    Intent.ACTION_PACKAGE_ADDED,
+                    Intent.ACTION_PACKAGE_FULLY_REMOVED,
+                    Intent.ACTION_PACKAGE_REMOVED,
+                    Intent.ACTION_PACKAGE_REPLACED -> {
                         createAppList()
                     }
 
@@ -308,22 +312,6 @@ class MainActivity : ComponentActivity() {
 
                     Intent.ACTION_DATE_CHANGED -> {
                         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-                    }
-
-                    Intent.ACTION_PACKAGE_ADDED -> {
-                        createAppList()
-                    }
-
-                    Intent.ACTION_PACKAGE_FULLY_REMOVED -> {
-                        createAppList()
-                    }
-
-                    Intent.ACTION_PACKAGE_REMOVED -> {
-                        createAppList()
-                    }
-
-                    Intent.ACTION_PACKAGE_REPLACED -> {
-                        createAppList()
                     }
                 }
             }
