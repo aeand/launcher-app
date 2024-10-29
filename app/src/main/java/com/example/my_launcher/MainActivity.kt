@@ -64,6 +64,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -89,6 +90,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
@@ -148,15 +150,15 @@ class MainActivity : ComponentActivity() {
     private var widgetId: Int = 0
     private lateinit var duoWidget: AppWidgetProviderInfo
     private lateinit var options: Bundle
-    private lateinit var hostView: AppWidgetHostView
+    private lateinit var hostView: MutableState<AppWidgetHostView>
 
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
             println("onActivityResult: ${widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)}")
             if (widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)) {
-                hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
-                hostView.setAppWidget(widgetId, duoWidget)
+                hostView = mutableStateOf(widgetHost.createView(applicationContext, widgetId, duoWidget))
+                hostView.value.setAppWidget(widgetId, duoWidget)
             }
         }
     }
@@ -356,6 +358,15 @@ class MainActivity : ComponentActivity() {
                 onDispose { }
             }
 
+            LaunchedEffect(true) {
+                customScope.launch {
+                    delay(900000) // every 15 min
+
+                    hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
+                    hostView.value.setAppWidget(widgetId, duoWidget)
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -467,7 +478,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = lazyScroll,
-                hostView = hostView,
+                hostView = hostView.value,
                 alphabet = alphabet,
                 apps = apps!!,
                 customScope = customScope,
@@ -644,8 +655,8 @@ class MainActivity : ComponentActivity() {
             requestWidgetPermissionsLauncher.launch(intent)
         }
 
-        hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
-        hostView.setAppWidget(widgetId, duoWidget)
+        hostView = mutableStateOf(widgetHost.createView(applicationContext, widgetId, duoWidget))
+        hostView.value.setAppWidget(widgetId, duoWidget)
     }
 }
 
