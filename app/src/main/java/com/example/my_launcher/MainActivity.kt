@@ -181,8 +181,8 @@ class MainActivity : ComponentActivity() {
             Intent.ACTION_BATTERY_OKAY, // broadcast battery is okay after being low
             Intent.ACTION_BOOT_COMPLETED, // broadcast permissions only once after the user has finished booting
             Intent.ACTION_CAMERA_BUTTON, // broadcast camera button is pressed. Broadcast includes EXTRA_KEY_EVENT
-            Intent.ACTION_CHOOSER, // opens an activity picker. Alternative to the standard picker.
-            Intent.ACTION_CLOSE_SYSTEM_DIALOGS, // broadcast user action to dismiss temporary system dialog.
+            Intent.ACTION_CHOOSER, // opens an activity picker. Alternative to the standard picker
+            Intent.ACTION_CLOSE_SYSTEM_DIALOGS, // broadcast user action to dismiss temporary system dialog
             Intent.ACTION_CONFIGURATION_CHANGED, // broadcast orientation, locale, etc has changed. UI will be rebuilt aka. system will stop and start app
             Intent.ACTION_DATE_CHANGED, // broadcast date has changed
             Intent.ACTION_DOCK_EVENT, // sticky broadcast changes in physical docking state
@@ -228,8 +228,8 @@ class MainActivity : ComponentActivity() {
             Intent.ACTION_SHOW_APP_INFO, // will show app information
             Intent.ACTION_SHUTDOWN, // broadcast device is shutting down
             Intent.ACTION_TIMEZONE_CHANGED, // broadcast timezone has changed. includes EXTRA_TIMEZONE
-            Intent.ACTION_TIME_CHANGED, // broadcast The time was set
-            Intent.ACTION_TIME_TICK, // broadcast time has changed. sent every minute. only receiver
+            //Intent.ACTION_TIME_CHANGED, // broadcast The time was set
+            //Intent.ACTION_TIME_TICK, // broadcast time has changed. sent every minute. only receiver
             Intent.ACTION_UID_REMOVED, // broadcast a uid has been removed from the system. includes EXTRA_UID and EXTRA_REPLACING
             Intent.ACTION_UMS_CONNECTED, // deprecated broadcast the device has entered USB mass storage mode
             Intent.ACTION_UMS_DISCONNECTED, // deprecated broadcast the device has exited USB mass storage mode
@@ -295,7 +295,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    Intent.ACTION_DATE_CHANGED -> {
+                    Intent.ACTION_DATE_CHANGED,
+                    Intent.ACTION_TIMEZONE_CHANGED -> {
                         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                     }
                 }
