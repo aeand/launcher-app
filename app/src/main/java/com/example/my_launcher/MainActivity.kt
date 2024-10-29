@@ -99,7 +99,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO
-- refresh app list after uninstall and install
+- refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
 - blur background when list is open
@@ -138,7 +138,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var receiver: BroadcastReceiver
 
     private var date: String = ""
-    private var apps: MutableList<ApplicationInformation>? = null
+    private var apps: List<ApplicationInformation>? = null
+    private var alphabet: List<String>? = mutableListOf()
     private lateinit var lazyScroll: LazyListState
     private lateinit var batteryManager: BatteryManager
     private lateinit var isCharging: MutableState<Boolean>
@@ -277,7 +278,7 @@ class MainActivity : ComponentActivity() {
                 list.forEach {
                     when (intent.action) {
                         it -> {
-                            println(it)
+                            println("Intent: " + it.split("android.intent.action.")[1])
                         }
                     }
                 }
@@ -288,8 +289,10 @@ class MainActivity : ComponentActivity() {
                     Intent.ACTION_PACKAGE_ADDED,
                     Intent.ACTION_PACKAGE_FULLY_REMOVED,
                     Intent.ACTION_PACKAGE_REMOVED,
-                    Intent.ACTION_PACKAGE_REPLACED -> {
+                    Intent.ACTION_PACKAGE_REPLACED,
+                    Intent.ACTION_UID_REMOVED -> {
                         createAppList()
+                        createAlphabetList(apps!!)
                     }
 
                     Intent.ACTION_BATTERY_CHANGED -> {
@@ -325,7 +328,7 @@ class MainActivity : ComponentActivity() {
         packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
         createAppList()
-        var alphabet = createAlphabetList(apps!!)
+        createAlphabetList(apps!!)
         createDuolingoWidget()
 
         batteryTextColor = mutableStateOf(Color.White)
@@ -455,7 +458,7 @@ class MainActivity : ComponentActivity() {
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
                 if (packages.size == pk.size && packages.toSet() == pk.toSet()) {
                     createAppList()
-                    alphabet = createAlphabetList(apps!!)
+                    createAlphabetList(apps!!)
                     packages = pk
                 }
             }
@@ -467,7 +470,7 @@ class MainActivity : ComponentActivity() {
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = lazyScroll,
                 hostView = hostView.value,
-                alphabet = alphabet,
+                alphabet = alphabet!!,
                 apps = apps!!,
                 customScope = customScope,
                 launchApp = ::launchApp,
@@ -587,18 +590,18 @@ class MainActivity : ComponentActivity() {
         apps = appList
     }
 
-    private fun createAlphabetList(apps: MutableList<ApplicationInformation>): MutableList<String> {
+    private fun createAlphabetList(apps: List<ApplicationInformation>) {
         val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
-        val alphabet = tempAlphabet.subList(1, tempAlphabet.size)
-        alphabet.sortWith { a, b ->
+        val alphabetList = tempAlphabet.subList(1, tempAlphabet.size)
+        alphabetList.sortWith { a, b ->
             a.compareTo(b)
         }
-        alphabet.add("å")
-        alphabet.add("ä")
-        alphabet.add("ö")
+        alphabetList.add("å")
+        alphabetList.add("ä")
+        alphabetList.add("ö")
 
         val removeLetters = mutableListOf<String>()
-        alphabet.forEach { letter ->
+        alphabetList.forEach { letter ->
             var result = false
             apps.forEach { app ->
                 if (!result) {
@@ -614,10 +617,10 @@ class MainActivity : ComponentActivity() {
         }
 
         removeLetters.forEach { letter ->
-            alphabet.remove(letter)
+            alphabetList.remove(letter)
         }
 
-        return alphabet
+        alphabet = alphabetList
     }
 
     private fun createDuolingoWidget() {
@@ -657,11 +660,11 @@ fun AppDrawer(
     hostView: AppWidgetHostView?,
     customScope: CoroutineScope,
     textColor: Color,
-    apps: MutableList<MainActivity.ApplicationInformation>,
+    apps: List<MainActivity.ApplicationInformation>,
     launchApp: (String?) -> Unit,
     hideApp: (String?) -> Unit,
     uninstallApp: (String?) -> Unit,
-    alphabet: MutableList<String>,
+    alphabet: List<String>,
 ) {
     val showAllApps = remember { mutableStateOf(false) }
 
