@@ -592,7 +592,6 @@ class MainActivity : ComponentActivity() {
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
 
         if (!widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider)) {
-            println("invalid")
             requestWidgetPermissionsLauncher.launch(intent)
         }
 
