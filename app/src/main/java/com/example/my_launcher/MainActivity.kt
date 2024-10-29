@@ -342,7 +342,7 @@ class MainActivity : ComponentActivity() {
                 fontSize = 11.sp,
                 fontWeight = FontWeight(600)
             )
-
+            
             val screenWidth = 1080f
             val screenHeight = 2340f
 
@@ -401,7 +401,7 @@ class MainActivity : ComponentActivity() {
                     }
             )
 
-            // create app list and alphabet when scrolling down
+            // create app list and alphabet when scrolled down
             if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
                 val i = Intent(Intent.ACTION_MAIN, null)
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
