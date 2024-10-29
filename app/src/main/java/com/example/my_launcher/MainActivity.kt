@@ -401,7 +401,7 @@ class MainActivity : ComponentActivity() {
                     }
             )
 
-            // create app list and alphabet when scrolled down
+            // create app list and alphabet list when scrolled down to bottom
             if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
                 val i = Intent(Intent.ACTION_MAIN, null)
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
