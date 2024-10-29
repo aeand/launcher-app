@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
 
-    private var date: String = ""
+    private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
     private var apps: List<ApplicationInformation>? = null
     private var alphabet: List<String>? = mutableListOf()
     private lateinit var lazyScroll: LazyListState
@@ -308,9 +308,7 @@ class MainActivity : ComponentActivity() {
 
         val textColor = Color.White
         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-        val packageIntent = Intent(Intent.ACTION_MAIN, null)
-        packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-        var packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
+        var packages = getPackages()
         createAppList()
         createAlphabetList(apps!!)
         createDuolingoWidget()
@@ -403,6 +401,7 @@ class MainActivity : ComponentActivity() {
                     }
             )
 
+            // create app list and alphabet when scrolling down
             if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
                 val i = Intent(Intent.ACTION_MAIN, null)
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
@@ -515,10 +514,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createAppList() {
+    private fun getPackages(): List<ResolveInfo> {
         val intent = Intent(Intent.ACTION_MAIN, null)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        val packages: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+        return packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+    }
+
+    private fun createAppList() {
+        val packages = getPackages()
 
         val appList = mutableListOf<ApplicationInformation>()
         packages.forEach { app ->
