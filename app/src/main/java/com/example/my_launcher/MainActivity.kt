@@ -63,7 +63,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -286,7 +285,6 @@ class MainActivity : ComponentActivity() {
                     Intent.ACTION_PACKAGE_REPLACED,
                     Intent.ACTION_UID_REMOVED -> {
                         createAppList()
-                        createAlphabetList(apps)
                     }
 
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
@@ -309,7 +307,6 @@ class MainActivity : ComponentActivity() {
         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         var packages = getPackages()
         createAppList()
-        createAlphabetList(apps)
         createDuolingoWidget()
 
         setContent {
@@ -407,7 +404,6 @@ class MainActivity : ComponentActivity() {
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
                 if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
                     createAppList()
-                    createAlphabetList(apps)
                     packages = pk
                 }
             }
@@ -544,6 +540,8 @@ class MainActivity : ComponentActivity() {
         appList.forEach {
             apps.add(it)
         }
+
+        createAlphabetList(apps)
     }
 
     private fun createAlphabetList(apps: List<ApplicationInformation>) {
