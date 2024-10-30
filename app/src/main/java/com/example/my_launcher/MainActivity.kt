@@ -96,7 +96,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/* TODO
+/* TODO Launcher
 - refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
@@ -105,6 +105,11 @@ import kotlin.math.roundToInt
 - add a notes feature on swipe right
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
+*/
+
+/* TODO Notes
+- make a field to enter text in there
+- file system access to read and write txt files
 */
 
 /* Intent list that would be useful
