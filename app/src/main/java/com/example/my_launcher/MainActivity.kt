@@ -97,6 +97,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO Launcher
+- bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
