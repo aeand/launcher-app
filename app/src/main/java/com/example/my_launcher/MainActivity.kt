@@ -131,7 +131,7 @@ https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
 */
 
-class MainActivity : ComponentActivity() {
+class MainActivity: ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
 
@@ -266,7 +266,7 @@ class MainActivity : ComponentActivity() {
             filters.addAction(it)
         }
 
-        receiver = object:BroadcastReceiver() {
+        receiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 list.forEach {
                     when (intent.action) {
@@ -283,11 +283,12 @@ class MainActivity : ComponentActivity() {
                     Intent.ACTION_PACKAGE_FULLY_REMOVED,
                     Intent.ACTION_PACKAGE_REMOVED,
                     Intent.ACTION_PACKAGE_REPLACED,
-                    Intent.ACTION_UID_REMOVED -> {
+                    Intent.ACTION_UID_REMOVED -> { // for uninstall
                         createAppList()
                     }
 
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
+                        createAppList()
                         customScope.launch {
                             lazyScroll.scrollToItem(0)
                         }
@@ -424,39 +425,11 @@ class MainActivity : ComponentActivity() {
                 textColor = textColor,
             )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .offset {
-                        IntOffset(
-                            dragState
-                                .requireOffset()
-                                .roundToInt() + screenWidth.roundToInt(),
-                            dragState2
-                                .requireOffset()
-                                .roundToInt()
-                        )
-                    }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(100.dp)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White,
-                                    Color.Cyan
-                                )
-                            )
-                        )
-                )
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.Center),
-                    text = "Reminder page!"
-                )
-            }
+            NotesPage(
+                Modifier.offset {
+                    IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt())
+                }
+            )
         }
     }
 
@@ -873,5 +846,34 @@ fun AppDrawer(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun NotesPage(
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(100.dp)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.White,
+                            Color.Cyan
+                        )
+                    )
+                )
+        )
+        Text(
+            modifier = Modifier
+                .align(Alignment.Center),
+            text = "Reminder page!"
+        )
     }
 }
