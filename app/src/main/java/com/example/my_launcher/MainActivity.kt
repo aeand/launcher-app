@@ -59,12 +59,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -78,12 +81,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -455,7 +462,12 @@ class MainActivity: ComponentActivity() {
             }
 
             val enabled = remember {
-                mutableStateOf(true)
+                mutableStateOf(false)
+            }
+
+            LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
+                enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt()
+                        && dragState2.requireOffset().roundToInt() == 0
             }
 
             NotesPage(
@@ -465,7 +477,7 @@ class MainActivity: ComponentActivity() {
                             IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt())
                     },
                 error = error,
-                isScrolledRight = enabled,
+                enabled = enabled,
                 textColor = textColor,
             )
         }
@@ -928,7 +940,7 @@ fun AppDrawer(
 @Composable
 fun NotesPage(
     modifier: Modifier,
-    isScrolledRight: MutableState<Boolean>,
+    enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
 ) {
@@ -948,6 +960,10 @@ fun NotesPage(
         mutableStateOf(false)
     }
 
+    val textFieldFocused = remember {
+        mutableStateOf(false)
+    }
+
     if (showSaveDialog.value) {
         NoteSaveDialog(
             showDialog = showSaveDialog
@@ -958,80 +974,100 @@ fun NotesPage(
         modifier = modifier
             .fillMaxSize()
     ) {
-        BasicTextField(
-            modifier = Modifier
-                .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 50.dp)
-                .fillMaxSize()
-                .clip(RoundedCornerShape(10.dp))
-                //.focusRequester(focusRequester)
-                /*.onFocusChanged {
-                    if (it.isFocused) {
-                        //TODO something here
-                    }
-                }*/
-                .background(Color.White),
-            value = text.value,
-            onValueChange = { it: String ->
-                text.value = it
-            },
-            cursorBrush = Brush.verticalGradient(
-                0.00f to Color.Black,
-                0.15f to Color.Black,
-                0.15f to Color.Black,
-                0.75f to Color.Black,
-                0.75f to Color.Black,
-                1.00f to Color.Black,
-            ),
-            enabled = isScrolledRight.value,
-            textStyle = TextStyle(
-                textAlign = TextAlign.Start,
-                color = if (error.value) Color.Red else Color.Black,
-                fontFamily = Typography.titleMedium.fontFamily,
-                fontSize = Typography.titleMedium.fontSize,
-                lineHeight = Typography.titleMedium.lineHeight,
-                letterSpacing = Typography.titleMedium.letterSpacing,
-            ),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                autoCorrectEnabled = false,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    //TODO close keyboard and save text
-                }
-            ),
-            singleLine = false,
-            maxLines = Int.MAX_VALUE,
-            visualTransformation = VisualTransformation.None,
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    if (text.value.isEmpty()) {
-                        Text(
-                            modifier = Modifier,
-                            text = "Write something",
-                            textAlign = TextAlign.Left,
-                            fontFamily = FontFamily(
-                                Font(R.font.roboto_italic)
-                            ),
-                            fontSize = Typography.titleMedium.fontSize,
-                            fontWeight = Typography.titleMedium.fontWeight,
-                            lineHeight = Typography.titleMedium.lineHeight,
-                            color = Color.Gray
-                        )
-                    }
-                    else {
-                        innerTextField()
-                    }
-                }
-            },
-            onTextLayout = {},
-            interactionSource = interactionSource,
-            minLines = 1,
+        val focusManager = LocalFocusManager.current
+        val focusRequester = remember {
+            FocusRequester()
+        }
+
+        LaunchedEffect(enabled) {
+            focusManager.clearFocus()
+            textFieldFocused.value = false
+        }
+
+        val customTextSelectionColors = TextSelectionColors(
+            handleColor = Color.Gray,
+            backgroundColor = Color.DarkGray
         )
+
+        CompositionLocalProvider(
+            LocalTextSelectionColors provides customTextSelectionColors
+        ) {
+
+            BasicTextField(
+                modifier = Modifier
+                    .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 50.dp)
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(10.dp))
+                    .focusRequester(focusRequester)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            textFieldFocused.value = true
+                        }
+                    }
+                    .background(Color.White),
+                value = text.value,
+                onValueChange = { it: String ->
+                    text.value = it
+                },
+                cursorBrush = Brush.verticalGradient(
+                    0.00f to Color.Black,
+                    0.15f to Color.Black,
+                    0.15f to Color.Black,
+                    0.75f to Color.Black,
+                    0.75f to Color.Black,
+                    1.00f to Color.Black,
+                ),
+                enabled = enabled.value,
+                textStyle = TextStyle(
+                    textAlign = TextAlign.Start,
+                    color = if (error.value) Color.Red else Color.Black,
+                    fontFamily = Typography.titleMedium.fontFamily,
+                    fontSize = Typography.titleMedium.fontSize,
+                    lineHeight = Typography.titleMedium.lineHeight,
+                    letterSpacing = Typography.titleMedium.letterSpacing,
+                ),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        textFieldFocused.value = false
+                    }
+                ),
+                singleLine = false,
+                maxLines = Int.MAX_VALUE,
+                visualTransformation = VisualTransformation.None,
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        if (text.value.isEmpty()) {
+                            Text(
+                                modifier = Modifier,
+                                text = "Write something",
+                                textAlign = TextAlign.Left,
+                                fontFamily = FontFamily(
+                                    Font(R.font.roboto_italic)
+                                ),
+                                fontSize = Typography.titleMedium.fontSize,
+                                fontWeight = Typography.titleMedium.fontWeight,
+                                lineHeight = Typography.titleMedium.lineHeight,
+                                color = Color.Gray
+                            )
+                        } else {
+                            innerTextField()
+                        }
+                    }
+                },
+                onTextLayout = {},
+                interactionSource = interactionSource,
+                minLines = 1,
+            )
+        }
 
         Text(
             modifier = Modifier
@@ -1039,9 +1075,6 @@ fun NotesPage(
                 .offset(x = (-60).dp, y = (-11).dp)
                 .clickable {
                    showSaveDialog.value = true
-                   // open dialog for saving content
-                   // give file name
-                   // check where to save it
                 },
             text = "Save",
             color = textColor,
