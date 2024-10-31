@@ -59,13 +59,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -80,8 +78,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -89,18 +85,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -125,9 +117,10 @@ import kotlin.math.roundToInt
 */
 
 /* TODO Notes
-- make a field to enter text in there
 - file system access to read and write txt files
+- add directory to dir menu
 - add auto saving every like 10 sec
+- save before switching
 */
 
 /* Intent list that would be useful
@@ -358,9 +351,11 @@ class MainActivity: ComponentActivity() {
                 modifier = Modifier
                     .padding(start = 19.dp, top = 30.dp),
                 text = date,
+                fontFamily = Typography.bodyMedium.fontFamily,
+                fontSize = Typography.bodyMedium.fontSize,
+                fontWeight = Typography.bodyMedium.fontWeight,
+                lineHeight = Typography.bodyMedium.lineHeight,
                 color = textColor,
-                fontSize = 11.sp,
-                fontWeight = FontWeight(600)
             )
 
             val screenWidth = 1080f
@@ -455,6 +450,10 @@ class MainActivity: ComponentActivity() {
                 mutableStateOf(false)
             }
 
+            val enabled = remember {
+                mutableStateOf(true)
+            }
+
             NotesPage(
                 Modifier
                     .padding(top = topBar.dp, bottom = bottomBar.dp)
@@ -462,7 +461,8 @@ class MainActivity: ComponentActivity() {
                             IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt())
                     },
                 error = error,
-                isScrolledRight = error
+                isScrolledRight = enabled,
+                textColor = textColor,
             )
         }
     }
@@ -723,8 +723,11 @@ fun AppDrawer(
                                         modifier = Modifier
                                             .padding(end = 10.dp),
                                         text = app.label?.first()?.uppercaseChar().toString(),
+                                        fontFamily = Typography.bodyMedium.fontFamily,
+                                        fontSize = Typography.bodyMedium.fontSize,
+                                        fontWeight = Typography.bodyMedium.fontWeight,
+                                        lineHeight = Typography.bodyMedium.lineHeight,
                                         color = textColor,
-                                        fontSize = 20.sp
                                     )
                                 }
                             }
@@ -732,8 +735,26 @@ fun AppDrawer(
                             if (showOptions.value) {
                                 AlertDialog(
                                     //icon = {  },
-                                    title = { Text(text = "ACTION") },
-                                    text = { Text(text = "What to do with ${app.label}?") },
+                                    title = {
+                                        Text(
+                                            text = "ACTION",
+                                            fontFamily = Typography.bodyMedium.fontFamily,
+                                            fontSize = Typography.bodyMedium.fontSize,
+                                            fontWeight = Typography.bodyMedium.fontWeight,
+                                            lineHeight = Typography.bodyMedium.lineHeight,
+                                            color = textColor
+                                        )
+                                    },
+                                    text = {
+                                        Text(
+                                            text = "What to do with ${app.label}?",
+                                            fontFamily = Typography.bodyMedium.fontFamily,
+                                            fontSize = Typography.bodyMedium.fontSize,
+                                            fontWeight = Typography.bodyMedium.fontWeight,
+                                            lineHeight = Typography.bodyMedium.lineHeight,
+                                            color = textColor
+                                        )
+                                    },
                                     onDismissRequest = {
                                         showOptions.value = false
                                     },
@@ -754,6 +775,10 @@ fun AppDrawer(
                                                         showOptions.value = false
                                                     },
                                                 text = "uninstall",
+                                                fontFamily = Typography.bodyMedium.fontFamily,
+                                                fontSize = Typography.bodyMedium.fontSize,
+                                                fontWeight = Typography.bodyMedium.fontWeight,
+                                                lineHeight = Typography.bodyMedium.lineHeight,
                                                 color = textColor
                                             )
                                         }
@@ -775,6 +800,10 @@ fun AppDrawer(
                                                         hideApp(app.packageName)
                                                     },
                                                 text = if (app.hidden != null && app.hidden!!) "show" else "hide",
+                                                fontFamily = Typography.bodyMedium.fontFamily,
+                                                fontSize = Typography.bodyMedium.fontSize,
+                                                fontWeight = Typography.bodyMedium.fontWeight,
+                                                lineHeight = Typography.bodyMedium.lineHeight,
                                                 color = textColor
                                             )
                                         }
@@ -801,8 +830,10 @@ fun AppDrawer(
                                         .width(300.dp),
                                     text = "${app.label}",
                                     color = textColor,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight(weight = 700),
+                                    fontFamily = Typography.titleMedium.fontFamily,
+                                    fontSize = Typography.titleMedium.fontSize,
+                                    fontWeight = Typography.titleMedium.fontWeight,
+                                    lineHeight = Typography.titleMedium.lineHeight,
                                     overflow = TextOverflow.Ellipsis,
                                     maxLines = 1,
                                     textAlign = TextAlign.End
@@ -889,6 +920,7 @@ fun NotesPage(
     modifier: Modifier,
     isScrolledRight: MutableState<Boolean>,
     error: MutableState<Boolean>,
+    textColor: Color,
 ) {
     val interactionSource = remember {
         MutableInteractionSource()
@@ -904,14 +936,16 @@ fun NotesPage(
     ) {
         BasicTextField(
             modifier = Modifier
+                .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 50.dp)
                 .fillMaxSize()
+                .clip(RoundedCornerShape(10.dp))
                 //.focusRequester(focusRequester)
-                .onFocusChanged {
+                /*.onFocusChanged {
                     if (it.isFocused) {
                         //TODO something here
                     }
-                }
-                .background(Color.DarkGray),
+                }*/
+                .background(Color.White),
             value = text.value,
             onValueChange = { it: String ->
                 text.value = it
@@ -949,21 +983,21 @@ fun NotesPage(
             decorationBox = { innerTextField ->
                 Box(
                     modifier = Modifier
+                        .fillMaxSize()
                 ) {
-                    Text(
-                        modifier = Modifier,
-                        text = "ABC 123",
-                        textAlign = TextAlign.Left,
-                        fontFamily = Typography.titleMedium.fontFamily,
-                        fontSize = Typography.titleMedium.fontSize,
-                        lineHeight = Typography.titleMedium.lineHeight,
-                        color = Color.Black
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                    ) {
+                    if (text.value.isEmpty()) {
+                        Text(
+                            modifier = Modifier,
+                            text = "ABC 123",
+                            textAlign = TextAlign.Left,
+                            fontFamily = Typography.titleMedium.fontFamily,
+                            fontSize = Typography.titleMedium.fontSize,
+                            fontWeight = Typography.titleMedium.fontWeight,
+                            lineHeight = Typography.titleMedium.lineHeight,
+                            color = Color.Black
+                        )
+                    }
+                    else {
                         innerTextField()
                     }
                 }
@@ -972,5 +1006,74 @@ fun NotesPage(
             interactionSource = interactionSource,
             minLines = 1,
         )
+
+        val openDirMenu = remember {
+            mutableStateOf(false)
+        }
+
+        if (!openDirMenu.value) {
+            Icon(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(50.dp)
+                    .clickable { openDirMenu.value = !openDirMenu.value },
+                painter = painterResource(R.drawable.burger_menu),
+                contentDescription = null,
+                tint = Color.White
+            )
+        }
+
+        if (openDirMenu.value) {
+            val dirs = listOf("1", "2", "3")
+
+            Column(
+                modifier = Modifier
+                    .width(200.dp)
+                    .fillMaxHeight()
+                    .align(Alignment.BottomEnd)
+                    .background(Color.DarkGray),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                dirs.forEach {
+                    Text(
+                        modifier = Modifier
+                            .padding(top = 10.dp, bottom = 10.dp),
+                        text = "item $it",
+                        color = textColor,
+                        fontFamily = Typography.bodyLarge.fontFamily,
+                        fontSize = Typography.bodyLarge.fontSize,
+                        fontWeight = Typography.bodyLarge.fontWeight,
+                        lineHeight = Typography.bodyLarge.lineHeight,
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "DIR",
+                        color = textColor,
+                        fontFamily = Typography.titleMedium.fontFamily,
+                        fontSize = Typography.titleMedium.fontSize,
+                        fontWeight = Typography.titleMedium.fontWeight,
+                        lineHeight = Typography.titleMedium.lineHeight,
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable { openDirMenu.value = !openDirMenu.value },
+                        painter = painterResource(R.drawable.x),
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+            }
+        }
     }
 }
