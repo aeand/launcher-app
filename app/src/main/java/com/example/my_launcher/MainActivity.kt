@@ -86,12 +86,15 @@ import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,6 +124,8 @@ import kotlin.math.roundToInt
 - add directory to dir menu
 - add auto saving every like 10 sec
 - save before switching
+- close keyboard when swiping away
+- close dir menu when swiping away
 */
 
 /* Intent list that would be useful
@@ -351,10 +356,8 @@ class MainActivity: ComponentActivity() {
                 modifier = Modifier
                     .padding(start = 19.dp, top = 30.dp),
                 text = date,
-                fontFamily = Typography.bodyMedium.fontFamily,
-                fontSize = Typography.bodyMedium.fontSize,
-                fontWeight = Typography.bodyMedium.fontWeight,
-                lineHeight = Typography.bodyMedium.lineHeight,
+                fontSize = 11.sp,
+                fontWeight = FontWeight(600),
                 color = textColor,
             )
 
@@ -988,13 +991,15 @@ fun NotesPage(
                     if (text.value.isEmpty()) {
                         Text(
                             modifier = Modifier,
-                            text = "ABC 123",
+                            text = "Write something",
                             textAlign = TextAlign.Left,
-                            fontFamily = Typography.titleMedium.fontFamily,
+                            fontFamily = FontFamily(
+                                Font(R.font.roboto_italic)
+                            ),
                             fontSize = Typography.titleMedium.fontSize,
                             fontWeight = Typography.titleMedium.fontWeight,
                             lineHeight = Typography.titleMedium.lineHeight,
-                            color = Color.Black
+                            color = Color.Gray
                         )
                     }
                     else {
@@ -1010,6 +1015,23 @@ fun NotesPage(
         val openDirMenu = remember {
             mutableStateOf(false)
         }
+
+        Text(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = (-60).dp, y = (-11).dp)
+                .clickable {
+                   // open dialog for saving content
+                   // give file name
+                   // check where to save it
+                },
+            text = "Save",
+            color = textColor,
+            fontFamily = Typography.bodyLarge.fontFamily,
+            fontSize = Typography.bodyLarge.fontSize,
+            fontWeight = Typography.bodyLarge.fontWeight,
+            lineHeight = Typography.bodyLarge.lineHeight,
+        )
 
         if (!openDirMenu.value) {
             Icon(
