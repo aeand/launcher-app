@@ -94,11 +94,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -109,7 +109,8 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO Launcher
-- bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
+- bug: when installed a completely new app and updating the lists.
+The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
@@ -594,7 +595,9 @@ class MainActivity: ComponentActivity() {
         widgetHost = AppWidgetHost(applicationContext, 0)
         widgetHost.startListening()
         widgetManager = AppWidgetManager.getInstance(applicationContext)
-        duoWidget = widgetManager.installedProviders.find { it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider") }!!
+        duoWidget = widgetManager.installedProviders.find {
+            it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider")
+        }!!
         widgetId = widgetHost.allocateAppWidgetId()
 
         options = Bundle()
@@ -879,7 +882,11 @@ fun AppDrawer(
                                                 var found = false
 
                                                 apps.forEachIndexed { index, app ->
-                                                    if (!found && app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                                                    if (
+                                                        !found
+                                                        && app.label != null
+                                                        && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()
+                                                    ) {
                                                         i = index
                                                         found = true
                                                     }
@@ -931,6 +938,20 @@ fun NotesPage(
 
     val text = remember {
         mutableStateOf("")
+    }
+
+    val showSaveDialog = remember {
+        mutableStateOf(false)
+    }
+
+    val showDirMenu = remember {
+        mutableStateOf(false)
+    }
+
+    if (showSaveDialog.value) {
+        NoteSaveDialog(
+            showDialog = showSaveDialog
+        )
     }
 
     Box(
@@ -1012,15 +1033,12 @@ fun NotesPage(
             minLines = 1,
         )
 
-        val openDirMenu = remember {
-            mutableStateOf(false)
-        }
-
         Text(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .offset(x = (-60).dp, y = (-11).dp)
                 .clickable {
+                   showSaveDialog.value = true
                    // open dialog for saving content
                    // give file name
                    // check where to save it
@@ -1033,19 +1051,19 @@ fun NotesPage(
             lineHeight = Typography.bodyLarge.lineHeight,
         )
 
-        if (!openDirMenu.value) {
+        if (!showDirMenu.value) {
             Icon(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(50.dp)
-                    .clickable { openDirMenu.value = !openDirMenu.value },
+                    .clickable { showDirMenu.value = !showDirMenu.value },
                 painter = painterResource(R.drawable.burger_menu),
                 contentDescription = null,
                 tint = Color.White
             )
         }
 
-        if (openDirMenu.value) {
+        if (showDirMenu.value) {
             val dirs = listOf("1", "2", "3")
 
             Column(
@@ -1089,10 +1107,109 @@ fun NotesPage(
                     Icon(
                         modifier = Modifier
                             .size(50.dp)
-                            .clickable { openDirMenu.value = !openDirMenu.value },
+                            .clickable { showDirMenu.value = !showDirMenu.value },
                         painter = painterResource(R.drawable.x),
                         contentDescription = null,
                         tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NoteSaveDialog(
+    showDialog: MutableState<Boolean>
+) {
+    Box(
+        modifier = Modifier
+            .zIndex(1f)
+            .fillMaxSize()
+            .clickable {
+               showDialog.value = false
+            },
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .width(300.dp)
+                .height(400.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.DarkGray),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(30.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    text = "Title",
+                    fontFamily = Typography.bodyMedium.fontFamily,
+                    fontSize = Typography.bodyMedium.fontSize,
+                    fontWeight = Typography.bodyMedium.fontWeight,
+                    lineHeight = Typography.bodyMedium.lineHeight,
+                    color = Color.White,
+                )
+
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    text = "name: [implement name for file]",
+                    fontFamily = Typography.bodyMedium.fontFamily,
+                    fontSize = Typography.bodyMedium.fontSize,
+                    fontWeight = Typography.bodyMedium.fontWeight,
+                    lineHeight = Typography.bodyMedium.lineHeight,
+                    color = Color.White,
+                )
+
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    text = "to: [implement dir picker]",
+                    fontFamily = Typography.bodyMedium.fontFamily,
+                    fontSize = Typography.bodyMedium.fontSize,
+                    fontWeight = Typography.bodyMedium.fontWeight,
+                    lineHeight = Typography.bodyMedium.lineHeight,
+                    color = Color.White,
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                               showDialog.value = false
+                            },
+                        text = "Cancel",
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontSize = Typography.bodyMedium.fontSize,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        lineHeight = Typography.bodyMedium.lineHeight,
+                        color = Color.White,
+                    )
+
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                //save
+                                showDialog.value = false
+                            },
+                        text = "Save",
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontSize = Typography.bodyMedium.fontSize,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        lineHeight = Typography.bodyMedium.lineHeight,
+                        color = Color.White,
                     )
                 }
             }
