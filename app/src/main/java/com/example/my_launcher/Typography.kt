@@ -37,8 +37,8 @@ val Typography = Typography(
         ),
         fontWeight = FontWeight.Normal,
         fontSize = 40.sp,
-        lineHeight = 40.sp,
-        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+        lineHeight = 45.sp,
+        letterSpacing = TextUnit(0f, TextUnitType.Em),
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily(
@@ -46,43 +46,43 @@ val Typography = Typography(
         ),
         fontWeight = FontWeight.Normal,
         fontSize = 30.sp,
-        lineHeight = 30.sp,
-        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+        lineHeight = 35.sp,
+        letterSpacing = TextUnit(0f, TextUnitType.Em),
     ),
     titleSmall = TextStyle(
         fontFamily = FontFamily(
             Font(roboto["regular"]!!),
         ),
         fontWeight = FontWeight.Normal,
-        fontSize = 20.sp,
-        lineHeight = 20.sp,
-        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+        fontSize = 25.sp,
+        lineHeight = 30.sp,
+        letterSpacing = TextUnit(0f, TextUnitType.Em),
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily(
             Font(roboto["regular"]!!)
         ),
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
-        lineHeight = 18.sp,
-        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+        fontSize = 23.sp,
+        lineHeight = 28.sp,
+        letterSpacing = TextUnit(0f, TextUnitType.Em),
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily(
             Font(roboto["regular"]!!)
         ),
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 16.sp,
-        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+        fontSize = 20.sp,
+        lineHeight = 25.sp,
+        letterSpacing = TextUnit(0f, TextUnitType.Em),
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily(
             Font(roboto["regular"]!!)
         ),
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 14.sp,
-        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+        fontSize = 16.sp,
+        lineHeight = 21.sp,
+        letterSpacing = TextUnit(0f, TextUnitType.Em),
     ),
 )
