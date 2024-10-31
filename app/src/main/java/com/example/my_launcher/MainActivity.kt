@@ -3,6 +3,7 @@ package com.example.my_launcher
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
+import android.R.attr.value
 import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
@@ -37,6 +38,7 @@ import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,11 +56,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +80,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -80,10 +89,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -110,6 +127,7 @@ import kotlin.math.roundToInt
 /* TODO Notes
 - make a field to enter text in there
 - file system access to read and write txt files
+- add auto saving every like 10 sec
 */
 
 /* Intent list that would be useful
@@ -347,6 +365,8 @@ class MainActivity: ComponentActivity() {
 
             val screenWidth = 1080f
             val screenHeight = 2340f
+            val topBar = 32f
+            val bottomBar = 48f
 
             val decayAnimationSpec = rememberSplineBasedDecay<Float>()
             val dragState = remember {
@@ -428,12 +448,21 @@ class MainActivity: ComponentActivity() {
                 hideApp = ::hideApp,
                 uninstallApp = ::uninstallApp,
                 textColor = textColor,
+                bottomBar = bottomBar
             )
 
+            val error = remember {
+                mutableStateOf(false)
+            }
+
             NotesPage(
-                Modifier.offset {
-                    IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt())
-                }
+                Modifier
+                    .padding(top = topBar.dp, bottom = bottomBar.dp)
+                    .offset {
+                            IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt())
+                    },
+                error = error,
+                isScrolledRight = error
             )
         }
     }
@@ -599,6 +628,7 @@ fun AppDrawer(
     hideApp: (String?) -> Unit,
     uninstallApp: (String?) -> Unit,
     alphabet: List<String>,
+    bottomBar: Float,
 ) {
     val showAllApps = remember { mutableStateOf(false) }
 
@@ -659,7 +689,7 @@ fun AppDrawer(
                 .fillMaxWidth()
                 .fillMaxHeight(0.6f)
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 48.dp),
+                .padding(bottom = bottomBar.dp),
             horizontalArrangement = Arrangement.End
         ) {
             LazyColumn(
@@ -856,29 +886,91 @@ fun AppDrawer(
 
 @Composable
 fun NotesPage(
-    modifier: Modifier
+    modifier: Modifier,
+    isScrolledRight: MutableState<Boolean>,
+    error: MutableState<Boolean>,
 ) {
+    val interactionSource = remember {
+        MutableInteractionSource()
+    }
+
+    val text = remember {
+        mutableStateOf("")
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
     ) {
-        Box(
+        BasicTextField(
             modifier = Modifier
-                .align(Alignment.Center)
-                .size(100.dp)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color.White,
-                            Color.Cyan
-                        )
+                .fillMaxSize()
+                //.focusRequester(focusRequester)
+                .onFocusChanged {
+                    if (it.isFocused) {
+                        //TODO something here
+                    }
+                }
+                .background(Color.DarkGray),
+            value = text.value,
+            onValueChange = { it: String ->
+                text.value = it
+            },
+            cursorBrush = Brush.verticalGradient(
+                0.00f to Color.Black,
+                0.15f to Color.Black,
+                0.15f to Color.Black,
+                0.75f to Color.Black,
+                0.75f to Color.Black,
+                1.00f to Color.Black,
+            ),
+            enabled = isScrolledRight.value,
+            textStyle = TextStyle(
+                textAlign = TextAlign.Start,
+                color = if (error.value) Color.Red else Color.Black,
+                fontFamily = Typography.titleMedium.fontFamily,
+                fontSize = Typography.titleMedium.fontSize,
+                lineHeight = Typography.titleMedium.lineHeight,
+                letterSpacing = Typography.titleMedium.letterSpacing,
+            ),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrectEnabled = false,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    //TODO close keyboard and save text
+                }
+            ),
+            singleLine = false,
+            maxLines = Int.MAX_VALUE,
+            visualTransformation = VisualTransformation.None,
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier
+                ) {
+                    Text(
+                        modifier = Modifier,
+                        text = "ABC 123",
+                        textAlign = TextAlign.Left,
+                        fontFamily = Typography.titleMedium.fontFamily,
+                        fontSize = Typography.titleMedium.fontSize,
+                        lineHeight = Typography.titleMedium.lineHeight,
+                        color = Color.Black
                     )
-                )
-        )
-        Text(
-            modifier = Modifier
-                .align(Alignment.Center),
-            text = "Reminder page!"
+
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                    ) {
+                        innerTextField()
+                    }
+                }
+            },
+            onTextLayout = {},
+            interactionSource = interactionSource,
+            minLines = 1,
         )
     }
 }
