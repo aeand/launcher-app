@@ -1,6 +1,6 @@
 package com.example.my_launcher
 
-/*
+/* UI for testing saving and reading data
 Box(
     modifier = Modifier.fillMaxSize()
 ) {
@@ -72,7 +72,7 @@ Box(
 }
 */
 
-/*
+/* write/read file
 private fun writeFile(file: File, data: String) {
     var fileOutputStream: FileOutputStream? = null
     try {
@@ -119,7 +119,7 @@ private fun readFile(file: File): String {
 }
 */
 
-/*
+/* request/check permissions
 private fun requestPermissions() {
     ActivityCompat.requestPermissions(
         this,
@@ -158,7 +158,7 @@ private fun checkPermissions(): Boolean {
 }
 */
 
-/*
+/* handling pdf
 // Request code for creating a PDF document.
 private val CREATE_FILE = 1
 private fun createFile(pickerInitialUri: Uri) {
