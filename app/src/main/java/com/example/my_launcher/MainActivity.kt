@@ -485,6 +485,7 @@ class MainActivity: ComponentActivity() {
                 textColor = textColor,
                 saveFile = ::saveNote,
                 readFile = ::readNote,
+                refreshFiles = ::updateNotes,
                 files = files
             )
         }
@@ -976,6 +977,7 @@ fun NotesPage(
     textColor: Color,
     saveFile: (name: String, folder: String, content: String) -> Unit,
     readFile: (file: File) -> String,
+    refreshFiles: () -> Unit,
     files: MutableList<File>,
 ) {
     val interactionSource = remember {
@@ -1144,6 +1146,7 @@ fun NotesPage(
                     .width(200.dp)
                     .fillMaxHeight()
                     .align(Alignment.BottomEnd)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(Color.DarkGray)
                     .clickable (interactionSource = interactionSource, indication = null) {},
                 horizontalAlignment = Alignment.Start,
@@ -1176,27 +1179,41 @@ fun NotesPage(
 
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(top = 30.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    Text(
+                    Icon(
                         modifier = Modifier
-                            .padding(start = 8.dp, bottom = 5.dp),
-                        text = "Directory",
-                        color = textColor,
-                        fontFamily = Typography.titleMedium.fontFamily,
-                        fontSize = Typography.titleMedium.fontSize,
-                        fontWeight = Typography.titleMedium.fontWeight,
-                        lineHeight = Typography.titleMedium.lineHeight,
+                            .size(50.dp)
+                            .clickable {
+                                text.value = ""
+                                presetFileName.value = ""
+                                showDirMenu.value = !showDirMenu.value
+                            },
+                        painter = painterResource(R.drawable.plus),
+                        contentDescription = null,
+                        tint = Color.White,
                     )
-
-                    //TODO add a refresh dirs list icon
 
                     Icon(
                         modifier = Modifier
                             .size(50.dp)
-                            .clickable { showDirMenu.value = !showDirMenu.value },
+                            .clickable { 
+                                refreshFiles()
+                            },
+                        painter = painterResource(R.drawable.refresh),
+                        contentDescription = null,
+                        tint = Color.White,
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable {
+                                showDirMenu.value = !showDirMenu.value
+                            },
                         painter = painterResource(R.drawable.x),
                         contentDescription = null,
                         tint = Color.White
