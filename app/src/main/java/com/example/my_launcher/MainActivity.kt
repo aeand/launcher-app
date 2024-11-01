@@ -498,11 +498,10 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun saveNote(name: String, folder: String = "", content: String) {
-        // I want to be able to override existing notes
         val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
-        file.appendText(content)
+        file.writeText(content)
         updateNotes()
         Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
@@ -1025,6 +1024,7 @@ fun NotesPage(
         LaunchedEffect(enabled) {
             focusManager.clearFocus()
             textFieldFocused.value = false
+            //TODO showDirMenu.value = false
         }
 
         val customTextSelectionColors = TextSelectionColors(
