@@ -1,6 +1,5 @@
 package com.example.my_launcher
 
-import android.Manifest
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
@@ -20,7 +19,6 @@ import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -108,15 +106,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -182,6 +176,8 @@ class MainActivity: ComponentActivity() {
     private lateinit var duoWidget: AppWidgetProviderInfo
     private lateinit var options: Bundle
     private lateinit var hostView: MutableState<AppWidgetHostView>
+
+    private var files: MutableList<File> = mutableStateListOf()
 
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
@@ -485,144 +481,39 @@ class MainActivity: ComponentActivity() {
                 enabled = enabled,
                 textColor = textColor,
             )
-
-            //TODO here. Trying to read the Thoughts folder but it is forbidden. So I'm trying to get the permissions, without success
-
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "public.txt")
-                val file1 = File(Environment.getExternalStorageDirectory(), "/Thoughts/public.txt")
-
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(0.dp, (-100).dp)
-                        .clickable {
-                            if (checkPermissions()) {
-                                println("data: ${readFile(file1)}")
-                            }
-                            else {
-                                println("bad")
-                            }
-                        },
-                    text = "attempt",
-                    color = Color.White,
-                )
-
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(100.dp)
-                        .offset((-50).dp, 0.dp)
-                        .clickable {
-                            writeFile(file, "Polyphemus")
-                        },
-                    text = "save",
-                    color = Color.White,
-                )
-
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(100.dp)
-                        .offset(50.dp, 0.dp)
-                        .clickable {
-                            println(readFile(file))
-                            writeFile(file, "Odysseys")
-                        },
-                    text = "read",
-                    color = Color.White,
-                )
-            }
         }
-    }
-
-    private fun writeFile(file: File, data: String) {
-        var fileOutputStream: FileOutputStream? = null
-        try {
-            fileOutputStream = FileOutputStream(file)
-            fileOutputStream.write(data.toByteArray())
-        } catch (e: Exception) {
-            println("error $e")
-        } finally {
-            if (fileOutputStream != null) {
-                try {
-                    fileOutputStream.close()
-                } catch (e: IOException) {
-                    println("error $e")
-                }
-            }
-        }
-    }
-
-    private fun readFile(file: File): String {
-        var fileInputStream: FileInputStream? = null
-        try {
-            fileInputStream = FileInputStream(file)
-            var i = -1
-            val buffer = StringBuffer()
-            while (fileInputStream.read().also {
-                    i = it
-                } != -1) {
-                buffer.append(i.toChar())
-            }
-            return buffer.toString()
-        } catch (e: java.lang.Exception) {
-            println("error $e")
-        } finally {
-            if (fileInputStream != null) {
-                try {
-                    fileInputStream!!.close()
-                } catch (e: IOException) {
-                    println("error $e")
-                }
-            }
-        }
-
-        return ""
-    }
-
-    private fun checkPermissions(): Boolean {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-            requestPermissions()
-            if (!shouldShowRequestPermissionRationale("android.permission.READ_EXTERNAL_STORAGE")) {
-                println("failed read show rational")
-            }
-
-            println("failed read")
-            return false
-        }
-        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-            requestPermissions()
-            if (!shouldShowRequestPermissionRationale("android.permission.WRITE_EXTERNAL_STORAGE")) {
-                println("failed write rational")
-            }
-
-            println("failed write")
-            return false
-        }
-        else {
-            println("success!")
-            return true
-        }
-    }
-
-    private fun requestPermissions() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            ),
-            0 //23
-        )
     }
 
     override fun onDestroy() {
         super.onDestroy()
         widgetHost.stopListening()
         widgetHost.deleteAppWidgetId(widgetId)
+    }
+
+    fun saveNote(name: String, folder: String = "", content: String) {
+        // I want to be able to override existing notes
+        val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
+        letDirectory.mkdirs()
+        val file = File(letDirectory, "$name.txt")
+        file.appendText(content)
+        files.add(file)
+    }
+
+    fun readNote(fileName: String): String? {
+        var file: File? = null
+        files.forEach {
+            if (it.name == fileName) {
+                file = it
+            }
+        }
+
+        if (file == null) {
+            return null
+        }
+
+        return FileInputStream(file).bufferedReader().use {
+            it.readText()
+        }
     }
 
     private fun launchApp(packageName: String?) {
