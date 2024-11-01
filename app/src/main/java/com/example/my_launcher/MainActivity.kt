@@ -56,12 +56,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
@@ -131,11 +133,10 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- file system access to read and write txt files
-- add directory to dir menu
 - add auto saving every like 10 sec
 - save before switching
 - close dir menu when swiping away
+- sort dir correctly. folders files in folders then files
 */
 
 /* Intent list that would be useful
@@ -342,7 +343,7 @@ class MainActivity: ComponentActivity() {
         var packages = getPackages()
         createAppList()
         createDuolingoWidget()
-        updateNotes()
+        files = fetchNotes()
         //TODO load files into MainActivity so I can read them
 
         setContent {
@@ -485,8 +486,9 @@ class MainActivity: ComponentActivity() {
                 textColor = textColor,
                 saveFile = ::saveNote,
                 readFile = ::readNote,
-                refreshFiles = ::updateNotes,
-                files = files
+                refreshFiles = ::fetchNotes,
+                updateFiles = ::updateFiles,
+                files = files,
             )
         }
     }
@@ -502,7 +504,7 @@ class MainActivity: ComponentActivity() {
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
-        updateNotes()
+        files = fetchNotes()
         Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
 
@@ -512,12 +514,47 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    private fun updateNotes() {
-        files.clear()
-        val letDirectory = File(applicationContext.getExternalFilesDir(null), "")
+    private fun updateFiles(list: MutableList<File>) {
+        files = list
+    }
+
+    private fun fetchNotes(path: String = ""): MutableList<File> {
+        //TODO call this function recursively to get the sorting correct.
+        // 1. fetch files
+        // 2. sort on folders and files
+        // 3. sort each on alphabet
+        // 4. for every folder loop step 1.
+        // 5. combine all lists into a mega mutable list and return it
+        val files = mutableListOf<File>()
+        val folders = mutableListOf<File>()
+        // 1
+        val letDirectory = File(applicationContext.getExternalFilesDir(null), path)
         letDirectory.listFiles()?.forEach {
-            files.add(it)
+            // 2
+            if (it.isFile) {
+                files.add(it)
+            }
+            else {
+                folders.add(it)
+            }
         }
+
+        // 3
+        files.sortWith { a, b ->
+            a.name.uppercase().compareTo(b.name.uppercase())
+        }
+
+        folders.sortWith { a, b ->
+            a.name.uppercase().compareTo(b.name.uppercase())
+        }
+
+        // 4
+        folders.forEach {
+            fetchNotes("/" + it.name)
+        }
+
+        // 5
+        return (folders + files).toMutableList() //TODO sorting makes files in folders appear after all folders
     }
 
     private fun launchApp(packageName: String?) {
@@ -976,7 +1013,8 @@ fun NotesPage(
     textColor: Color,
     saveFile: (name: String, folder: String, content: String) -> Unit,
     readFile: (file: File) -> String,
-    refreshFiles: () -> Unit,
+    refreshFiles: (String) -> MutableList<File>,
+    updateFiles: (MutableList<File>) -> Unit,
     files: MutableList<File>,
 ) {
     val interactionSource = remember {
@@ -1148,26 +1186,41 @@ fun NotesPage(
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color.DarkGray)
-                    .clickable (interactionSource = interactionSource, indication = null) {},
+                    .clickable (interactionSource = interactionSource, indication = null) {}
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Bottom,
             ) {
                 files.forEach { file ->
-                    val fileName = file.name.replaceAfterLast('.', "").dropLast(1)
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
                             .clickable {
-                                text.value = readFile(file)
-                                presetFileName.value = fileName
-                                showDirMenu.value = false
+                                if (file.isFile) {
+                                    text.value = readFile(file)
+                                    presetFileName.value = file.nameWithoutExtension
+                                    showDirMenu.value = false
+                                }
+                                else {
+                                    //TODO
+                                    // expand/shrink folder
+                                    // and if not file or folder handle case correctly
+                                }
                             },
                     ) {
+                        Icon(
+                            modifier = Modifier
+                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
+                            painter = painterResource(if (file.isFile) R.drawable.file else R.drawable.folder),
+                            contentDescription = null,
+                            tint = Color.Black,
+                        )
+
                         Text(
                             modifier = Modifier
-                                .padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
-                            text = fileName,
+                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
+                            text = file.nameWithoutExtension,
                             color = textColor,
                             fontFamily = Typography.bodyLarge.fontFamily,
                             fontSize = Typography.bodyLarge.fontSize,
@@ -1201,7 +1254,7 @@ fun NotesPage(
                         modifier = Modifier
                             .size(50.dp)
                             .clickable { 
-                                refreshFiles()
+                                updateFiles(refreshFiles(""))
                             },
                         painter = painterResource(R.drawable.refresh),
                         contentDescription = null,
