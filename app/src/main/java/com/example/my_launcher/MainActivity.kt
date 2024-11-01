@@ -19,6 +19,7 @@ import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -341,6 +342,8 @@ class MainActivity: ComponentActivity() {
         var packages = getPackages()
         createAppList()
         createDuolingoWidget()
+        updateNotes()
+        //TODO load files into MainActivity so I can read them
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -480,6 +483,9 @@ class MainActivity: ComponentActivity() {
                 error = error,
                 enabled = enabled,
                 textColor = textColor,
+                saveFile = ::saveNote,
+                readFile = ::readNote,
+                files = files
             )
         }
     }
@@ -490,29 +496,27 @@ class MainActivity: ComponentActivity() {
         widgetHost.deleteAppWidgetId(widgetId)
     }
 
-    fun saveNote(name: String, folder: String = "", content: String) {
+    private fun saveNote(name: String, folder: String = "", content: String) {
         // I want to be able to override existing notes
         val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.appendText(content)
-        files.add(file)
+        updateNotes()
+        Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
 
-    fun readNote(fileName: String): String? {
-        var file: File? = null
-        files.forEach {
-            if (it.name == fileName) {
-                file = it
-            }
-        }
-
-        if (file == null) {
-            return null
-        }
-
+    private fun readNote(file: File): String {
         return FileInputStream(file).bufferedReader().use {
             it.readText()
+        }
+    }
+
+    private fun updateNotes() {
+        files.clear()
+        val letDirectory = File(applicationContext.getExternalFilesDir(null), "")
+        letDirectory.listFiles()?.forEach {
+            files.add(it)
         }
     }
 
@@ -970,6 +974,9 @@ fun NotesPage(
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
+    saveFile: (name: String, folder: String, content: String) -> Unit,
+    readFile: (file: File) -> String,
+    files: MutableList<File>,
 ) {
     val interactionSource = remember {
         MutableInteractionSource()
@@ -991,9 +998,16 @@ fun NotesPage(
         mutableStateOf(false)
     }
 
+    val presetFileName = remember {
+        mutableStateOf("")
+    }
+
     if (showSaveDialog.value) {
         NoteSaveDialog(
             showDialog = showSaveDialog,
+            noteContent = text.value,
+            saveFile = saveFile,
+            presetFileName = presetFileName.value,
         )
     }
 
@@ -1019,7 +1033,6 @@ fun NotesPage(
         CompositionLocalProvider(
             LocalTextSelectionColors provides customTextSelectionColors
         ) {
-
             BasicTextField(
                 modifier = Modifier
                     .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 50.dp)
@@ -1101,6 +1114,8 @@ fun NotesPage(
                 .align(Alignment.BottomEnd)
                 .offset(x = (-60).dp, y = (-11).dp)
                 .clickable {
+                    focusManager.clearFocus()
+                    textFieldFocused.value = false
                     showSaveDialog.value = true
                 },
             text = "Save",
@@ -1124,28 +1139,39 @@ fun NotesPage(
         }
 
         if (showDirMenu.value) {
-            val dirs = listOf("1", "2", "3")
-
             Column(
                 modifier = Modifier
                     .width(200.dp)
                     .fillMaxHeight()
                     .align(Alignment.BottomEnd)
-                    .background(Color.DarkGray),
+                    .background(Color.DarkGray)
+                    .clickable (interactionSource = interactionSource, indication = null) {},
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Bottom,
             ) {
-                dirs.forEach {
-                    Text(
+                files.forEach { file ->
+                    val fileName = file.name.replaceAfterLast('.', "").dropLast(1)
+                    Box(
                         modifier = Modifier
-                            .padding(top = 10.dp, bottom = 10.dp),
-                        text = "item $it",
-                        color = textColor,
-                        fontFamily = Typography.bodyLarge.fontFamily,
-                        fontSize = Typography.bodyLarge.fontSize,
-                        fontWeight = Typography.bodyLarge.fontWeight,
-                        lineHeight = Typography.bodyLarge.lineHeight,
-                    )
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clickable {
+                                text.value = readFile(file)
+                                presetFileName.value = fileName
+                                showDirMenu.value = false
+                            },
+                    ) {
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
+                            text = fileName,
+                            color = textColor,
+                            fontFamily = Typography.bodyLarge.fontFamily,
+                            fontSize = Typography.bodyLarge.fontSize,
+                            fontWeight = Typography.bodyLarge.fontWeight,
+                            lineHeight = Typography.bodyLarge.lineHeight,
+                        )
+                    }
                 }
 
                 Row(
@@ -1155,14 +1181,17 @@ fun NotesPage(
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
-                        modifier = Modifier,
-                        text = "DIR",
+                        modifier = Modifier
+                            .padding(start = 8.dp, bottom = 5.dp),
+                        text = "Directory",
                         color = textColor,
                         fontFamily = Typography.titleMedium.fontFamily,
                         fontSize = Typography.titleMedium.fontSize,
                         fontWeight = Typography.titleMedium.fontWeight,
                         lineHeight = Typography.titleMedium.lineHeight,
                     )
+
+                    //TODO add a refresh dirs list icon
 
                     Icon(
                         modifier = Modifier
@@ -1181,6 +1210,9 @@ fun NotesPage(
 @Composable
 fun NoteSaveDialog(
     showDialog: MutableState<Boolean>,
+    noteContent: String,
+    saveFile: (name: String, folder: String, content: String) -> Unit,
+    presetFileName: String,
 ) {
     Box(
         modifier = Modifier
@@ -1205,11 +1237,10 @@ fun NoteSaveDialog(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-
                 Text(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally),
-                    text = "Title",
+                    text = "Save note",
                     fontFamily = Typography.bodyMedium.fontFamily,
                     fontSize = Typography.bodyMedium.fontSize,
                     fontWeight = Typography.bodyMedium.fontWeight,
@@ -1217,16 +1248,98 @@ fun NoteSaveDialog(
                     color = Color.White,
                 )
 
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    text = "name: [implement name for file]",
-                    fontFamily = Typography.bodyMedium.fontFamily,
-                    fontSize = Typography.bodyMedium.fontSize,
-                    fontWeight = Typography.bodyMedium.fontWeight,
-                    lineHeight = Typography.bodyMedium.lineHeight,
-                    color = Color.White,
+                val fileName = remember {
+                    mutableStateOf(presetFileName)
+                }
+
+                val focusManager = LocalFocusManager.current
+                val focusRequester = remember {
+                    FocusRequester()
+                }
+
+                val textFieldFocused = remember {
+                    mutableStateOf(false)
+                }
+
+                val customTextSelectionColors = TextSelectionColors(
+                    handleColor = Color.Gray,
+                    backgroundColor = Color.DarkGray
                 )
+
+                CompositionLocalProvider(
+                    LocalTextSelectionColors provides customTextSelectionColors
+                ) {
+                    BasicTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .focusRequester(focusRequester)
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    textFieldFocused.value = true
+                                }
+                            }
+                            .background(Color.White),
+                        value = fileName.value,
+                        onValueChange = { it: String ->
+                            fileName.value = it
+                        },
+                        cursorBrush = Brush.verticalGradient(
+                            0.00f to Color.Black,
+                            0.15f to Color.Black,
+                            0.15f to Color.Black,
+                            0.75f to Color.Black,
+                            0.75f to Color.Black,
+                            1.00f to Color.Black,
+                        ),
+                        textStyle = TextStyle(
+                            textAlign = TextAlign.Start,
+                            color = Color.Black,
+                            fontFamily = Typography.titleMedium.fontFamily,
+                            fontSize = Typography.titleMedium.fontSize,
+                            lineHeight = Typography.titleMedium.lineHeight,
+                            letterSpacing = Typography.titleMedium.letterSpacing,
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrectEnabled = false,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                textFieldFocused.value = false
+                            }
+                        ),
+                        singleLine = true,
+                        maxLines = 1,
+                        visualTransformation = VisualTransformation.None,
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+                                if (fileName.value.isEmpty()) {
+                                    Text(
+                                        modifier = Modifier,
+                                        text = "Name the file",
+                                        textAlign = TextAlign.Left,
+                                        fontFamily = FontFamily(
+                                            Font(R.font.roboto_italic)
+                                        ),
+                                        fontSize = Typography.titleMedium.fontSize,
+                                        fontWeight = Typography.titleMedium.fontWeight,
+                                        lineHeight = Typography.titleMedium.lineHeight,
+                                        color = Color.Gray
+                                    )
+                                } else {
+                                    innerTextField()
+                                }
+                            }
+                        },
+                    )
+                }
 
                 Text(
                     modifier = Modifier
@@ -1261,43 +1374,17 @@ fun NoteSaveDialog(
                     Text(
                         modifier = Modifier
                             .clickable {
-                                /* SAVE_FILE_PUBLIC
-                                    ActivityCompat.requestPermissions(activity, arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), 23)
-                                    val folder: File = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                                    val file = File(folder, "public.txt")
-                                    writeTextData(file, message.value, applicationContext)
-                                    message.value = ""
-                                */
-
-                                /* READ_FILE_PUBLIC
-                                    val folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                                    val file = File(folder, "public.txt")
-                                    val data: String = getdata(file)
-                                    message.value = if (data != "") data else "No Data Found"
-                                */
-
-                                /* SAVE_FILE_PRIVATE
-                                val folder: File? = applicationContext.getExternalFilesDir("my-notes")
-                                val file = File(folder, "private.txt")
-                                writeTextData(file, message.value, applicationContext)
-                                Toast.makeText(applicationContext, "Data saved privately", Toast.LENGTH_SHORT).show()
-                                */
-
-                                /* READ_FILE_PRIVATE
-                                    val folder: File? = applicationContext.getExternalFilesDir("GeeksForGeeks")
-                                    val file = File(folder, "private.txt")
-                                    val data = getdata(file)
-                                    message.value = if (data != "") data else "No Data Found"
-                                */
-
-                                showDialog.value = false
+                                if (fileName.value.isNotEmpty()) {
+                                    saveFile(fileName.value, "", noteContent)
+                                    showDialog.value = false
+                                }
                             },
                         text = "Save",
                         fontFamily = Typography.bodyMedium.fontFamily,
                         fontSize = Typography.bodyMedium.fontSize,
                         fontWeight = Typography.bodyMedium.fontWeight,
                         lineHeight = Typography.bodyMedium.lineHeight,
-                        color = Color.White,
+                        color = if (fileName.value.isNotEmpty()) Color.White else Color.Gray,
                     )
                 }
             }
