@@ -181,6 +181,18 @@ class MainActivity: ComponentActivity() {
 
     private var files: MutableList<File> = mutableStateListOf()
 
+    class DirectoryFile(a: File, b: Int) {
+        val file = a
+        val indent = b
+    }
+
+    class ApplicationInformation {
+        var label: String? = null
+        var packageName: String? = null
+        var icon: Drawable? = null
+        var hidden: Boolean? = null
+    }
+
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
@@ -190,13 +202,6 @@ class MainActivity: ComponentActivity() {
                 hostView.value.setAppWidget(widgetId, duoWidget)
             }
         }
-    }
-
-    class ApplicationInformation {
-        var label: String? = null
-        var packageName: String? = null
-        var icon: Drawable? = null
-        var hidden: Boolean? = null
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -343,8 +348,7 @@ class MainActivity: ComponentActivity() {
         var packages = getPackages()
         createAppList()
         createDuolingoWidget()
-        files = fetchNotes()
-        //TODO load files into MainActivity so I can read them
+        files = fetchFiles()
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -480,15 +484,22 @@ class MainActivity: ComponentActivity() {
             NotesPage(
                 Modifier
                     .padding(top = topBar.dp, bottom = bottomBar.dp)
-                    .offset { IntOffset(dragState.requireOffset().roundToInt() + screenWidth.roundToInt(), dragState2.requireOffset().roundToInt()) },
+                    .offset {
+                        IntOffset(
+                            dragState
+                                .requireOffset()
+                                .roundToInt() + screenWidth.roundToInt(),
+                            dragState2
+                                .requireOffset()
+                                .roundToInt()
+                        )
+                    },
                 error = error,
                 enabled = enabled,
                 textColor = textColor,
                 saveFile = ::saveNote,
                 readFile = ::readNote,
-                refreshFiles = ::fetchNotes,
-                updateFiles = ::updateFiles,
-                files = files,
+                dirContent = files,
             )
         }
     }
@@ -504,7 +515,7 @@ class MainActivity: ComponentActivity() {
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
-        files = fetchNotes()
+        files = fetchFiles()
         Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
 
@@ -514,47 +525,33 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    private fun updateFiles(list: MutableList<File>) {
-        files = list
-    }
+    private fun fetchFiles(path: String = ""): MutableList<File> {
+        val dir = File(applicationContext.getExternalFilesDir(null), path).listFiles()
 
-    private fun fetchNotes(path: String = ""): MutableList<File> {
-        //TODO call this function recursively to get the sorting correct.
-        // 1. fetch files
-        // 2. sort on folders and files
-        // 3. sort each on alphabet
-        // 4. for every folder loop step 1.
-        // 5. combine all lists into a mega mutable list and return it
-        val files = mutableListOf<File>()
-        val folders = mutableListOf<File>()
-        // 1
-        val letDirectory = File(applicationContext.getExternalFilesDir(null), path)
-        letDirectory.listFiles()?.forEach {
-            // 2
-            if (it.isFile) {
-                files.add(it)
-            }
-            else {
-                folders.add(it)
+        dir?.sortWith { a, b ->
+            a.name.uppercase().compareTo(b.name.uppercase())
+            a.isFile.compareTo(b.isFile)
+        }
+
+        val dirs = mutableListOf<MutableList<File>>()
+        dir?.forEach {
+            dirs.add(mutableListOf(it))
+        }
+
+        dirs.forEach { list ->
+            if (!list[0].isFile) {
+                fetchFiles("$path/${list[0].name}").forEach {
+                    list.add(it)
+                }
             }
         }
 
-        // 3
-        files.sortWith { a, b ->
-            a.name.uppercase().compareTo(b.name.uppercase())
+        var result = mutableListOf<File>()
+        dirs.forEach { i ->
+            result = (result + i).toMutableList()
         }
 
-        folders.sortWith { a, b ->
-            a.name.uppercase().compareTo(b.name.uppercase())
-        }
-
-        // 4
-        folders.forEach {
-            fetchNotes("/" + it.name)
-        }
-
-        // 5
-        return (folders + files).toMutableList() //TODO sorting makes files in folders appear after all folders
+        return result
     }
 
     private fun launchApp(packageName: String?) {
@@ -697,767 +694,5 @@ class MainActivity: ComponentActivity() {
 
         hostView = mutableStateOf(widgetHost.createView(applicationContext, widgetId, duoWidget))
         hostView.value.setAppWidget(widgetId, duoWidget)
-    }
-}
-
-@SuppressLint("UseOfNonLambdaOffsetOverload")
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AppDrawer(
-    modifier: Modifier,
-    lazyScroll: LazyListState,
-    hostView: AppWidgetHostView?,
-    customScope: CoroutineScope,
-    textColor: Color,
-    apps: List<MainActivity.ApplicationInformation>,
-    launchApp: (String?) -> Unit,
-    hideApp: (String?) -> Unit,
-    uninstallApp: (String?) -> Unit,
-    alphabet: List<String>,
-    bottomBar: Float,
-) {
-    val showAllApps = remember { mutableStateOf(false) }
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(start = 10.dp, end = 10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.4f)
-        ) {
-            Icon(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(if (showAllApps.value) 30.dp else 20.dp)
-                    .offset(
-                        x = if (showAllApps.value) (-35).dp else (-40).dp,
-                        y = if (showAllApps.value) (-1).dp else (-5).dp
-                    )
-                    .clickable {
-                        showAllApps.value = !showAllApps.value
-                    },
-                painter = painterResource(id = if (showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
-                contentDescription = null,
-                tint = textColor
-            )
-
-            AndroidView(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(0.dp, (-50).dp)
-                    .width(350.dp)
-                    .height(200.dp),
-                factory = { hostView!! }
-            )
-
-            Icon(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(30.dp)
-                    .align(Alignment.BottomEnd)
-                    .clickable {
-                        customScope.launch {
-                            lazyScroll.animateScrollToItem(0)
-                        }
-                    },
-                imageVector = Icons.Rounded.KeyboardArrowUp,
-                contentDescription = null,
-                tint = textColor
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .padding(start = 10.dp, end = 10.dp)
-                .fillMaxWidth()
-                .fillMaxHeight(0.6f)
-                .align(Alignment.BottomEnd)
-                .padding(bottom = bottomBar.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(end = 20.dp),
-                state = lazyScroll,
-                horizontalAlignment = Alignment.End
-            ) {
-                apps.forEach { app ->
-                    item {
-                        if (showAllApps.value || !app.hidden!!) {
-                            val showOptions = remember { mutableStateOf(false) }
-                            val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
-
-                            if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
-                                Row(
-                                    modifier = Modifier
-                                        .padding(bottom = 4.dp),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(150.dp)
-                                            .height(1.dp)
-                                            .padding(end = 10.dp)
-                                            .offset(0.dp, 2.dp)
-                                            .background(Color.White)
-                                    )
-                                    Text(
-                                        modifier = Modifier
-                                            .padding(end = 10.dp),
-                                        text = app.label?.first()?.uppercaseChar().toString(),
-                                        fontFamily = Typography.bodyMedium.fontFamily,
-                                        fontSize = Typography.bodyMedium.fontSize,
-                                        fontWeight = Typography.bodyMedium.fontWeight,
-                                        lineHeight = Typography.bodyMedium.lineHeight,
-                                        color = textColor,
-                                    )
-                                }
-                            }
-
-                            if (showOptions.value) {
-                                AlertDialog(
-                                    //icon = {  },
-                                    title = {
-                                        Text(
-                                            text = "ACTION",
-                                            fontFamily = Typography.bodyMedium.fontFamily,
-                                            fontSize = Typography.bodyMedium.fontSize,
-                                            fontWeight = Typography.bodyMedium.fontWeight,
-                                            lineHeight = Typography.bodyMedium.lineHeight,
-                                            color = textColor
-                                        )
-                                    },
-                                    text = {
-                                        Text(
-                                            text = "What to do with ${app.label}?",
-                                            fontFamily = Typography.bodyMedium.fontFamily,
-                                            fontSize = Typography.bodyMedium.fontSize,
-                                            fontWeight = Typography.bodyMedium.fontWeight,
-                                            lineHeight = Typography.bodyMedium.lineHeight,
-                                            color = textColor
-                                        )
-                                    },
-                                    onDismissRequest = {
-                                        showOptions.value = false
-                                    },
-                                    confirmButton = {
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(end = 10.dp)
-                                                .width(100.dp)
-                                                .height(40.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(Color.DarkGray)
-                                        ) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .align(Alignment.Center)
-                                                    .clickable {
-                                                        uninstallApp(app.packageName)
-                                                        showOptions.value = false
-                                                    },
-                                                text = "uninstall",
-                                                fontFamily = Typography.bodyMedium.fontFamily,
-                                                fontSize = Typography.bodyMedium.fontSize,
-                                                fontWeight = Typography.bodyMedium.fontWeight,
-                                                lineHeight = Typography.bodyMedium.lineHeight,
-                                                color = textColor
-                                            )
-                                        }
-                                    },
-                                    dismissButton = {
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(start = 10.dp)
-                                                .width(100.dp)
-                                                .height(40.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(Color.DarkGray)
-                                        ) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .align(Alignment.Center)
-                                                    .clickable {
-                                                        showOptions.value = false
-                                                        hideApp(app.packageName)
-                                                    },
-                                                text = if (app.hidden != null && app.hidden!!) "show" else "hide",
-                                                fontFamily = Typography.bodyMedium.fontFamily,
-                                                fontSize = Typography.bodyMedium.fontSize,
-                                                fontWeight = Typography.bodyMedium.fontWeight,
-                                                lineHeight = Typography.bodyMedium.lineHeight,
-                                                color = textColor
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .padding(bottom = 20.dp)
-                                    .combinedClickable(
-                                        onClick = {
-                                            launchApp(app.packageName)
-                                        },
-                                        onLongClick = {
-                                            showOptions.value = true
-                                        },
-                                    )
-                            ) {
-                                Text(
-                                    modifier = Modifier
-                                        .align(Alignment.CenterVertically)
-                                        .padding(end = 10.dp)
-                                        .width(300.dp),
-                                    text = "${app.label}",
-                                    color = textColor,
-                                    fontFamily = Typography.titleMedium.fontFamily,
-                                    fontSize = Typography.titleMedium.fontSize,
-                                    fontWeight = Typography.titleMedium.fontWeight,
-                                    lineHeight = Typography.titleMedium.lineHeight,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.End
-                                )
-
-                                Image(
-                                    modifier = Modifier
-                                        .size(50.dp),
-                                    painter = rememberDrawablePainter(drawable = app.icon),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            var offsetY by remember { mutableFloatStateOf(0f) }
-            var selectedLetter by remember { mutableStateOf("") }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                alphabet.forEach { letter ->
-                    Text(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        try {
-                                            selectedLetter = letter
-                                            offsetY = -150f
-                                            awaitRelease()
-                                        } finally {
-                                            customScope.launch {
-                                                var i = 0
-                                                var found = false
-
-                                                apps.forEachIndexed { index, app ->
-                                                    if (
-                                                        !found
-                                                        && app.label != null
-                                                        && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()
-                                                    ) {
-                                                        i = index
-                                                        found = true
-                                                    }
-                                                }
-
-                                                lazyScroll.animateScrollToItem(i)
-                                            }
-
-                                            offsetY = 0f
-                                            selectedLetter = ""
-                                        }
-                                    },
-                                )
-                            }
-                            .offset {
-                                if (selectedLetter == letter) IntOffset(
-                                    0,
-                                    offsetY.roundToInt()
-                                ) else IntOffset(0, 0)
-                            }
-                            .drawBehind {
-                                if (selectedLetter == letter)
-                                    drawCircle(
-                                        radius = 80f,
-                                        color = Color.Black
-                                    )
-                            },
-                        text = letter.uppercase(),
-                        color = textColor,
-                        fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
-                        fontWeight = FontWeight(600)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun NotesPage(
-    modifier: Modifier,
-    enabled: MutableState<Boolean>,
-    error: MutableState<Boolean>,
-    textColor: Color,
-    saveFile: (name: String, folder: String, content: String) -> Unit,
-    readFile: (file: File) -> String,
-    refreshFiles: (String) -> MutableList<File>,
-    updateFiles: (MutableList<File>) -> Unit,
-    files: MutableList<File>,
-) {
-    val interactionSource = remember {
-        MutableInteractionSource()
-    }
-
-    val text = remember {
-        mutableStateOf("")
-    }
-
-    val showSaveDialog = remember {
-        mutableStateOf(false)
-    }
-
-    val showDirMenu = remember {
-        mutableStateOf(false)
-    }
-
-    val textFieldFocused = remember {
-        mutableStateOf(false)
-    }
-
-    val presetFileName = remember {
-        mutableStateOf("")
-    }
-
-    if (showSaveDialog.value) {
-        NoteSaveDialog(
-            showDialog = showSaveDialog,
-            noteContent = text.value,
-            saveFile = saveFile,
-            presetFileName = presetFileName.value,
-        )
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-    ) {
-        val focusManager = LocalFocusManager.current
-        val focusRequester = remember {
-            FocusRequester()
-        }
-
-        LaunchedEffect(enabled) {
-            focusManager.clearFocus()
-            textFieldFocused.value = false
-            //TODO showDirMenu.value = false
-        }
-
-        val customTextSelectionColors = TextSelectionColors(
-            handleColor = Color.Gray,
-            backgroundColor = Color.DarkGray
-        )
-
-        CompositionLocalProvider(
-            LocalTextSelectionColors provides customTextSelectionColors
-        ) {
-            BasicTextField(
-                modifier = Modifier
-                    .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 50.dp)
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(10.dp))
-                    .focusRequester(focusRequester)
-                    .onFocusChanged {
-                        if (it.isFocused) {
-                            textFieldFocused.value = true
-                        }
-                    }
-                    .background(Color.White),
-                value = text.value,
-                onValueChange = { it: String ->
-                    text.value = it
-                },
-                cursorBrush = Brush.verticalGradient(
-                    0.00f to Color.Black,
-                    0.15f to Color.Black,
-                    0.15f to Color.Black,
-                    0.75f to Color.Black,
-                    0.75f to Color.Black,
-                    1.00f to Color.Black,
-                ),
-                enabled = enabled.value,
-                textStyle = TextStyle(
-                    textAlign = TextAlign.Start,
-                    color = if (error.value) Color.Red else Color.Black,
-                    fontFamily = Typography.titleMedium.fontFamily,
-                    fontSize = Typography.titleMedium.fontSize,
-                    lineHeight = Typography.titleMedium.lineHeight,
-                    letterSpacing = Typography.titleMedium.letterSpacing,
-                ),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        textFieldFocused.value = false
-                    }
-                ),
-                singleLine = false,
-                maxLines = Int.MAX_VALUE,
-                visualTransformation = VisualTransformation.None,
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        if (text.value.isEmpty()) {
-                            Text(
-                                modifier = Modifier,
-                                text = "Write something",
-                                textAlign = TextAlign.Left,
-                                fontFamily = FontFamily(
-                                    Font(R.font.roboto_italic)
-                                ),
-                                fontSize = Typography.titleMedium.fontSize,
-                                fontWeight = Typography.titleMedium.fontWeight,
-                                lineHeight = Typography.titleMedium.lineHeight,
-                                color = Color.Gray
-                            )
-                        } else {
-                            innerTextField()
-                        }
-                    }
-                },
-                onTextLayout = {},
-                interactionSource = interactionSource,
-                minLines = 1,
-            )
-        }
-
-        Text(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = (-60).dp, y = (-11).dp)
-                .clickable {
-                    focusManager.clearFocus()
-                    textFieldFocused.value = false
-                    showSaveDialog.value = true
-                },
-            text = "Save",
-            color = textColor,
-            fontFamily = Typography.bodyLarge.fontFamily,
-            fontSize = Typography.bodyLarge.fontSize,
-            fontWeight = Typography.bodyLarge.fontWeight,
-            lineHeight = Typography.bodyLarge.lineHeight,
-        )
-
-        if (!showDirMenu.value) {
-            Icon(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(50.dp)
-                    .clickable { showDirMenu.value = !showDirMenu.value },
-                painter = painterResource(R.drawable.burger_menu),
-                contentDescription = null,
-                tint = Color.White
-            )
-        }
-
-        if (showDirMenu.value) {
-            Column(
-                modifier = Modifier
-                    .width(200.dp)
-                    .fillMaxHeight()
-                    .align(Alignment.BottomEnd)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.DarkGray)
-                    .clickable (interactionSource = interactionSource, indication = null) {}
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Bottom,
-            ) {
-                files.forEach { file ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .clickable {
-                                if (file.isFile) {
-                                    text.value = readFile(file)
-                                    presetFileName.value = file.nameWithoutExtension
-                                    showDirMenu.value = false
-                                }
-                                else {
-                                    //TODO
-                                    // expand/shrink folder
-                                    // and if not file or folder handle case correctly
-                                }
-                            },
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                            painter = painterResource(if (file.isFile) R.drawable.file else R.drawable.folder),
-                            contentDescription = null,
-                            tint = Color.Black,
-                        )
-
-                        Text(
-                            modifier = Modifier
-                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                            text = file.nameWithoutExtension,
-                            color = textColor,
-                            fontFamily = Typography.bodyLarge.fontFamily,
-                            fontSize = Typography.bodyLarge.fontSize,
-                            fontWeight = Typography.bodyLarge.fontWeight,
-                            lineHeight = Typography.bodyLarge.lineHeight,
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 30.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clickable {
-                                text.value = ""
-                                presetFileName.value = ""
-                                showDirMenu.value = !showDirMenu.value
-                            },
-                        painter = painterResource(R.drawable.plus),
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-
-                    Icon(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clickable { 
-                                updateFiles(refreshFiles(""))
-                            },
-                        painter = painterResource(R.drawable.refresh),
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-
-                    Icon(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clickable {
-                                showDirMenu.value = !showDirMenu.value
-                            },
-                        painter = painterResource(R.drawable.x),
-                        contentDescription = null,
-                        tint = Color.White
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun NoteSaveDialog(
-    showDialog: MutableState<Boolean>,
-    noteContent: String,
-    saveFile: (name: String, folder: String, content: String) -> Unit,
-    presetFileName: String,
-) {
-    Box(
-        modifier = Modifier
-            .zIndex(1f)
-            .fillMaxSize()
-            .clickable {
-                showDialog.value = false
-            },
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .width(300.dp)
-                .height(400.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.DarkGray),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(30.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    text = "Save note",
-                    fontFamily = Typography.bodyMedium.fontFamily,
-                    fontSize = Typography.bodyMedium.fontSize,
-                    fontWeight = Typography.bodyMedium.fontWeight,
-                    lineHeight = Typography.bodyMedium.lineHeight,
-                    color = Color.White,
-                )
-
-                val fileName = remember {
-                    mutableStateOf(presetFileName)
-                }
-
-                val focusManager = LocalFocusManager.current
-                val focusRequester = remember {
-                    FocusRequester()
-                }
-
-                val textFieldFocused = remember {
-                    mutableStateOf(false)
-                }
-
-                val customTextSelectionColors = TextSelectionColors(
-                    handleColor = Color.Gray,
-                    backgroundColor = Color.DarkGray
-                )
-
-                CompositionLocalProvider(
-                    LocalTextSelectionColors provides customTextSelectionColors
-                ) {
-                    BasicTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .focusRequester(focusRequester)
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    textFieldFocused.value = true
-                                }
-                            }
-                            .background(Color.White),
-                        value = fileName.value,
-                        onValueChange = { it: String ->
-                            fileName.value = it
-                        },
-                        cursorBrush = Brush.verticalGradient(
-                            0.00f to Color.Black,
-                            0.15f to Color.Black,
-                            0.15f to Color.Black,
-                            0.75f to Color.Black,
-                            0.75f to Color.Black,
-                            1.00f to Color.Black,
-                        ),
-                        textStyle = TextStyle(
-                            textAlign = TextAlign.Start,
-                            color = Color.Black,
-                            fontFamily = Typography.titleMedium.fontFamily,
-                            fontSize = Typography.titleMedium.fontSize,
-                            lineHeight = Typography.titleMedium.lineHeight,
-                            letterSpacing = Typography.titleMedium.letterSpacing,
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.None,
-                            autoCorrectEnabled = false,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                                textFieldFocused.value = false
-                            }
-                        ),
-                        singleLine = true,
-                        maxLines = 1,
-                        visualTransformation = VisualTransformation.None,
-                        decorationBox = { innerTextField ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                            ) {
-                                if (fileName.value.isEmpty()) {
-                                    Text(
-                                        modifier = Modifier,
-                                        text = "Name the file",
-                                        textAlign = TextAlign.Left,
-                                        fontFamily = FontFamily(
-                                            Font(R.font.roboto_italic)
-                                        ),
-                                        fontSize = Typography.titleMedium.fontSize,
-                                        fontWeight = Typography.titleMedium.fontWeight,
-                                        lineHeight = Typography.titleMedium.lineHeight,
-                                        color = Color.Gray
-                                    )
-                                } else {
-                                    innerTextField()
-                                }
-                            }
-                        },
-                    )
-                }
-
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    text = "to: [implement dir picker]",
-                    fontFamily = Typography.bodyMedium.fontFamily,
-                    fontSize = Typography.bodyMedium.fontSize,
-                    fontWeight = Typography.bodyMedium.fontWeight,
-                    lineHeight = Typography.bodyMedium.lineHeight,
-                    color = Color.White,
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .clickable {
-                               showDialog.value = false
-                            },
-                        text = "Cancel",
-                        fontFamily = Typography.bodyMedium.fontFamily,
-                        fontSize = Typography.bodyMedium.fontSize,
-                        fontWeight = Typography.bodyMedium.fontWeight,
-                        lineHeight = Typography.bodyMedium.lineHeight,
-                        color = Color.White,
-                    )
-
-                    Text(
-                        modifier = Modifier
-                            .clickable {
-                                if (fileName.value.isNotEmpty()) {
-                                    saveFile(fileName.value, "", noteContent)
-                                    showDialog.value = false
-                                }
-                            },
-                        text = "Save",
-                        fontFamily = Typography.bodyMedium.fontFamily,
-                        fontSize = Typography.bodyMedium.fontSize,
-                        fontWeight = Typography.bodyMedium.fontWeight,
-                        lineHeight = Typography.bodyMedium.lineHeight,
-                        color = if (fileName.value.isNotEmpty()) Color.White else Color.Gray,
-                    )
-                }
-            }
-        }
     }
 }
