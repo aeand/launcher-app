@@ -60,7 +60,7 @@ fun NotesPage(
     textColor: Color,
     saveFile: (name: String, folder: String, content: String) -> Unit,
     readFile: (file: File) -> String,
-    dirContent: MutableList<MainActivity.DirectoryFile>,
+    dirContent: MutableList<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember {
         MutableInteractionSource()
@@ -236,42 +236,87 @@ fun NotesPage(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Bottom,
             ) {
-                dirContent.forEach { dir ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .clickable {
-                                if (dir.file.isFile) {
-                                    text.value = readFile(dir.file)
-                                    presetFileName.value = dir.file.nameWithoutExtension
-                                    showDirMenu.value = false
-                                }
-                                else {
-                                    //TODO
-                                    // expand/shrink folder
-                                    // and if not file or folder handle case correctly
-                                }
-                            },
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                            painter = painterResource(if (dir.file.isFile) R.drawable.file else R.drawable.folder),
-                            contentDescription = null,
-                            tint = Color.Black,
-                        )
+                /*
+                * if (expanded.value) {
+                                            expanded.value = false
+                                            var startHidingItems = false
+                                            var startIndent = 0
+                                            for (it in dirContent) {
+                                                if (it.file == dir.file) {
+                                                    startIndent = dir.indent
+                                                    startHidingItems = true
+                                                    continue
+                                                }
+                                                if (it.indent <= startIndent) {
+                                                    startHidingItems = false
+                                                }
+                                                if (startHidingItems) {
+                                                    it.hidden = true
+                                                }
+                                            }
+                                        }
+                                        else {
+                                            expanded.value = true
+                                            var startShowingItems = false
+                                            var startIndent = 0
+                                            for (it in dirContent) {
+                                                if (it.file == dir.file) {
+                                                    startIndent = dir.indent
+                                                    startShowingItems = true
+                                                    continue
+                                                }
+                                                if (it.indent <= startIndent) {
+                                                    startShowingItems = false
+                                                }
+                                                if (startShowingItems) {
+                                                    it.hidden = false
+                                                }
+                                            }
+                                        }*/
 
-                        Text(
+
+
+
+                dirContent.forEach { dir ->
+                    val expanded = remember { mutableStateOf(true) }
+                    if (!dir.hidden) {
+                        Row(
                             modifier = Modifier
-                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                            text = if (dir.file.isFile) dir.file.nameWithoutExtension else dir.file.name,
-                            color = textColor,
-                            fontFamily = Typography.bodyLarge.fontFamily,
-                            fontSize = Typography.bodyLarge.fontSize,
-                            fontWeight = Typography.bodyLarge.fontWeight,
-                            lineHeight = Typography.bodyLarge.lineHeight,
-                        )
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .clickable {
+                                    if (dir.file.isFile) {
+                                        text.value = readFile(dir.file)
+                                        presetFileName.value = dir.file.nameWithoutExtension
+                                        showDirMenu.value = false
+                                    }
+                                    else {
+                                        expanded.value = !expanded.value
+                                        dir.children?.forEach { child ->
+                                            dirContent.find { child.file == it.file }?.hidden = !expanded.value
+                                        }
+                                    }
+                                },
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .padding(start = (5 * dir.indent).dp, top = 10.dp, bottom = 10.dp),
+                                painter = painterResource(if (dir.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
+                                contentDescription = null,
+                                tint = Color.Black,
+                            )
+
+                            Text(
+                                modifier = Modifier
+                                    .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
+                                text = if (dir.file.isFile) dir.file.nameWithoutExtension else dir.file.name,
+                                color = textColor,
+                                fontFamily = Typography.bodyLarge.fontFamily,
+                                fontSize = Typography.bodyLarge.fontSize,
+                                fontWeight = Typography.bodyLarge.fontWeight,
+                                lineHeight = Typography.bodyLarge.lineHeight,
+                            )
+                        }
                     }
                 }
 
