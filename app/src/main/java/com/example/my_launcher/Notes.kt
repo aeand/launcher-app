@@ -312,9 +312,17 @@ fun NotesPage(
                                 .height(50.dp)
                                 .clickable {
                                     if (dir.file.isFile) {
-                                        text.value = readFile(dir.file)
-                                        title.value = dir.file.nameWithoutExtension
-                                        showDirMenu.value = false
+                                        if (text.value != "") {
+                                            val file = dirContent.find { it.file.nameWithoutExtension == title.value }
+                                            if (file == null || readFile(file.file) != text.value) {
+                                                showSaveDialog.value = true
+                                            }
+                                        }
+                                        if (text.value == "" || !showSaveDialog.value) {
+                                            text.value = readFile(dir.file)
+                                            title.value = dir.file.nameWithoutExtension
+                                            showDirMenu.value = false
+                                        }
                                     }
                                     else {
                                         expanded.value = !expanded.value
@@ -372,7 +380,7 @@ fun NotesPage(
                             .clickable {
                                 showDirMenu.value = !showDirMenu.value
                             },
-                        painter = painterResource(R.drawable.x),
+                        painter = painterResource(R.drawable.burger_menu),
                         contentDescription = null,
                         tint = Color.White
                     )
@@ -497,7 +505,8 @@ fun NoteSaveDialog(
                             ) {
                                 if (fileName.value.isEmpty()) {
                                     Text(
-                                        modifier = Modifier,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart),
                                         text = "Name the file",
                                         textAlign = TextAlign.Left,
                                         fontFamily = FontFamily(
@@ -509,7 +518,12 @@ fun NoteSaveDialog(
                                         color = Color.Gray
                                     )
                                 } else {
-                                    innerTextField()
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                    ) {
+                                        innerTextField()
+                                    }
                                 }
                             }
                         },

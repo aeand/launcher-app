@@ -82,7 +82,6 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 
 /* TODO Notes
 - add auto saving every like 10 sec
-- save before switching
 - update file list after save. Currently doesn't do anything
 */
 
