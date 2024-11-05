@@ -87,9 +87,10 @@ fun NotesPage(
             FocusRequester()
         }
 
-        LaunchedEffect(enabled) {
+        LaunchedEffect(enabled.value) {
             focusManager.clearFocus()
             textFieldFocused.value = false
+            showDirMenu.value = false
         }
 
         val customTextSelectionColors = TextSelectionColors(
