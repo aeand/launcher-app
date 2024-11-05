@@ -83,6 +83,7 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 /* TODO Notes
 - add override dialog that will handle saving file with same name as other file
 - press and hold to delete/move notes in directory
+- add folder button
 */
 
 /* Intent list that would be useful
