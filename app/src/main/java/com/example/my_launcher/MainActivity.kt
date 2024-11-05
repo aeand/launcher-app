@@ -458,13 +458,14 @@ class MainActivity: ComponentActivity() {
         widgetHost.deleteAppWidgetId(widgetId)
     }
 
-    private fun saveNote(name: String, folder: String = "", content: String) {
+    private fun saveNote(name: String, folder: String = "", content: String, showToast: Boolean = true) {
         val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
         files = getFiles()
-        Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
+        if (showToast)
+            Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
 
     private fun readNote(file: File): String {

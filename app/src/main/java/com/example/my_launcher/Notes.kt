@@ -50,6 +50,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -58,7 +60,7 @@ fun NotesPage(
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
-    saveFile: (name: String, folder: String, content: String) -> Unit,
+    saveFile: (name: String, folder: String, content: String, showToast: Boolean) -> Unit,
     readFile: (file: File) -> String,
     dirContent: MutableList<MainActivity.CustomFile>,
 ) {
@@ -68,6 +70,15 @@ fun NotesPage(
     val showSaveDialog = remember { mutableStateOf(false) }
     val showDirMenu = remember { mutableStateOf(false) }
     val textFieldFocused = remember { mutableStateOf(false) }
+
+    LaunchedEffect(text.value) {
+        this.launch {
+            delay(1000)
+            if (text.value != "") {
+                saveFile("tmpfileforautosave", "", text.value, false)
+            }
+        }
+    }
 
     if (showSaveDialog.value) {
         NoteSaveDialog(
@@ -148,7 +159,7 @@ fun NotesPage(
                     }
                 ),
                 singleLine = false,
-                maxLines = Int.MAX_VALUE,
+                maxLines = 1,
                 visualTransformation = VisualTransformation.None,
                 decorationBox = { innerTextField ->
                     Box(
@@ -291,7 +302,7 @@ fun NotesPage(
         }
 
         if (showDirMenu.value) {
-            Column(
+            Box(
                 modifier = Modifier
                     .width(200.dp)
                     .fillMaxHeight()
@@ -299,65 +310,113 @@ fun NotesPage(
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color.DarkGray)
                     .clickable (interactionSource = interactionSource, indication = null) {}
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Bottom,
             ) {
-                dirContent.forEach { dir ->
-                    val expanded = remember { mutableStateOf(true) }
-                    if (!dir.hidden) {
-                        Row(
+                val autoSaveFile = dirContent.find { it.file.nameWithoutExtension == "tmpfileforautosave" }
+                if (autoSaveFile != null) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clickable {
+                                val file = dirContent.find { it.file.nameWithoutExtension == title.value }
+                                if (text.value != "") {
+                                    if (file == null || readFile(file.file) != text.value) {
+                                        showSaveDialog.value = true
+                                    }
+                                }
+                                if (text.value == "" || !showSaveDialog.value) {
+                                    text.value = readFile(autoSaveFile.file)
+                                    title.value = "tmpfileforautosave"
+                                    showDirMenu.value = false
+                                }
+                            },
+                    ) {
+                        Icon(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                                .clickable {
-                                    if (dir.file.isFile) {
-                                        if (text.value != "") {
-                                            val file = dirContent.find { it.file.nameWithoutExtension == title.value }
-                                            if (file == null || readFile(file.file) != text.value) {
-                                                showSaveDialog.value = true
+                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
+                            painter = painterResource(R.drawable.file),
+                            contentDescription = null,
+                            tint = Color.Black,
+                        )
+
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
+                            text = "Auto save",
+                            color = textColor,
+                            fontFamily = Typography.bodyLarge.fontFamily,
+                            fontSize = Typography.bodyLarge.fontSize,
+                            fontWeight = Typography.bodyLarge.fontWeight,
+                            lineHeight = Typography.bodyLarge.lineHeight,
+                        )
+                    }
+                }
+
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(top = 60.dp, bottom = 60.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    dirContent.forEach { dir ->
+                        val expanded = remember { mutableStateOf(true) }
+
+                        if (!dir.hidden && dir.file.nameWithoutExtension != "tmpfileforautosave") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                                    .clickable {
+                                        if (dir.file.isFile) {
+                                            if (text.value != "") {
+                                                val file = dirContent.find { it.file.nameWithoutExtension == title.value }
+                                                if (file == null || readFile(file.file) != text.value) {
+                                                    showSaveDialog.value = true
+                                                }
+                                            }
+                                            if (text.value == "" || !showSaveDialog.value) {
+                                                text.value = readFile(dir.file)
+                                                title.value = dir.file.nameWithoutExtension
+                                                showDirMenu.value = false
                                             }
                                         }
-                                        if (text.value == "" || !showSaveDialog.value) {
-                                            text.value = readFile(dir.file)
-                                            title.value = dir.file.nameWithoutExtension
-                                            showDirMenu.value = false
+                                        else {
+                                            expanded.value = !expanded.value
+                                            dir.children?.forEach { child ->
+                                                dirContent.find { child.file == it.file }?.hidden = !expanded.value
+                                            }
                                         }
-                                    }
-                                    else {
-                                        expanded.value = !expanded.value
-                                        dir.children?.forEach { child ->
-                                            dirContent.find { child.file == it.file }?.hidden = !expanded.value
-                                        }
-                                    }
-                                },
-                        ) {
-                            Icon(
-                                modifier = Modifier
-                                    .padding(start = (5 * dir.indent).dp, top = 10.dp, bottom = 10.dp),
-                                painter = painterResource(if (dir.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
-                                contentDescription = null,
-                                tint = Color.Black,
-                            )
+                                    },
+                            ) {
+                                Icon(
+                                    modifier = Modifier
+                                        .padding(start = (5 * dir.indent).dp, top = 10.dp, bottom = 10.dp),
+                                    painter = painterResource(if (dir.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
+                                    contentDescription = null,
+                                    tint = Color.Black,
+                                )
 
-                            Text(
-                                modifier = Modifier
-                                    .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                                text = if (dir.file.isFile) dir.file.nameWithoutExtension else dir.file.name,
-                                color = textColor,
-                                fontFamily = Typography.bodyLarge.fontFamily,
-                                fontSize = Typography.bodyLarge.fontSize,
-                                fontWeight = Typography.bodyLarge.fontWeight,
-                                lineHeight = Typography.bodyLarge.lineHeight,
-                            )
+                                Text(
+                                    modifier = Modifier
+                                        .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
+                                    text = if (dir.file.isFile) dir.file.nameWithoutExtension else dir.file.name,
+                                    color = textColor,
+                                    fontFamily = Typography.bodyLarge.fontFamily,
+                                    fontSize = Typography.bodyLarge.fontSize,
+                                    fontWeight = Typography.bodyLarge.fontWeight,
+                                    lineHeight = Typography.bodyLarge.lineHeight,
+                                )
+                            }
                         }
                     }
                 }
 
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 30.dp),
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
@@ -394,7 +453,7 @@ fun NotesPage(
 fun NoteSaveDialog(
     showDialog: MutableState<Boolean>,
     noteContent: String,
-    saveFile: (name: String, folder: String, content: String) -> Unit,
+    saveFile: (name: String, folder: String, content: String, showToast: Boolean) -> Unit,
     presetFileName: String,
 ) {
     Box(
@@ -564,7 +623,7 @@ fun NoteSaveDialog(
                         modifier = Modifier
                             .clickable {
                                 if (fileName.value.isNotEmpty()) {
-                                    saveFile(fileName.value, "", noteContent)
+                                    saveFile(fileName.value, "", noteContent, true)
                                     showDialog.value = false
                                 }
                             },
