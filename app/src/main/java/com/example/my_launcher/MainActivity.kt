@@ -81,7 +81,7 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- update file list after save. Currently doesn't do anything
+- add override dialog that will handle saving file with same name as other file
 */
 
 /* Intent list that would be useful
@@ -124,7 +124,7 @@ class MainActivity: ComponentActivity() {
     private lateinit var options: Bundle
     private lateinit var hostView: MutableState<AppWidgetHostView>
 
-    private var files: MutableList<CustomFile> = mutableStateListOf()
+    private var files = mutableStateListOf<CustomFile>()
 
     class CustomFile(a: File, b: MutableList<CustomFile>?, c: Int, d: Boolean) {
         val file = a
@@ -295,7 +295,10 @@ class MainActivity: ComponentActivity() {
         var packages = getPackages()
         createAppList()
         createDuolingoWidget()
-        files = getFiles()
+        files.clear()
+        getFiles().forEach {
+            files.add(it)
+        }
 
         setContent {
             val isDarkMode = isSystemInDarkTheme()
@@ -446,7 +449,7 @@ class MainActivity: ComponentActivity() {
                 textColor = textColor,
                 saveFile = ::saveNote,
                 readFile = ::readNote,
-                dirContent = files,
+                files = files,
             )
         }
     }
@@ -462,7 +465,10 @@ class MainActivity: ComponentActivity() {
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
-        files = getFiles()
+        files.clear()
+        getFiles().forEach {
+            files.add(it)
+        }
         if (showToast)
             Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }

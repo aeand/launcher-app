@@ -62,7 +62,7 @@ fun NotesPage(
     textColor: Color,
     saveFile: (name: String, folder: String, content: String, showToast: Boolean) -> Unit,
     readFile: (file: File) -> String,
-    dirContent: MutableList<MainActivity.CustomFile>,
+    files: List<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val title = remember { mutableStateOf("") }
@@ -73,7 +73,7 @@ fun NotesPage(
 
     LaunchedEffect(text.value) {
         this.launch {
-            delay(1000)
+            delay(3000)
             if (text.value != "") {
                 saveFile("tmpfileforautosave", "", text.value, false)
             }
@@ -94,9 +94,7 @@ fun NotesPage(
             .fillMaxSize()
     ) {
         val focusManager = LocalFocusManager.current
-        val focusRequester = remember {
-            FocusRequester()
-        }
+        val focusRequester = remember { FocusRequester() }
 
         LaunchedEffect(enabled.value) {
             focusManager.clearFocus()
@@ -311,7 +309,7 @@ fun NotesPage(
                     .background(Color.DarkGray)
                     .clickable (interactionSource = interactionSource, indication = null) {}
             ) {
-                val autoSaveFile = dirContent.find { it.file.nameWithoutExtension == "tmpfileforautosave" }
+                val autoSaveFile = files.find { it.file.nameWithoutExtension == "tmpfileforautosave" }
                 if (autoSaveFile != null) {
                     Row(
                         modifier = Modifier
@@ -319,7 +317,7 @@ fun NotesPage(
                             .fillMaxWidth()
                             .height(50.dp)
                             .clickable {
-                                val file = dirContent.find { it.file.nameWithoutExtension == title.value }
+                                val file = files.find { it.file.nameWithoutExtension == title.value }
                                 if (text.value != "") {
                                     if (file == null || readFile(file.file) != text.value) {
                                         showSaveDialog.value = true
@@ -360,40 +358,40 @@ fun NotesPage(
                         .padding(top = 60.dp, bottom = 60.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    dirContent.forEach { dir ->
+                    files.forEach { file ->
                         val expanded = remember { mutableStateOf(true) }
 
-                        if (!dir.hidden && dir.file.nameWithoutExtension != "tmpfileforautosave") {
+                        if (!file.hidden && file.file.nameWithoutExtension != "tmpfileforautosave") {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp)
                                     .clickable {
-                                        if (dir.file.isFile) {
+                                        if (file.file.isFile) {
                                             if (text.value != "") {
-                                                val file = dirContent.find { it.file.nameWithoutExtension == title.value }
-                                                if (file == null || readFile(file.file) != text.value) {
+                                                val match = files.find { it.file.nameWithoutExtension == title.value }
+                                                if (match == null || readFile(match.file) != text.value) {
                                                     showSaveDialog.value = true
                                                 }
                                             }
                                             if (text.value == "" || !showSaveDialog.value) {
-                                                text.value = readFile(dir.file)
-                                                title.value = dir.file.nameWithoutExtension
+                                                text.value = readFile(file.file)
+                                                title.value = file.file.nameWithoutExtension
                                                 showDirMenu.value = false
                                             }
                                         }
                                         else {
                                             expanded.value = !expanded.value
-                                            dir.children?.forEach { child ->
-                                                dirContent.find { child.file == it.file }?.hidden = !expanded.value
+                                            file.children?.forEach { child ->
+                                                files.find { child.file == it.file }?.hidden = !expanded.value
                                             }
                                         }
                                     },
                             ) {
                                 Icon(
                                     modifier = Modifier
-                                        .padding(start = (5 * dir.indent).dp, top = 10.dp, bottom = 10.dp),
-                                    painter = painterResource(if (dir.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
+                                        .padding(start = (5 * file.indent).dp, top = 10.dp, bottom = 10.dp),
+                                    painter = painterResource(if (file.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
                                     contentDescription = null,
                                     tint = Color.Black,
                                 )
@@ -401,7 +399,7 @@ fun NotesPage(
                                 Text(
                                     modifier = Modifier
                                         .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                                    text = if (dir.file.isFile) dir.file.nameWithoutExtension else dir.file.name,
+                                    text = if (file.file.isFile) file.file.nameWithoutExtension else file.file.name,
                                     color = textColor,
                                     fontFamily = Typography.bodyLarge.fontFamily,
                                     fontSize = Typography.bodyLarge.fontSize,
@@ -490,18 +488,10 @@ fun NoteSaveDialog(
                     color = Color.White,
                 )
 
-                val fileName = remember {
-                    mutableStateOf(presetFileName)
-                }
-
+                val fileName = remember { mutableStateOf(presetFileName) }
                 val focusManager = LocalFocusManager.current
-                val focusRequester = remember {
-                    FocusRequester()
-                }
-
-                val textFieldFocused = remember {
-                    mutableStateOf(false)
-                }
+                val focusRequester = remember { FocusRequester() }
+                val textFieldFocused = remember { mutableStateOf(false) }
 
                 val customTextSelectionColors = TextSelectionColors(
                     handleColor = Color.Gray,
