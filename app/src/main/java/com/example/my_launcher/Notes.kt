@@ -62,36 +62,19 @@ fun NotesPage(
     readFile: (file: File) -> String,
     dirContent: MutableList<MainActivity.CustomFile>,
 ) {
-    val interactionSource = remember {
-        MutableInteractionSource()
-    }
-
-    val text = remember {
-        mutableStateOf("")
-    }
-
-    val showSaveDialog = remember {
-        mutableStateOf(false)
-    }
-
-    val showDirMenu = remember {
-        mutableStateOf(false)
-    }
-
-    val textFieldFocused = remember {
-        mutableStateOf(false)
-    }
-
-    val presetFileName = remember {
-        mutableStateOf("")
-    }
+    val interactionSource = remember { MutableInteractionSource() }
+    val title = remember { mutableStateOf("") }
+    val text = remember { mutableStateOf("") }
+    val showSaveDialog = remember { mutableStateOf(false) }
+    val showDirMenu = remember { mutableStateOf(false) }
+    val textFieldFocused = remember { mutableStateOf(false) }
 
     if (showSaveDialog.value) {
         NoteSaveDialog(
             showDialog = showSaveDialog,
             noteContent = text.value,
             saveFile = saveFile,
-            presetFileName = presetFileName.value,
+            presetFileName = title.value,
         )
     }
 
@@ -119,9 +102,90 @@ fun NotesPage(
         ) {
             BasicTextField(
                 modifier = Modifier
-                    .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 50.dp)
+                    .padding(start = 20.dp, top = 20.dp, end = 20.dp)
+                    .fillMaxWidth()
+                    .height(70.dp)
+                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                    .focusRequester(focusRequester)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            textFieldFocused.value = true
+                            showDirMenu.value = false
+                        }
+                    }
+                    .background(Color.White),
+                value = title.value,
+                onValueChange = { it: String ->
+                    title.value = it
+                },
+                cursorBrush = Brush.verticalGradient(
+                    0.00f to Color.Black,
+                    0.15f to Color.Black,
+                    0.15f to Color.Black,
+                    0.75f to Color.Black,
+                    0.75f to Color.Black,
+                    1.00f to Color.Black,
+                ),
+                enabled = enabled.value,
+                textStyle = TextStyle(
+                    textAlign = TextAlign.Start,
+                    color = if (error.value) Color.Red else Color.Black,
+                    fontFamily = Typography.titleMedium.fontFamily,
+                    fontSize = Typography.titleMedium.fontSize,
+                    lineHeight = Typography.titleMedium.lineHeight,
+                    letterSpacing = Typography.titleMedium.letterSpacing,
+                ),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        textFieldFocused.value = false
+                    }
+                ),
+                singleLine = false,
+                maxLines = Int.MAX_VALUE,
+                visualTransformation = VisualTransformation.None,
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        if (title.value.isEmpty()) {
+                            Text(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart),
+                                text = "Title",
+                                textAlign = TextAlign.Left,
+                                fontFamily = FontFamily(roboto["italic"]!!),
+                                fontSize = Typography.titleMedium.fontSize,
+                                fontWeight = Typography.titleMedium.fontWeight,
+                                lineHeight = Typography.titleMedium.lineHeight,
+                                color = Color.Gray
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                            ) {
+                                innerTextField()
+                            }
+                        }
+                    }
+                },
+                onTextLayout = {},
+                interactionSource = interactionSource,
+                minLines = 1,
+            )
+
+            BasicTextField(
+                modifier = Modifier
+                    .padding(start = 20.dp, top = 90.dp, end = 20.dp, bottom = 50.dp)
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp))
                     .focusRequester(focusRequester)
                     .onFocusChanged {
                         if (it.isFocused) {
@@ -236,47 +300,6 @@ fun NotesPage(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Bottom,
             ) {
-                /*
-                * if (expanded.value) {
-                                            expanded.value = false
-                                            var startHidingItems = false
-                                            var startIndent = 0
-                                            for (it in dirContent) {
-                                                if (it.file == dir.file) {
-                                                    startIndent = dir.indent
-                                                    startHidingItems = true
-                                                    continue
-                                                }
-                                                if (it.indent <= startIndent) {
-                                                    startHidingItems = false
-                                                }
-                                                if (startHidingItems) {
-                                                    it.hidden = true
-                                                }
-                                            }
-                                        }
-                                        else {
-                                            expanded.value = true
-                                            var startShowingItems = false
-                                            var startIndent = 0
-                                            for (it in dirContent) {
-                                                if (it.file == dir.file) {
-                                                    startIndent = dir.indent
-                                                    startShowingItems = true
-                                                    continue
-                                                }
-                                                if (it.indent <= startIndent) {
-                                                    startShowingItems = false
-                                                }
-                                                if (startShowingItems) {
-                                                    it.hidden = false
-                                                }
-                                            }
-                                        }*/
-
-
-
-
                 dirContent.forEach { dir ->
                     val expanded = remember { mutableStateOf(true) }
                     if (!dir.hidden) {
@@ -287,7 +310,7 @@ fun NotesPage(
                                 .clickable {
                                     if (dir.file.isFile) {
                                         text.value = readFile(dir.file)
-                                        presetFileName.value = dir.file.nameWithoutExtension
+                                        title.value = dir.file.nameWithoutExtension
                                         showDirMenu.value = false
                                     }
                                     else {
@@ -332,7 +355,7 @@ fun NotesPage(
                             .size(50.dp)
                             .clickable {
                                 text.value = ""
-                                presetFileName.value = ""
+                                title.value = ""
                                 showDirMenu.value = !showDirMenu.value
                             },
                         painter = painterResource(R.drawable.plus),
