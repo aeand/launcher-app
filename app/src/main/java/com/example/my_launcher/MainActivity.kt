@@ -179,7 +179,7 @@ class MainActivity: ComponentActivity() {
     private lateinit var options: Bundle
     private lateinit var hostView: MutableState<AppWidgetHostView>
 
-    private var files: MutableList<File> = mutableStateListOf()
+    private var files: MutableList<DirectoryFile> = mutableStateListOf()
 
     class DirectoryFile(a: File, b: Int) {
         val file = a
@@ -525,28 +525,29 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    private fun fetchFiles(path: String = ""): MutableList<File> {
+    private fun fetchFiles(path: String = ""): MutableList<DirectoryFile> {
         val dir = File(applicationContext.getExternalFilesDir(null), path).listFiles()
+        val dirLevel = path.count { it == '/' } + 1
 
         dir?.sortWith { a, b ->
             a.name.uppercase().compareTo(b.name.uppercase())
             a.isFile.compareTo(b.isFile)
         }
 
-        val dirs = mutableListOf<MutableList<File>>()
+        val dirs = mutableListOf<MutableList<DirectoryFile>>()
         dir?.forEach {
-            dirs.add(mutableListOf(it))
+            dirs.add(mutableListOf(DirectoryFile(it, dirLevel)))
         }
 
         dirs.forEach { list ->
-            if (!list[0].isFile) {
-                fetchFiles("$path/${list[0].name}").forEach {
-                    list.add(it)
+            if (!list[0].file.isFile) {
+                fetchFiles("$path/${list[0].file.name}").forEach {
+                    list.add(DirectoryFile(it.file, dirLevel))
                 }
             }
         }
 
-        var result = mutableListOf<File>()
+        var result = mutableListOf<DirectoryFile>()
         dirs.forEach { i ->
             result = (result + i).toMutableList()
         }

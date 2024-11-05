@@ -60,7 +60,7 @@ fun NotesPage(
     textColor: Color,
     saveFile: (name: String, folder: String, content: String) -> Unit,
     readFile: (file: File) -> String,
-    dirContent: MutableList<File>,
+    dirContent: MutableList<MainActivity.DirectoryFile>,
 ) {
     val interactionSource = remember {
         MutableInteractionSource()
@@ -107,7 +107,6 @@ fun NotesPage(
         LaunchedEffect(enabled) {
             focusManager.clearFocus()
             textFieldFocused.value = false
-            //TODO showDirMenu.value = false
         }
 
         val customTextSelectionColors = TextSelectionColors(
@@ -243,9 +242,9 @@ fun NotesPage(
                             .fillMaxWidth()
                             .height(50.dp)
                             .clickable {
-                                if (dir.isFile) {
-                                    text.value = readFile(dir)
-                                    presetFileName.value = dir.nameWithoutExtension
+                                if (dir.file.isFile) {
+                                    text.value = readFile(dir.file)
+                                    presetFileName.value = dir.file.nameWithoutExtension
                                     showDirMenu.value = false
                                 }
                                 else {
@@ -258,15 +257,15 @@ fun NotesPage(
                         Icon(
                             modifier = Modifier
                                 .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                            painter = painterResource(if (dir.isFile) R.drawable.file else R.drawable.folder),
+                            painter = painterResource(if (dir.file.isFile) R.drawable.file else R.drawable.folder),
                             contentDescription = null,
                             tint = Color.Black,
                         )
 
-                        Text( //TODO what if the file has a mega name. Will it fit?
+                        Text(
                             modifier = Modifier
                                 .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
-                            text = if (dir.isFile) dir.nameWithoutExtension else dir.name,
+                            text = if (dir.file.isFile) dir.file.nameWithoutExtension else dir.file.name,
                             color = textColor,
                             fontFamily = Typography.bodyLarge.fontFamily,
                             fontSize = Typography.bodyLarge.fontSize,
