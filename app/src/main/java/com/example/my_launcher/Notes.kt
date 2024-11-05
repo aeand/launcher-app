@@ -153,6 +153,7 @@ fun NotesPage(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .padding(start = 10.dp, top = 10.dp, end = 10.dp)
                     ) {
                         if (title.value.isEmpty()) {
                             Text(
@@ -233,6 +234,7 @@ fun NotesPage(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
                     ) {
                         if (text.value.isEmpty()) {
                             Text(

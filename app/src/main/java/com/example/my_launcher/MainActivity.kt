@@ -84,7 +84,6 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 - add auto saving every like 10 sec
 - save before switching
 - close dir menu when swiping away
-- add a slight padding to textfields
 - update file list after save. Currently doesn't do anything
 */
 
