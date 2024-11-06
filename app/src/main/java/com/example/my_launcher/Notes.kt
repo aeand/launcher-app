@@ -49,7 +49,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -60,16 +59,21 @@ fun NotesPage(
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
-    saveFile: (name: String, folder: String, content: String, showToast: Boolean) -> Unit,
+    saveFile: (name: String, path: String, content: String, showToast: Boolean) -> Unit,
     readFile: (file: File) -> String,
+    saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
     files: List<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val title = remember { mutableStateOf("") }
-    val text = remember { mutableStateOf("") }
-    val showSaveDialog = remember { mutableStateOf(false) }
-    val showDirMenu = remember { mutableStateOf(false) }
     val textFieldFocused = remember { mutableStateOf(false) }
+
+    val title = remember { mutableStateOf("") }
+    val path = remember { mutableStateOf("") }
+    val text = remember { mutableStateOf("") }
+
+    val showDirMenu = remember { mutableStateOf(false) }
+    val showSaveFileDialog = remember { mutableStateOf(false) }
+    val showSaveFolderDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(text.value) {
         this.launch {
@@ -80,12 +84,20 @@ fun NotesPage(
         }
     }
 
-    if (showSaveDialog.value) {
-        NoteSaveDialog(
-            showDialog = showSaveDialog,
+    if (showSaveFileDialog.value) {
+        DialogSaveFile(
+            showDialog = showSaveFileDialog,
             noteContent = text.value,
             saveFile = saveFile,
             presetFileName = title.value,
+            presetPath = path.value,
+        )
+    }
+
+    if (showSaveFolderDialog.value) {
+        DialogSaveFolder(
+            saveFolder = saveFolder,
+            showDialog = showSaveFolderDialog
         )
     }
 
@@ -277,7 +289,7 @@ fun NotesPage(
                 .clickable {
                     focusManager.clearFocus()
                     textFieldFocused.value = false
-                    showSaveDialog.value = true
+                    showSaveFileDialog.value = true
                 },
             text = "Save",
             color = textColor,
@@ -292,7 +304,9 @@ fun NotesPage(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(50.dp)
-                    .clickable { showDirMenu.value = !showDirMenu.value },
+                    .clickable {
+                        showDirMenu.value = !showDirMenu.value
+                    },
                 painter = painterResource(R.drawable.burger_menu),
                 contentDescription = null,
                 tint = Color.White
@@ -320,12 +334,15 @@ fun NotesPage(
                                 val file = files.find { it.file.nameWithoutExtension == title.value }
                                 if (text.value != "") {
                                     if (file == null || readFile(file.file) != text.value) {
-                                        showSaveDialog.value = true
+                                        showSaveFileDialog.value = true
                                     }
                                 }
-                                if (text.value == "" || !showSaveDialog.value) {
+                                if (text.value == "" || !showSaveFileDialog.value) {
                                     text.value = readFile(autoSaveFile.file)
                                     title.value = "tmpfileforautosave"
+                                    val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
+                                    path.value = autoSaveFile.file.path.replace(appPath, "").replace(autoSaveFile.file.name, "")
+                                    println(path.value)
                                     showDirMenu.value = false
                                 }
                             },
@@ -371,16 +388,16 @@ fun NotesPage(
                                             if (text.value != "") {
                                                 val match = files.find { it.file.nameWithoutExtension == title.value }
                                                 if (match == null || readFile(match.file) != text.value) {
-                                                    showSaveDialog.value = true
+                                                    showSaveFileDialog.value = true
                                                 }
                                             }
-                                            if (text.value == "" || !showSaveDialog.value) {
+                                            if (text.value == "" || !showSaveFileDialog.value) {
                                                 text.value = readFile(file.file)
                                                 title.value = file.file.nameWithoutExtension
                                                 showDirMenu.value = false
                                             }
                                         }
-                                        else {
+                                        else if (file.file.isDirectory) {
                                             expanded.value = !expanded.value
                                             file.children?.forEach { child ->
                                                 files.find { child.file == it.file }?.hidden = !expanded.value
@@ -424,9 +441,22 @@ fun NotesPage(
                             .clickable {
                                 text.value = ""
                                 title.value = ""
+                                path.value = ""
                                 showDirMenu.value = !showDirMenu.value
                             },
                         painter = painterResource(R.drawable.plus),
+                        contentDescription = null,
+                        tint = Color.White,
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clickable {
+                                showDirMenu.value = !showDirMenu.value
+                                showSaveFolderDialog.value = true
+                            },
+                        painter = painterResource(R.drawable.folder),
                         contentDescription = null,
                         tint = Color.White,
                     )
@@ -447,185 +477,3 @@ fun NotesPage(
     }
 }
 
-@Composable
-fun NoteSaveDialog(
-    showDialog: MutableState<Boolean>,
-    noteContent: String,
-    saveFile: (name: String, folder: String, content: String, showToast: Boolean) -> Unit,
-    presetFileName: String,
-) {
-    Box(
-        modifier = Modifier
-            .zIndex(1f)
-            .fillMaxSize()
-            .clickable {
-                showDialog.value = false
-            },
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .width(300.dp)
-                .height(400.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.DarkGray),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(30.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    text = "Save note",
-                    fontFamily = Typography.bodyMedium.fontFamily,
-                    fontSize = Typography.bodyMedium.fontSize,
-                    fontWeight = Typography.bodyMedium.fontWeight,
-                    lineHeight = Typography.bodyMedium.lineHeight,
-                    color = Color.White,
-                )
-
-                val fileName = remember { mutableStateOf(presetFileName) }
-                val focusManager = LocalFocusManager.current
-                val focusRequester = remember { FocusRequester() }
-                val textFieldFocused = remember { mutableStateOf(false) }
-
-                val customTextSelectionColors = TextSelectionColors(
-                    handleColor = Color.Gray,
-                    backgroundColor = Color.DarkGray
-                )
-
-                CompositionLocalProvider(
-                    LocalTextSelectionColors provides customTextSelectionColors
-                ) {
-                    BasicTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .focusRequester(focusRequester)
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    textFieldFocused.value = true
-                                }
-                            }
-                            .background(Color.White),
-                        value = fileName.value,
-                        onValueChange = { it: String ->
-                            fileName.value = it
-                        },
-                        cursorBrush = Brush.verticalGradient(
-                            0.00f to Color.Black,
-                            0.15f to Color.Black,
-                            0.15f to Color.Black,
-                            0.75f to Color.Black,
-                            0.75f to Color.Black,
-                            1.00f to Color.Black,
-                        ),
-                        textStyle = TextStyle(
-                            textAlign = TextAlign.Start,
-                            color = Color.Black,
-                            fontFamily = Typography.titleMedium.fontFamily,
-                            fontSize = Typography.titleMedium.fontSize,
-                            lineHeight = Typography.titleMedium.lineHeight,
-                            letterSpacing = Typography.titleMedium.letterSpacing,
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.None,
-                            autoCorrectEnabled = false,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                                textFieldFocused.value = false
-                            }
-                        ),
-                        singleLine = true,
-                        maxLines = 1,
-                        visualTransformation = VisualTransformation.None,
-                        decorationBox = { innerTextField ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                            ) {
-                                if (fileName.value.isEmpty()) {
-                                    Text(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterStart),
-                                        text = "Name the file",
-                                        textAlign = TextAlign.Left,
-                                        fontFamily = FontFamily(
-                                            Font(R.font.roboto_italic)
-                                        ),
-                                        fontSize = Typography.titleMedium.fontSize,
-                                        fontWeight = Typography.titleMedium.fontWeight,
-                                        lineHeight = Typography.titleMedium.lineHeight,
-                                        color = Color.Gray
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterStart)
-                                    ) {
-                                        innerTextField()
-                                    }
-                                }
-                            }
-                        },
-                    )
-                }
-
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    text = "to: [implement dir picker]",
-                    fontFamily = Typography.bodyMedium.fontFamily,
-                    fontSize = Typography.bodyMedium.fontSize,
-                    fontWeight = Typography.bodyMedium.fontWeight,
-                    lineHeight = Typography.bodyMedium.lineHeight,
-                    color = Color.White,
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .clickable {
-                                showDialog.value = false
-                            },
-                        text = "Cancel",
-                        fontFamily = Typography.bodyMedium.fontFamily,
-                        fontSize = Typography.bodyMedium.fontSize,
-                        fontWeight = Typography.bodyMedium.fontWeight,
-                        lineHeight = Typography.bodyMedium.lineHeight,
-                        color = Color.White,
-                    )
-
-                    Text(
-                        modifier = Modifier
-                            .clickable {
-                                if (fileName.value.isNotEmpty()) {
-                                    saveFile(fileName.value, "", noteContent, true)
-                                    showDialog.value = false
-                                }
-                            },
-                        text = "Save",
-                        fontFamily = Typography.bodyMedium.fontFamily,
-                        fontSize = Typography.bodyMedium.fontSize,
-                        fontWeight = Typography.bodyMedium.fontWeight,
-                        lineHeight = Typography.bodyMedium.lineHeight,
-                        color = if (fileName.value.isNotEmpty()) Color.White else Color.Gray,
-                    )
-                }
-            }
-        }
-    }
-}

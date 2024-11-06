@@ -1,8 +1,10 @@
 package com.example.my_launcher
 
+import android.R.attr.bitmap
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
+import android.R.attr.mode
 import android.R.attr.value
 import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHost
@@ -16,9 +18,11 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -30,6 +34,8 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -39,6 +45,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -62,6 +69,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -83,7 +93,8 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 /* TODO Notes
 - add override dialog that will handle saving file with same name as other file
 - press and hold to delete/move notes in directory
-- add folder button
+- store notes in folder in root
+- reload files when opening dir menu
 */
 
 /* Intent list that would be useful
@@ -449,8 +460,9 @@ class MainActivity: ComponentActivity() {
                 error = error,
                 enabled = enabled,
                 textColor = textColor,
-                saveFile = ::saveNote,
-                readFile = ::readNote,
+                saveFile = ::saveFile,
+                readFile = ::readFile,
+                saveFolder = ::saveFolder,
                 files = files,
             )
         }
@@ -462,10 +474,30 @@ class MainActivity: ComponentActivity() {
         widgetHost.deleteAppWidgetId(widgetId)
     }
 
-    private fun saveNote(name: String, folder: String = "", content: String, showToast: Boolean = true) {
+    private fun saveFolder(name: String, path: String = "", showToast: Boolean = true) {
+        val folder = File(applicationContext.getExternalFilesDir(null), path + name)
+
+        if (!folder.exists()) {
+            if (!folder.mkdir()) {
+                println("ERROR Cannot create a directory!")
+            } else {
+                folder.mkdirs()
+            }
+        }
+
+        files.clear()
+        getFiles().forEach {
+            files.add(it)
+        }
+
+        if (showToast)
+            Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveFile(name: String, folder: String = "", content: String, showToast: Boolean = true) {
         val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
         letDirectory.mkdirs()
-        val file = File(letDirectory, "$name.txt")
+        val file = File(letDirectory, "$name.txt") //TODO .exists()
         file.writeText(content)
         files.clear()
         getFiles().forEach {
@@ -475,7 +507,7 @@ class MainActivity: ComponentActivity() {
             Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
 
-    private fun readNote(file: File): String {
+    private fun readFile(file: File): String {
         return FileInputStream(file).bufferedReader().use {
             it.readText()
         }
