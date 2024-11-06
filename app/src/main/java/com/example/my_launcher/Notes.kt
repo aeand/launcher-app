@@ -59,7 +59,8 @@ fun NotesPage(
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
-    saveFile: (name: String, path: String, content: String, showToast: Boolean) -> Unit,
+    saveFile: (name: String, path: String, content: String, showToast: Boolean) -> Boolean,
+    saveFileOverride: (name: String, path: String, content: String, showToast: Boolean) -> Unit,
     readFile: (file: File) -> String,
     saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
     files: List<MainActivity.CustomFile>,
@@ -74,6 +75,7 @@ fun NotesPage(
     val showDirMenu = remember { mutableStateOf(false) }
     val showSaveFileDialog = remember { mutableStateOf(false) }
     val showSaveFolderDialog = remember { mutableStateOf(false) }
+    val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(text.value) {
         this.launch {
@@ -86,9 +88,16 @@ fun NotesPage(
 
     if (showSaveFileDialog.value) {
         DialogSaveFile(
-            showDialog = showSaveFileDialog,
-            noteContent = text.value,
-            saveFile = saveFile,
+            confirm = { name: String, folderPath: String ->
+                if (!saveFile(name, folderPath, text.value, true)) {
+                    showSaveFileOverrideDialog.value = true
+                }
+
+                showSaveFileDialog.value = false
+            },
+            cancel = {
+                showSaveFileDialog.value = false
+            },
             presetFileName = title.value,
             presetPath = path.value,
         )
@@ -96,8 +105,26 @@ fun NotesPage(
 
     if (showSaveFolderDialog.value) {
         DialogSaveFolder(
-            saveFolder = saveFolder,
-            showDialog = showSaveFolderDialog
+            confirm = { folderName: String, folderPath: String ->
+                saveFolder(folderName, folderPath, true)
+                showSaveFolderDialog.value = false
+            },
+            cancel = {
+                showSaveFolderDialog.value = false
+            },
+        )
+    }
+
+    if (showSaveFileOverrideDialog.value) {
+        DialogOverride(
+            confirm = {
+                saveFileOverride(title.value, path.value, text.value, true)
+                showSaveFileOverrideDialog.value = false
+            },
+            cancel = {
+                showSaveFileDialog.value = false
+                showSaveFileOverrideDialog.value = false
+            },
         )
     }
 
@@ -367,7 +394,6 @@ fun NotesPage(
                         )
                     }
                 }
-
 
                 Column(
                     modifier = Modifier

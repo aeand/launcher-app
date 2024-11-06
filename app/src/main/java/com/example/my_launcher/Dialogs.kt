@@ -45,15 +45,15 @@ import androidx.compose.ui.zIndex
 
 @Composable
 fun DialogSaveFolder(
-    saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
-    showDialog: MutableState<Boolean>
+    confirm: (name: String, path: String) -> Unit,
+    cancel: () -> Unit,
 ) {
     Box(
         modifier = Modifier
             .zIndex(1f)
             .fillMaxSize()
             .clickable {
-                showDialog.value = false
+                cancel()
             },
     ) {
         val interactionSource = remember { MutableInteractionSource() }
@@ -274,7 +274,7 @@ fun DialogSaveFolder(
                     Text(
                         modifier = Modifier
                             .clickable {
-                                showDialog.value = false
+                                cancel()
                             },
                         text = "Cancel",
                         fontFamily = Typography.bodyMedium.fontFamily,
@@ -288,8 +288,7 @@ fun DialogSaveFolder(
                         modifier = Modifier
                             .clickable {
                                 if (fileName.value.isNotEmpty()) {
-                                    saveFolder(fileName.value, pathName.value, true)
-                                    showDialog.value = false
+                                    confirm(fileName.value, pathName.value)
                                 }
                             },
                         text = "Save",
@@ -307,9 +306,8 @@ fun DialogSaveFolder(
 
 @Composable
 fun DialogSaveFile(
-    showDialog: MutableState<Boolean>,
-    noteContent: String,
-    saveFile: (name: String, folder: String, content: String, showToast: Boolean) -> Unit,
+    confirm: (name: String, folder: String) -> Unit,
+    cancel: () -> Unit,
     presetFileName: String,
     presetPath: String,
 ) {
@@ -318,7 +316,7 @@ fun DialogSaveFile(
             .zIndex(1f)
             .fillMaxSize()
             .clickable {
-                showDialog.value = false
+                cancel()
             },
     ) {
         val interactionSource = remember { MutableInteractionSource() }
@@ -539,7 +537,7 @@ fun DialogSaveFile(
                     Text(
                         modifier = Modifier
                             .clickable {
-                                showDialog.value = false
+                                cancel()
                             },
                         text = "Cancel",
                         fontFamily = Typography.bodyMedium.fontFamily,
@@ -553,8 +551,8 @@ fun DialogSaveFile(
                         modifier = Modifier
                             .clickable {
                                 if (fileName.value.isNotEmpty()) {
-                                    saveFile(fileName.value, pathName.value, noteContent, true)
-                                    showDialog.value = false
+                                    confirm(fileName.value, pathName.value)
+                                    cancel()
                                 }
                             },
                         text = "Save",
@@ -563,6 +561,85 @@ fun DialogSaveFile(
                         fontWeight = Typography.bodyMedium.fontWeight,
                         lineHeight = Typography.bodyMedium.lineHeight,
                         color = if (fileName.value.isNotEmpty()) Color.White else Color.Gray,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DialogOverride(
+    confirm: () -> Unit,
+    cancel: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .zIndex(1f)
+            .fillMaxSize()
+            .clickable {
+                cancel()
+            },
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .width(300.dp)
+                .height(400.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(interactionSource = interactionSource, indication = null) {  }
+                .background(Color.DarkGray),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(30.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    text = "Override note",
+                    fontFamily = Typography.bodyMedium.fontFamily,
+                    fontSize = Typography.bodyMedium.fontSize,
+                    fontWeight = Typography.bodyMedium.fontWeight,
+                    lineHeight = Typography.bodyMedium.lineHeight,
+                    color = Color.White,
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                cancel()
+                            },
+                        text = "Cancel",
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontSize = Typography.bodyMedium.fontSize,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        lineHeight = Typography.bodyMedium.lineHeight,
+                        color = Color.White,
+                    )
+
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                confirm()
+                            },
+                        text = "Save",
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontSize = Typography.bodyMedium.fontSize,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        lineHeight = Typography.bodyMedium.lineHeight,
+                        color = Color.White,
                     )
                 }
             }

@@ -461,6 +461,7 @@ class MainActivity: ComponentActivity() {
                 enabled = enabled,
                 textColor = textColor,
                 saveFile = ::saveFile,
+                saveFileOverride = ::overrideFile,
                 readFile = ::readFile,
                 saveFolder = ::saveFolder,
                 files = files,
@@ -494,17 +495,40 @@ class MainActivity: ComponentActivity() {
             Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
     }
 
-    private fun saveFile(name: String, folder: String = "", content: String, showToast: Boolean = true) {
+    private fun overrideFile(name: String, folder: String, content: String, showToast: Boolean = true) {
         val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
         letDirectory.mkdirs()
-        val file = File(letDirectory, "$name.txt") //TODO .exists()
+        val file = File(letDirectory, "$name.txt")
         file.writeText(content)
+
         files.clear()
         getFiles().forEach {
             files.add(it)
         }
+
         if (showToast)
             Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveFile(name: String, folder: String = "", content: String, showToast: Boolean = true): Boolean {
+        val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
+        letDirectory.mkdirs()
+        val file = File(letDirectory, "$name.txt")
+        if (file.exists()) {
+            return false
+        }
+
+        file.writeText(content)
+
+        files.clear()
+        getFiles().forEach {
+            files.add(it)
+        }
+
+        if (showToast)
+            Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
+
+        return true
     }
 
     private fun readFile(file: File): String {
