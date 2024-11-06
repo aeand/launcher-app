@@ -82,7 +82,6 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 /* TODO Notes
 - press and hold to delete/move notes in directory
 - store notes in folder in root
-- reload files when opening dir menu
 */
 
 /* Intent list that would be useful
