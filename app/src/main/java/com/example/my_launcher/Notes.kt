@@ -395,6 +395,8 @@ fun NotesPage(
                                                 text.value = readFile(file.file)
                                                 title.value = file.file.nameWithoutExtension
                                                 showDirMenu.value = false
+                                                val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
+                                                path.value = file.file.path.replace(appPath, "").replace(file.file.name, "")
                                             }
                                         }
                                         else if (file.file.isDirectory) {
