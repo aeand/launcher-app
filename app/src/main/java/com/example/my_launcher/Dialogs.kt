@@ -286,9 +286,7 @@ fun DialogSaveFolder(
                     Text(
                         modifier = Modifier
                             .clickable {
-                                if (fileName.value.isNotEmpty()) {
-                                    confirm(fileName.value, pathName.value)
-                                }
+                                confirm(fileName.value, pathName.value)
                             },
                         text = "Save",
                         fontFamily = Typography.bodyMedium.fontFamily,

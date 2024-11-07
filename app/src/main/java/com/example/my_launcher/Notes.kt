@@ -89,11 +89,13 @@ fun NotesPage(
     if (showSaveFileDialog.value) {
         DialogSaveFile(
             confirm = { name: String, folderPath: String ->
-                if (!saveFile(name, folderPath, text.value, true)) {
-                    showSaveFileOverrideDialog.value = true
-                }
+                if (name.isNotEmpty()) {
+                    if (!saveFile(name, folderPath, text.value, true)) {
+                        showSaveFileOverrideDialog.value = true
+                    }
 
-                showSaveFileDialog.value = false
+                    showSaveFileDialog.value = false
+                }
             },
             cancel = {
                 showSaveFileDialog.value = false
