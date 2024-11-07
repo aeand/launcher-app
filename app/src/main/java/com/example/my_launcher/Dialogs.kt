@@ -584,7 +584,7 @@ fun DialogOverride(
             modifier = Modifier
                 .align(Alignment.Center)
                 .width(300.dp)
-                .height(400.dp)
+                .height(200.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .clickable(interactionSource = interactionSource, indication = null) {  }
                 .background(Color.DarkGray),
