@@ -1,7 +1,18 @@
 package com.example.my_launcher
 
+import android.content.ClipData
+import android.content.ClipDescription
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.draganddrop.dragAndDropSource
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.gestures.DraggableState
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,16 +40,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragAndDropTransferData
+import androidx.compose.ui.draganddrop.mimeTypes
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -48,11 +68,17 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+import java.nio.file.Files
+import java.time.LocalDateTime
+import java.time.temporal.TemporalQueries.offset
+import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NotesPage(
     modifier: Modifier,
@@ -63,6 +89,7 @@ fun NotesPage(
     saveFileOverride: (name: String, path: String, content: String, showToast: Boolean) -> Unit,
     readFile: (file: File) -> String,
     saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
+    moveFile: (sourceFileName: String, sourceFilePath: String, targetFile: MainActivity.CustomFile) -> Boolean,
     files: List<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -76,6 +103,8 @@ fun NotesPage(
     val showSaveFileDialog = remember { mutableStateOf(false) }
     val showSaveFolderDialog = remember { mutableStateOf(false) }
     val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
+
+    val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
 
     LaunchedEffect(text.value) {
         this.launch {
@@ -343,6 +372,8 @@ fun NotesPage(
         }
 
         if (showDirMenu.value) {
+            val context = LocalContext.current
+
             Box(
                 modifier = Modifier
                     .width(200.dp)
@@ -351,6 +382,27 @@ fun NotesPage(
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color.DarkGray)
                     .clickable (interactionSource = interactionSource, indication = null) {}
+                    .dragAndDropTarget(
+                        shouldStartDragAndDrop = { event ->
+                            event
+                                .mimeTypes()
+                                .contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
+                        },
+                        target = remember {
+                            object: DragAndDropTarget {
+                                override fun onDrop(event: DragAndDropEvent): Boolean {
+                                    val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
+                                    val draggedFileName = draggedFilePath.takeLastWhile { it != '/' }
+                                    return moveFile(draggedFileName, draggedFilePath, MainActivity.CustomFile(
+                                        file = File(context.getExternalFilesDir(null), ""),
+                                        children = null,
+                                        indent = 1,
+                                        hidden = true
+                                    ))
+                                }
+                            }
+                        },
+                    )
             ) {
                 val autoSaveFile = files.find { it.file.nameWithoutExtension == "tmpfileforautosave" }
                 if (autoSaveFile != null) {
@@ -369,9 +421,7 @@ fun NotesPage(
                                 if (text.value == "" || !showSaveFileDialog.value) {
                                     text.value = readFile(autoSaveFile.file)
                                     title.value = "tmpfileforautosave"
-                                    val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
                                     path.value = autoSaveFile.file.path.replace(appPath, "").replace(autoSaveFile.file.name, "")
-                                    println(path.value)
                                     showDirMenu.value = false
                                 }
                             },
@@ -404,43 +454,72 @@ fun NotesPage(
                         .verticalScroll(rememberScrollState())
                 ) {
                     files.forEach { file ->
-                        val expanded = remember { mutableStateOf(true) }
-
                         if (!file.hidden && file.file.nameWithoutExtension != "tmpfileforautosave") {
+                            val expanded = remember { mutableStateOf(true) }
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp)
-                                    .clickable {
-                                        if (file.file.isFile) {
-                                            if (text.value != "") {
-                                                val match = files.find { it.file.nameWithoutExtension == title.value }
-                                                if (match == null || readFile(match.file) != text.value) {
-                                                    showSaveFileDialog.value = true
+                                    .dragAndDropSource {
+                                        detectTapGestures(
+                                            onTap = {
+                                                if (file.file.isFile) {
+                                                    if (text.value != "") {
+                                                        val match = files.find { it.file.nameWithoutExtension == title.value }
+                                                        if (match == null || readFile(match.file) != text.value) {
+                                                            showSaveFileDialog.value = true
+                                                        }
+                                                    }
+                                                    if (text.value == "" || !showSaveFileDialog.value) {
+                                                        text.value = readFile(file.file)
+                                                        title.value = file.file.nameWithoutExtension
+                                                        showDirMenu.value = false
+                                                        path.value = file.file.path.replace(appPath, "").replace(file.file.name, "")
+                                                    }
+                                                }
+                                                else if (file.file.isDirectory) {
+                                                    expanded.value = !expanded.value
+                                                    file.children?.forEach { child ->
+                                                        files.find { child.file == it.file }?.hidden = !expanded.value
+                                                    }
+                                                }
+                                            },
+                                            onLongPress = { offset ->
+                                                startTransfer(
+                                                    transferData = DragAndDropTransferData(
+                                                        clipData = ClipData.newPlainText(
+                                                            file.file.name,
+                                                            file.file.path,
+                                                        )
+                                                    )
+                                                )
+                                            }
+                                        )
+                                    }
+                                    .dragAndDropTarget(
+                                        shouldStartDragAndDrop = { event ->
+                                            event
+                                                .mimeTypes()
+                                                .contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
+                                        },
+                                        target = remember {
+                                            object: DragAndDropTarget {
+                                                override fun onDrop(event: DragAndDropEvent): Boolean {
+                                                    val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
+                                                    val draggedFileName = draggedFilePath.takeLastWhile { it != '/' }
+                                                    return moveFile(draggedFileName, draggedFilePath, file)
                                                 }
                                             }
-                                            if (text.value == "" || !showSaveFileDialog.value) {
-                                                text.value = readFile(file.file)
-                                                title.value = file.file.nameWithoutExtension
-                                                showDirMenu.value = false
-                                                val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
-                                                path.value = file.file.path.replace(appPath, "").replace(file.file.name, "")
-                                            }
-                                        }
-                                        else if (file.file.isDirectory) {
-                                            expanded.value = !expanded.value
-                                            file.children?.forEach { child ->
-                                                files.find { child.file == it.file }?.hidden = !expanded.value
-                                            }
-                                        }
-                                    },
+                                        },
+                                    )
                             ) {
                                 Icon(
                                     modifier = Modifier
                                         .padding(start = (5 * file.indent).dp, top = 10.dp, bottom = 10.dp),
                                     painter = painterResource(if (file.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
                                     contentDescription = null,
-                                    tint = Color.Black,
+                                    tint = Color.White,
                                 )
 
                                 Text(
