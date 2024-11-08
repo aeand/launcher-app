@@ -516,20 +516,16 @@ class MainActivity: ComponentActivity() {
     private fun moveFile(sourceFileName: String, sourceFilePath: String, targetFile: CustomFile): Boolean {
         val sourceFile = files.find { it.file.name == sourceFileName &&  it.file.path == sourceFilePath } ?: return false
         val rootPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
-        //TODO I managed to turn a txt file into a folder. Probably by messing up the copy path
 
         if (sourceFile.file.isFile) {
             if (targetFile.file.isFile) {
-                // move source file to taget files directory
                 val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
-                // check if paths are the same
                 if (sourceFile.file.path.replace("/${sourceFile.file.name}", "") == targetFilePath) {
                     println("file and file have the same name")
                     return false
                 }
 
-                // check if FILE names are named like source file (files and folders should be able to have the same name, I think, yes)
                 val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "")).listFiles()
                 if (filesInPath == null) {
                     println("found no files in ${rootPath + targetFile.file.path}")
@@ -562,11 +558,6 @@ class MainActivity: ComponentActivity() {
                 }
             }
             else if (targetFile.file.isDirectory) {
-                // move source file into the target folder
-                // get target path + name
-                val targetFilePath = targetFile.file.path
-
-                // check the targets children for same names
                 targetFile.children?.forEach {
                     if (sourceFile.file.name == it.file.name && it.file.isFile) {
                         println("found file with same name as source file")
@@ -575,8 +566,8 @@ class MainActivity: ComponentActivity() {
                 }
 
                 try {
-                    println("attempt copy to: $targetFilePath/${sourceFile.file.name}")
-                    sourceFile.file.copyTo(File("$targetFilePath/${sourceFile.file.name}"))
+                    println("attempt copy to: ${targetFile.file.path}/${sourceFile.file.name}")
+                    sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
                     try {
                         println("attempt delete")
                         sourceFile.file.delete()
@@ -599,11 +590,8 @@ class MainActivity: ComponentActivity() {
         }
         else if (sourceFile.file.isDirectory) {
             if (targetFile.file.isFile) {
-                // move source folder into the same path as target file
-                // get target path without target file name
                 val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
-                // check for same named FOLDERS in target path (files and folders should be able to have the same name, I think, yes)
                 val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "")).listFiles()
                 if (filesInPath == null) {
                     println("found no files in ${rootPath + targetFile.file.path}")
@@ -636,11 +624,6 @@ class MainActivity: ComponentActivity() {
                 }
             }
             else if (targetFile.file.isDirectory) {
-                // move source folder into the FULL path of target folder
-                // get target path with name
-                val targetFilePath = targetFile.file.path
-
-                // check for duplicate names in children of target folder
                 targetFile.children?.forEach {
                     if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
                         println("target folder contains folder with the same name as source folder")
@@ -648,8 +631,8 @@ class MainActivity: ComponentActivity() {
                 }
 
                 try {
-                    println("attempt copy to: $targetFilePath/${sourceFile.file.name}")
-                    sourceFile.file.copyTo(File("$targetFilePath/${sourceFile.file.name}"))
+                    println("attempt copy to: $targetFile.file.path/${sourceFile.file.name}")
+                    sourceFile.file.copyTo(File("$targetFile.file.path/${sourceFile.file.name}"))
                     try {
                         println("attempt delete")
                         sourceFile.file.delete()
