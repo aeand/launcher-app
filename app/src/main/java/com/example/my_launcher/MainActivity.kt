@@ -631,8 +631,8 @@ class MainActivity: ComponentActivity() {
                 }
 
                 try {
-                    println("attempt copy to: $targetFile.file.path/${sourceFile.file.name}")
-                    sourceFile.file.copyTo(File("$targetFile.file.path/${sourceFile.file.name}"))
+                    println("attempt copy to: ${targetFile.file.path}/${sourceFile.file.name}")
+                    sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
                     try {
                         println("attempt delete")
                         sourceFile.file.delete()
