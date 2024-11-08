@@ -80,7 +80,7 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- press and hold to delete/move notes in directory
+- press and hold to select and delete in directory
 - store notes in folder in root
 */
 
