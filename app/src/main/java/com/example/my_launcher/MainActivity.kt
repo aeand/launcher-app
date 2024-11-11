@@ -631,9 +631,12 @@ class MainActivity: ComponentActivity() {
                     copyFileAndChildren(sourceFile, targetFilePath)
                 }
                 else if (targetFile.file.isDirectory) {
-                    targetFile.children?.forEach {
-                        if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
-                            println("target folder contains folder with the same name as source folder")
+                    if (sourceFile.children != null) {
+                        for (it in sourceFile.children) {
+                            if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
+                                println("target folder contains folder with the same name as source folder")
+                                return@forEach
+                            }
                         }
                     }
 
