@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -64,6 +65,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileNotFoundException
+
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -72,11 +76,12 @@ fun NotesPage(
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
+    updateFiles: () -> Unit,
     saveFile: (name: String, path: String, content: String, showToast: Boolean) -> Boolean,
     saveFileOverride: (name: String, path: String, content: String, showToast: Boolean) -> Unit,
     readFile: (file: File) -> String,
     saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
-    moveFile: (sourceFileName: String, sourceFilePath: String, targetFile: MainActivity.CustomFile) -> Boolean,
+    moveFile: (sourceFilePaths: String, targetFile: MainActivity.CustomFile) -> Unit,
     files: List<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -350,6 +355,7 @@ fun NotesPage(
                     .align(Alignment.BottomEnd)
                     .size(50.dp)
                     .clickable {
+                        updateFiles()
                         showDirMenu.value = !showDirMenu.value
                     },
                 painter = painterResource(R.drawable.burger_menu),
@@ -360,6 +366,7 @@ fun NotesPage(
 
         if (showDirMenu.value) {
             val context = LocalContext.current
+            val selectedItems = remember { mutableStateListOf<String>() }
 
             Box(
                 modifier = Modifier
@@ -368,7 +375,7 @@ fun NotesPage(
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
                     .background(Color.DarkGray)
-                    .clickable (interactionSource = interactionSource, indication = null) {}
+                    .clickable(interactionSource = interactionSource, indication = null) {}
                     .dragAndDropTarget(
                         shouldStartDragAndDrop = { event ->
                             event
@@ -376,16 +383,20 @@ fun NotesPage(
                                 .contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
                         },
                         target = remember {
-                            object: DragAndDropTarget {
+                            object : DragAndDropTarget {
                                 override fun onDrop(event: DragAndDropEvent): Boolean {
-                                    val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
-                                    val draggedFileName = draggedFilePath.takeLastWhile { it != '/' }
-                                    return moveFile(draggedFileName, draggedFilePath, MainActivity.CustomFile(
-                                        file = File(context.getExternalFilesDir(null), ""),
-                                        children = null,
-                                        indent = 1,
-                                        hidden = true
-                                    ))
+                                    val draggedFilePath =
+                                        event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
+                                    moveFile(
+                                        draggedFilePath, MainActivity.CustomFile(
+                                            file = File(context.getExternalFilesDir(null), ""),
+                                            children = null,
+                                            indent = 1,
+                                            hidden = true
+                                        )
+                                    )
+                                    selectedItems.clear()
+                                    return true
                                 }
                             }
                         },
@@ -399,7 +410,8 @@ fun NotesPage(
                             .fillMaxWidth()
                             .height(50.dp)
                             .clickable {
-                                val file = files.find { it.file.nameWithoutExtension == title.value }
+                                val file =
+                                    files.find { it.file.nameWithoutExtension == title.value }
                                 if (text.value != "") {
                                     if (file == null || readFile(file.file) != text.value) {
                                         showSaveFileDialog.value = true
@@ -408,7 +420,9 @@ fun NotesPage(
                                 if (text.value == "" || !showSaveFileDialog.value) {
                                     text.value = readFile(autoSaveFile.file)
                                     title.value = "tmpfileforautosave"
-                                    path.value = autoSaveFile.file.path.replace(appPath, "").replace(autoSaveFile.file.name, "")
+                                    path.value = autoSaveFile.file.path
+                                        .replace(appPath, "")
+                                        .replace(autoSaveFile.file.name, "")
                                     showDirMenu.value = false
                                 }
                             },
@@ -443,17 +457,29 @@ fun NotesPage(
                     files.forEach { file ->
                         if (!file.hidden && file.file.nameWithoutExtension != "tmpfileforautosave") {
                             val expanded = remember { mutableStateOf(true) }
+                            val selected = remember { mutableStateOf(false) }
+
+                            LaunchedEffect(selectedItems.size == 0) {
+                                if (selectedItems.size == 0) selected.value = false
+                            }
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp)
+                                    .background(if (selected.value) Color.Gray else Color.Transparent)
                                     .dragAndDropSource {
                                         detectTapGestures(
                                             onTap = {
-                                                if (file.file.isFile) {
+                                                if (selectedItems.size > 0) {
+                                                    if (selectedItems.contains(file.file.path)) selectedItems.remove(
+                                                        file.file.path
+                                                    ) else selectedItems.add(file.file.path)
+                                                    selected.value = !selected.value
+                                                } else if (file.file.isFile) {
                                                     if (text.value != "") {
-                                                        val match = files.find { it.file.nameWithoutExtension == title.value }
+                                                        val match =
+                                                            files.find { it.file.nameWithoutExtension == title.value }
                                                         if (match == null || readFile(match.file) != text.value) {
                                                             showSaveFileDialog.value = true
                                                         }
@@ -462,25 +488,43 @@ fun NotesPage(
                                                         text.value = readFile(file.file)
                                                         title.value = file.file.nameWithoutExtension
                                                         showDirMenu.value = false
-                                                        path.value = file.file.path.replace(appPath, "").replace(file.file.name, "")
+                                                        path.value = file.file.path
+                                                            .replace(appPath, "")
+                                                            .replace(file.file.name, "")
                                                     }
-                                                }
-                                                else if (file.file.isDirectory) {
+                                                } else if (file.file.isDirectory) {
                                                     expanded.value = !expanded.value
                                                     file.children?.forEach { child ->
-                                                        files.find { child.file == it.file }?.hidden = !expanded.value
+                                                        files.find { child.file == it.file }?.hidden =
+                                                            !expanded.value
                                                     }
+                                                } else {
+                                                    updateFiles()
                                                 }
                                             },
                                             onLongPress = { offset ->
-                                                startTransfer(
-                                                    transferData = DragAndDropTransferData(
-                                                        clipData = ClipData.newPlainText(
-                                                            file.file.name,
-                                                            file.file.path,
+                                                if (selected.value) {
+                                                    var result = ""
+                                                    selectedItems.forEachIndexed { index, path ->
+                                                        result += if (index != selectedItems.size - 1) {
+                                                            path + "_-middle-_"
+                                                        } else {
+                                                            path
+                                                        }
+                                                    }
+
+                                                    startTransfer(
+                                                        transferData = DragAndDropTransferData(
+                                                            clipData = ClipData.newPlainText(
+                                                                file.file.name,
+                                                                result,
+                                                            )
                                                         )
                                                     )
-                                                )
+                                                } else {
+                                                    selectedItems.add(file.file.path)
+                                                    selected.value = true
+                                                }
                                             }
                                         )
                                     }
@@ -491,11 +535,15 @@ fun NotesPage(
                                                 .contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
                                         },
                                         target = remember {
-                                            object: DragAndDropTarget {
+                                            object : DragAndDropTarget {
                                                 override fun onDrop(event: DragAndDropEvent): Boolean {
-                                                    val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
-                                                    val draggedFileName = draggedFilePath.takeLastWhile { it != '/' }
-                                                    return moveFile(draggedFileName, draggedFilePath, file)
+                                                    val filePaths =
+                                                        event.toAndroidDragEvent().clipData?.getItemAt(
+                                                            0
+                                                        )?.text.toString()
+                                                    moveFile(filePaths, file)
+                                                    selectedItems.clear()
+                                                    return true
                                                 }
                                             }
                                         },

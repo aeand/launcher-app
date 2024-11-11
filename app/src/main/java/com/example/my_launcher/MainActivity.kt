@@ -80,8 +80,10 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- press and hold to select and delete in directory
+- finish move folder function. So I can move folders and all its children
+- when selecting files add an option for deleting selected files
 - store notes in folder in root
+- move title down to bottom instead of top
 */
 
 /* Intent list that would be useful
@@ -444,6 +446,7 @@ class MainActivity: ComponentActivity() {
                 error = error,
                 enabled = enabled,
                 textColor = textColor,
+                updateFiles = ::updateFiles,
                 saveFile = ::saveFile,
                 saveFileOverride = ::overrideFile,
                 readFile = ::readFile,
@@ -513,156 +516,190 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    private fun moveFile(sourceFileName: String, sourceFilePath: String, targetFile: CustomFile): Boolean {
-        val sourceFile = files.find { it.file.name == sourceFileName &&  it.file.path == sourceFilePath } ?: return false
-        val rootPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
-
-        if (sourceFile.file.isFile) {
-            if (targetFile.file.isFile) {
-                val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
-
-                if (sourceFile.file.path.replace("/${sourceFile.file.name}", "") == targetFilePath) {
-                    println("file and file have the same name")
-                    return false
-                }
-
-                val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "")).listFiles()
-                if (filesInPath == null) {
-                    println("found no files in ${rootPath + targetFile.file.path}")
-                    return false
-                }
-
-                filesInPath.forEach {
-                    if (sourceFile.file.name == it.name && it.isFile) {
-                        println("path has file with the same name as source")
-                        return false
-                    }
-                }
-
-                try {
-                    println("attempt copy to: $targetFilePath/$sourceFileName")
-                    sourceFile.file.copyTo(File("$targetFilePath/$sourceFileName"))
-                    try {
-                        println("attempt delete")
-                        sourceFile.file.delete()
-                        Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
-                        updateFiles()
-                        return true
-                    } catch (e: Exception) {
-                        println("delete failed $e")
-                        return false
-                    }
-                } catch (e: Exception) {
-                    println("copy failed $e")
-                    return false
-                }
-            }
-            else if (targetFile.file.isDirectory) {
-                targetFile.children?.forEach {
-                    if (sourceFile.file.name == it.file.name && it.file.isFile) {
-                        println("found file with same name as source file")
-                        return false
-                    }
-                }
-
-                try {
-                    println("attempt copy to: ${targetFile.file.path}/${sourceFile.file.name}")
-                    sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
-                    try {
-                        println("attempt delete")
-                        sourceFile.file.delete()
-                        Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
-                        updateFiles()
-                        return true
-                    } catch (e: Exception) {
-                        println("delete failed $e")
-                        return false
-                    }
-                } catch (e: Exception) {
-                    println("copy failed $e")
-                    return false
-                }
-            }
-            else {
-                println("target file is not file or folder")
-                return false
-            }
-        }
-        else if (sourceFile.file.isDirectory) {
-            if (targetFile.file.isFile) {
-                val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
-
-                val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "")).listFiles()
-                if (filesInPath == null) {
-                    println("found no files in ${rootPath + targetFile.file.path}")
-                    return false
-                }
-
-                filesInPath.forEach {
-                    if (sourceFile.file.name == it.name && it.isDirectory) {
-                        println("path has folder with the same name as source")
-                        return false
-                    }
-                }
-
-                try {
-                    println("attempt copy to: $targetFilePath/${sourceFile.file.name}")
-                    sourceFile.file.copyTo(File("$targetFilePath/${sourceFile.file.name}"))
-                    try {
-                        println("attempt delete")
-                        sourceFile.file.delete()
-                        Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
-                        updateFiles()
-                        return true
-                    } catch (e: Exception) {
-                        println("delete failed $e")
-                        return false
-                    }
-                } catch (e: Exception) {
-                    println("copy failed $e")
-                    return false
-                }
-            }
-            else if (targetFile.file.isDirectory) {
-                targetFile.children?.forEach {
-                    if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
-                        println("target folder contains folder with the same name as source folder")
-                    }
-                }
-
-                try {
-                    println("attempt copy to: ${targetFile.file.path}/${sourceFile.file.name}")
-                    sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
-                    try {
-                        println("attempt delete")
-                        sourceFile.file.delete()
-                        Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
-                        updateFiles()
-                        return true
-                    } catch (e: Exception) {
-                        println("delete failed $e")
-                        return false
-                    }
-                } catch (e: Exception) {
-                    println("copy failed $e")
-                    return false
-                }
-            }
-            else {
-                println("target file is not file or folder")
-                return false
+    private fun moveFile(sourceFilePaths: String, targetFile: CustomFile) {
+        val pathList = mutableListOf<String>()
+        if (sourceFilePaths.contains("_-middle-_")) {
+            sourceFilePaths.split("_-middle-_").forEach { path ->
+                pathList.add(path)
             }
         }
         else {
-            println("source file is not file or folder")
-            return false
+            pathList.add(sourceFilePaths)
         }
+
+        val sourceFileList = mutableListOf<CustomFile>()
+        pathList.forEach { path ->
+            val file = files.find { file ->
+                file.file.name == path.takeLastWhile { s -> s != '/' } &&  file.file.path == path
+            }
+            if (file != null) {
+                sourceFileList.add(file)
+            }
+        }
+
+        val rootPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
+        var showToast = false
+
+        sourceFileList.forEach { sourceFile ->
+            if (sourceFile.file.isFile) {
+                if (targetFile.file.isFile) {
+                    val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
+
+                    if (sourceFile.file.path.replace("/${sourceFile.file.name}", "") == targetFilePath) {
+                        println("file and file have the same path")
+                        return@forEach
+                    }
+
+                    val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    if (filesInPath == null) {
+                        println("found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
+                        return@forEach
+                    }
+
+                    for (file in filesInPath) {
+                        if (sourceFile.file.name == file.name && file.isFile) {
+                            println("path has file with the same name as source")
+                            return@forEach
+                        }
+                    }
+
+                    try {
+                        sourceFile.file.copyTo(File("$targetFilePath/${sourceFile.file.name}"))
+
+                        try {
+                            sourceFile.file.delete()
+                            showToast = true
+                            updateFiles()
+                            return@forEach
+                        } catch (e: Exception) {
+                            println("delete failed $e")
+                            return@forEach
+                        }
+                    } catch (e: Exception) {
+                        println("copy failed $e")
+                        return@forEach
+                    }
+                }
+                else if (targetFile.file.isDirectory) {
+                    if (targetFile.children != null) {
+                        for (file in targetFile.children) {
+                            if (sourceFile.file.name == file.file.name && file.file.isFile && sourceFile.file.path != file.file.path) {
+                                println("found file with same name as source file")
+                                return@forEach
+                            }
+                        }
+                    }
+
+                    try {
+                        sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
+                        try {
+                            sourceFile.file.delete()
+                            showToast = true
+                            updateFiles()
+                            return@forEach
+                        } catch (e: Exception) {
+                            println("delete failed $e")
+                            return@forEach
+                        }
+                    } catch (e: Exception) {
+                        println("copy failed $e")
+                        return@forEach
+                    }
+                }
+                else {
+                    println("target file is not file or folder")
+                    return@forEach
+                }
+            }
+            else if (sourceFile.file.isDirectory) {
+                if (targetFile.file.isFile) {
+                    val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
+
+                    val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    if (filesInPath == null) {
+                        println("found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
+                        return@forEach
+                    }
+
+                    for (file in filesInPath) {
+                        if (sourceFile.file.name == file.name && file.isDirectory) {
+                            println("path has folder with the same name as source")
+                            return@forEach
+                        }
+                    }
+
+                    copyFileAndChildren(sourceFile, targetFilePath)
+                }
+                else if (targetFile.file.isDirectory) {
+                    targetFile.children?.forEach {
+                        if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
+                            println("target folder contains folder with the same name as source folder")
+                        }
+                    }
+
+                    copyFileAndChildren(sourceFile, targetFile.file.path)
+                }
+                else {
+                    println("target file is not file or folder")
+                    return@forEach
+                }
+            }
+            else {
+                println("source file is not file or folder")
+                return@forEach
+            }
+        }
+
+        if (showToast)
+            Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
+    }
+
+    // this requires the folder structure to be folders before files
+    private fun copyFileAndChildren(sourceFile: CustomFile, targetPath: String) {
+        try {
+            sourceFile.file.copyTo(File("$targetPath/${sourceFile.file.name}"))
+        } catch (e: Exception) {
+            println("copy failed $e")
+        }
+
+        val topPath = sourceFile.file.path.replace(sourceFile.file.name, "")
+        sourceFile.children?.forEach { child ->
+            try {
+                val childPath = child.file.path.replace(topPath, "")
+                sourceFile.file.copyTo(File("$targetPath/${childPath}"))
+            } catch (e: Exception) {
+                println("copy failed $e")
+            }
+        }
+
+        deleteFileAndChildren(sourceFile)
+    }
+
+    private fun deleteFileAndChildren(sourceFile: CustomFile) {
+        if (sourceFile.children != null) {
+            for (it in sourceFile.children.reversed()) {
+                try {
+                    it.file.delete()
+                } catch (e: Exception) {
+                    println("delete failed $e")
+                }
+            }
+        }
+
+        try {
+            sourceFile.file.delete()
+        } catch (e: Exception) {
+            println("delete failed $e")
+        }
+
+        updateFiles()
     }
 
     private fun updateFiles() {
         files.clear()
         getFiles().forEach {
-            files.add(it)
+            if (it.file.exists())
+                files.add(it)
         }
     }
 
