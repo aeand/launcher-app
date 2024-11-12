@@ -606,9 +606,19 @@ class MainActivity: ComponentActivity() {
         var showToast = false
 
         sourceFileList.forEach { sourceFile ->
+            if (sourceFile.file.path == targetFile.file.path) {
+                println("file is targeting the source file")
+                return@forEach
+            }
+
             if (sourceFile.file.isFile) {
                 if (targetFile.file.isFile) {
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
+
+                    if (sourceFile.file.name == targetFile.file.name) {
+                        println("file with that name already exists")
+                        return@forEach
+                    }
 
                     if (sourceFile.file.path.replace("/${sourceFile.file.name}", "") == targetFilePath) {
                         println("file and file have the same path")
@@ -648,7 +658,7 @@ class MainActivity: ComponentActivity() {
                 else if (targetFile.file.isDirectory) {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
-                            if (sourceFile.file.name == file.file.name && file.file.isFile && sourceFile.file.path != file.file.path) {
+                            if (sourceFile.file.name == file.file.name && file.file.isFile) {
                                 println("found file with same name as source file")
                                 return@forEach
                             }
@@ -686,10 +696,7 @@ class MainActivity: ComponentActivity() {
                         return@forEach
                     }
 
-                    println(filesInPath)
-
                     for (file in filesInPath) {
-                        println("${sourceFile.file.name} ${file.name}, ${file.isDirectory}")
                         if (sourceFile.file.name == file.name && file.isDirectory) {
                             println("path has folder with the same name as source")
                             return@forEach
@@ -699,20 +706,13 @@ class MainActivity: ComponentActivity() {
                     copyFolderAndChildren(sourceFile, targetFilePath)
                 }
                 else if (targetFile.file.isDirectory) {
-                    if (sourceFile.children != null) {
-                        if (sourceFile.file.path == targetFile.file.path) {
-                            println("folder already exists with same name")
-                            return@forEach
-                        }
-
-                        for (it in sourceFile.children) {
-                            if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
-                                println("target folder contains folder with the same name as source folder")
+                    if (targetFile.children != null) {
+                        for (file in targetFile.children) {
+                            if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
+                                println("folder with that name already exists")
                                 return@forEach
                             }
                         }
-
-                        // check if target folder is sub folder to source folder
                     }
 
                     copyFolderAndChildren(sourceFile, targetFile.file.path)
@@ -732,20 +732,12 @@ class MainActivity: ComponentActivity() {
             Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
     }
 
-    // this requires the folder structure to be folders before files
     private fun copyFolderAndChildren(sourceFile: CustomFile, targetPath: String) {
-        println("from: ${sourceFile.file.path}")
-        println("to: $targetPath")
-
         try {
-            println("copy started")
             sourceFile.file.copyRecursively(File("$targetPath/${sourceFile.file.name}"))
-            println("copy done")
 
             try {
-                println("delete started")
                 sourceFile.file.deleteRecursively()
-                println("delete done")
             } catch (e: Exception) {
                 println("delete failed $e")
             }
