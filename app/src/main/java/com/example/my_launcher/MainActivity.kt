@@ -512,11 +512,18 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun renameNotesRootFolder(name: String) {
+        File("/storage/emulated/0/", "").list()?.forEach {
+            if (it == name) {
+                println("error: folder with that name already exists")
+                return
+            }
+        }
+
         try {
             File("/storage/emulated/0/${rootFolderName.value}", "")
                 .renameTo(File("/storage/emulated/0/${name}", ""))
         } catch (e: Exception) {
-            println("failed rename root folder: $e")
+            println("error: failed rename root folder: $e")
             return
         }
 
@@ -534,7 +541,7 @@ class MainActivity: ComponentActivity() {
 
         if (!folder.exists()) {
             if (!folder.mkdir()) {
-                println("ERROR Cannot create a directory!")
+                println("error: Cannot create a directory!")
             } else {
                 folder.mkdirs()
             }
@@ -608,7 +615,7 @@ class MainActivity: ComponentActivity() {
 
         sourceFileList.forEach { sourceFile ->
             if (sourceFile.file.path == targetFile.file.path) {
-                println("file is targeting the source file")
+                println("error: file is targeting the source file")
                 return@forEach
             }
 
@@ -617,24 +624,24 @@ class MainActivity: ComponentActivity() {
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
                     if (sourceFile.file.name == targetFile.file.name) {
-                        println("file with that name already exists")
+                        println("error: file with that name already exists")
                         return@forEach
                     }
 
                     if (sourceFile.file.path.replace("/${sourceFile.file.name}", "") == targetFilePath) {
-                        println("file and file have the same path")
+                        println("error: file and file have the same path")
                         return@forEach
                     }
 
                     val filesInPath = File("/storage/emulated/0/${rootFolderName.value}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
-                        println("found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
+                        println("error: found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
                         return@forEach
                     }
 
                     for (file in filesInPath) {
                         if (sourceFile.file.name == file.name && file.isFile) {
-                            println("path has file with the same name as source")
+                            println("error: path has file with the same name as source")
                             return@forEach
                         }
                     }
@@ -648,11 +655,11 @@ class MainActivity: ComponentActivity() {
                             updateFiles()
                             return@forEach
                         } catch (e: Exception) {
-                            println("delete failed $e")
+                            println("error: delete failed $e")
                             return@forEach
                         }
                     } catch (e: Exception) {
-                        println("copy failed $e")
+                        println("error: copy failed $e")
                         return@forEach
                     }
                 }
@@ -660,7 +667,7 @@ class MainActivity: ComponentActivity() {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isFile) {
-                                println("found file with same name as source file")
+                                println("error: found file with same name as source file")
                                 return@forEach
                             }
                         }
@@ -674,16 +681,16 @@ class MainActivity: ComponentActivity() {
                             updateFiles()
                             return@forEach
                         } catch (e: Exception) {
-                            println("delete failed $e")
+                            println("error: delete failed $e")
                             return@forEach
                         }
                     } catch (e: Exception) {
-                        println("copy failed $e")
+                        println("error: copy failed $e")
                         return@forEach
                     }
                 }
                 else {
-                    println("target file is not file or folder")
+                    println("error: target file is not file or folder")
                     return@forEach
                 }
             }
@@ -693,13 +700,13 @@ class MainActivity: ComponentActivity() {
 
                     val filesInPath = File("/storage/emulated/0/${rootFolderName.value}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
-                        println("found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
+                        println("error: found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
                         return@forEach
                     }
 
                     for (file in filesInPath) {
                         if (sourceFile.file.name == file.name && file.isDirectory) {
-                            println("path has folder with the same name as source")
+                            println("error: path has folder with the same name as source")
                             return@forEach
                         }
                     }
@@ -710,7 +717,7 @@ class MainActivity: ComponentActivity() {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
-                                println("folder with that name already exists")
+                                println("error: folder with that name already exists")
                                 return@forEach
                             }
                         }
@@ -719,12 +726,12 @@ class MainActivity: ComponentActivity() {
                     copyFolderAndChildren(sourceFile, targetFile.file.path)
                 }
                 else {
-                    println("target file is not file or folder")
+                    println("error: target file is not file or folder")
                     return@forEach
                 }
             }
             else {
-                println("source file is not file or folder")
+                println("error: source file is not file or folder")
                 return@forEach
             }
         }
@@ -740,10 +747,10 @@ class MainActivity: ComponentActivity() {
             try {
                 sourceFile.file.deleteRecursively()
             } catch (e: Exception) {
-                println("delete failed $e")
+                println("error: delete failed $e")
             }
         } catch (e: Exception) {
-            println("copy failed $e")
+            println("error: copy failed $e")
         }
 
         updateFiles()
@@ -753,7 +760,7 @@ class MainActivity: ComponentActivity() {
         try {
             sourceFile.file.deleteRecursively()
         } catch (e: Exception) {
-            println("delete failed $e")
+            println("error: delete failed $e")
         }
 
         updateFiles()
