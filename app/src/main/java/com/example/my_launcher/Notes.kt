@@ -421,7 +421,6 @@ fun NotesPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .background(Color.Yellow)
                         .clickable {
                             showRenameRootFolder.value = true
                         }
