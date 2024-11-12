@@ -404,7 +404,7 @@ fun NotesPage(
                                         event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
                                     moveFile(
                                         draggedFilePath, MainActivity.CustomFile(
-                                            file = File(context.getExternalFilesDir(null), ""),
+                                            file = File("/storage/emulated/0/${rootFolderName.value}", ""),
                                             children = null,
                                             indent = 1,
                                             hidden = true

@@ -1,6 +1,5 @@
 package com.example.my_launcher
 
-import android.Manifest
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
@@ -34,8 +33,6 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -45,7 +42,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -55,7 +51,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -65,8 +60,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -622,7 +615,7 @@ class MainActivity: ComponentActivity() {
                         return@forEach
                     }
 
-                    val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    val filesInPath = File("/storage/emulated/0/${rootFolderName.value}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
                         println("found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
                         return@forEach
@@ -687,32 +680,42 @@ class MainActivity: ComponentActivity() {
                 if (targetFile.file.isFile) {
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
-                    val filesInPath = File(applicationContext.getExternalFilesDir(null), targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    val filesInPath = File("/storage/emulated/0/${rootFolderName.value}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
                         println("found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
                         return@forEach
                     }
 
+                    println(filesInPath)
+
                     for (file in filesInPath) {
+                        println("${sourceFile.file.name} ${file.name}, ${file.isDirectory}")
                         if (sourceFile.file.name == file.name && file.isDirectory) {
                             println("path has folder with the same name as source")
                             return@forEach
                         }
                     }
 
-                    copyFileAndChildren(sourceFile, targetFilePath)
+                    copyFolderAndChildren(sourceFile, targetFilePath)
                 }
                 else if (targetFile.file.isDirectory) {
                     if (sourceFile.children != null) {
+                        if (sourceFile.file.path == targetFile.file.path) {
+                            println("folder already exists with same name")
+                            return@forEach
+                        }
+
                         for (it in sourceFile.children) {
                             if (sourceFile.file.name == it.file.name && it.file.isDirectory) {
                                 println("target folder contains folder with the same name as source folder")
                                 return@forEach
                             }
                         }
+
+                        // check if target folder is sub folder to source folder
                     }
 
-                    copyFileAndChildren(sourceFile, targetFile.file.path)
+                    copyFolderAndChildren(sourceFile, targetFile.file.path)
                 }
                 else {
                     println("target file is not file or folder")
@@ -730,39 +733,32 @@ class MainActivity: ComponentActivity() {
     }
 
     // this requires the folder structure to be folders before files
-    private fun copyFileAndChildren(sourceFile: CustomFile, targetPath: String) {
+    private fun copyFolderAndChildren(sourceFile: CustomFile, targetPath: String) {
+        println("from: ${sourceFile.file.path}")
+        println("to: $targetPath")
+
         try {
-            sourceFile.file.copyTo(File("$targetPath/${sourceFile.file.name}"))
+            println("copy started")
+            sourceFile.file.copyRecursively(File("$targetPath/${sourceFile.file.name}"))
+            println("copy done")
+
+            try {
+                println("delete started")
+                sourceFile.file.deleteRecursively()
+                println("delete done")
+            } catch (e: Exception) {
+                println("delete failed $e")
+            }
         } catch (e: Exception) {
             println("copy failed $e")
         }
 
-        val topPath = sourceFile.file.path.replace(sourceFile.file.name, "")
-        sourceFile.children?.forEach { child ->
-            try {
-                val childPath = child.file.path.replace(topPath, "")
-                sourceFile.file.copyTo(File("$targetPath/${childPath}"))
-            } catch (e: Exception) {
-                println("copy failed $e")
-            }
-        }
-
-        deleteFileAndChildren(sourceFile)
+        updateFiles()
     }
 
     private fun deleteFileAndChildren(sourceFile: CustomFile) {
-        if (sourceFile.children != null) {
-            for (it in sourceFile.children.reversed()) {
-                try {
-                    it.file.delete()
-                } catch (e: Exception) {
-                    println("delete failed $e")
-                }
-            }
-        }
-
         try {
-            sourceFile.file.delete()
+            sourceFile.file.deleteRecursively()
         } catch (e: Exception) {
             println("delete failed $e")
         }
