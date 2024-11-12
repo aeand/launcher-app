@@ -10,9 +10,7 @@
     <!-- from quicksteps manifest: Permission required to start a WidgetPickerActivity. -->
     <permission android:name="${applicationId}.permission.START_WIDGET_PICKER_ACTIVITY" android:protectionLevel="signature|privileged" />
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
 
     <!--<uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.STATUS_BAR"/>

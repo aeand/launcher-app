@@ -1,5 +1,6 @@
 package com.example.my_launcher
 
+import android.Manifest
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
 import android.R.attr.minHeight
@@ -12,12 +13,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -30,6 +34,8 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -39,6 +45,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -48,6 +55,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -57,6 +65,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -80,7 +91,8 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- store notes in folder in root
+- add select directory to change to different directory
+- upgrade select path for file
 */
 
 /* Intent list that would be useful
@@ -111,6 +123,7 @@ https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-ne
 class MainActivity: ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
+    private lateinit var sharedPref: SharedPreferences
 
     private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
     private var apps = mutableStateListOf<ApplicationInformation>()
@@ -128,6 +141,7 @@ class MainActivity: ComponentActivity() {
     private lateinit var hostView: MutableState<AppWidgetHostView>
 
     private var files = mutableStateListOf<CustomFile>()
+    private var rootFolderName = mutableStateOf("FolderNotFound")
 
     class CustomFile(
         val file: File,
@@ -157,6 +171,7 @@ class MainActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        @SuppressLint("SourceLockedOrientationActivity")
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         val list = listOf(
@@ -317,162 +332,183 @@ class MainActivity: ComponentActivity() {
         createAppList()
         createDuolingoWidget()
         updateFiles()
+        requestPermissions()
 
-        setContent {
-            val isDarkMode = isSystemInDarkTheme()
-            val context = LocalContext.current as ComponentActivity
-            DisposableEffect(isDarkMode) {
-                context.enableEdgeToEdge(
-                    statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                    navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                )
+        lifecycleScope.launch {
+            sharedPref = getSharedPreferences("mylauncher", MODE_PRIVATE)
+            val rootName = sharedPref.getString("rootName", null)
+            if (rootName != null)
+                rootFolderName.value = rootName
 
-                onDispose { }
-            }
+            setContent {
+                val isDarkMode = isSystemInDarkTheme()
+                val context = LocalContext.current as ComponentActivity
+                DisposableEffect(isDarkMode) {
+                    context.enableEdgeToEdge(
+                        statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+                        navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+                    )
 
-            LaunchedEffect(true) {
-                customScope.launch {
-                    delay(900000) // every 15 min
-                    hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
-                    hostView.value.setAppWidget(widgetId, duoWidget)
+                    onDispose { }
                 }
-            }
 
-            Text(
-                modifier = Modifier
-                    .padding(start = 19.dp, top = 30.dp),
-                text = date,
-                fontSize = 11.sp,
-                fontWeight = FontWeight(600),
-                color = textColor,
-            )
-
-            val screenWidth = 1080f
-            val screenHeight = 2340f
-            val topBar = 32f
-            val bottomBar = 48f
-
-            val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-            dragState = remember {
-                AnchoredDraggableState(
-                    initialValue = Start,
-                    anchors = DraggableAnchors {
-                        Start at 0f
-                        End at -screenWidth
-                    },
-                    positionalThreshold = { d -> d * 0.9f},
-                    velocityThreshold = { Float.POSITIVE_INFINITY },
-                    snapAnimationSpec = tween(),
-                    decayAnimationSpec = decayAnimationSpec
-                )
-            }
-            dragState2 = remember {
-                AnchoredDraggableState(
-                    initialValue = Start,
-                    anchors = DraggableAnchors {
-                        Start at 0f
-                        End at -screenHeight
-                    },
-                    positionalThreshold = { d -> d * 0.9f},
-                    velocityThreshold = { Float.POSITIVE_INFINITY },
-                    snapAnimationSpec = tween(),
-                    decayAnimationSpec = decayAnimationSpec
-                )
-            }
-
-            val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
-
-            Box(
-                modifier = Modifier
-                    .anchoredDraggable(
-                        state = dragState,
-                        enabled = appDrawerClosed,
-                        orientation = Orientation.Horizontal
-                    )
-                    .anchoredDraggable(
-                        state = dragState2,
-                        enabled = true,
-                        orientation = Orientation.Vertical
-                    )
-                    .fillMaxSize()
-                    .offset {
-                        IntOffset(
-                            dragState
-                                .requireOffset()
-                                .roundToInt(),
-                            dragState2
-                                .requireOffset()
-                                .roundToInt()
-                        )
+                LaunchedEffect(true) {
+                    customScope.launch {
+                        delay(900000) // every 15 min
+                        hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
+                        hostView.value.setAppWidget(widgetId, duoWidget)
                     }
-            )
-
-            // create app list and alphabet list when scrolled down to bottom
-            LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
-                val i = Intent(Intent.ACTION_MAIN, null)
-                i.addCategory(Intent.CATEGORY_LAUNCHER)
-                val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
-                if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
-                    createAppList()
-                    packages = pk
                 }
-            }
 
-            lazyScroll = rememberLazyListState()
+                Text(
+                    modifier = Modifier
+                        .padding(start = 19.dp, top = 30.dp),
+                    text = date,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight(600),
+                    color = textColor,
+                )
 
-            AppDrawer(
-                modifier = Modifier
-                    .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
-                lazyScroll = lazyScroll,
-                hostView = hostView.value,
-                alphabet = alphabet,
-                apps = apps,
-                customScope = customScope,
-                launchApp = ::launchApp,
-                hideApp = ::hideApp,
-                uninstallApp = ::uninstallApp,
-                textColor = textColor,
-                bottomBar = bottomBar
-            )
+                val screenWidth = 1080f
+                val screenHeight = 2340f
+                val topBar = 32f
+                val bottomBar = 48f
 
-            val error = remember {
-                mutableStateOf(false)
-            }
+                val decayAnimationSpec = rememberSplineBasedDecay<Float>()
+                dragState = remember {
+                    AnchoredDraggableState(
+                        initialValue = Start,
+                        anchors = DraggableAnchors {
+                            Start at 0f
+                            End at -screenWidth
+                        },
+                        positionalThreshold = { d -> d * 0.9f},
+                        velocityThreshold = { Float.POSITIVE_INFINITY },
+                        snapAnimationSpec = tween(),
+                        decayAnimationSpec = decayAnimationSpec
+                    )
+                }
+                dragState2 = remember {
+                    AnchoredDraggableState(
+                        initialValue = Start,
+                        anchors = DraggableAnchors {
+                            Start at 0f
+                            End at -screenHeight
+                        },
+                        positionalThreshold = { d -> d * 0.9f},
+                        velocityThreshold = { Float.POSITIVE_INFINITY },
+                        snapAnimationSpec = tween(),
+                        decayAnimationSpec = decayAnimationSpec
+                    )
+                }
 
-            val enabled = remember {
-                mutableStateOf(false)
-            }
+                val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
 
-            LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
-                enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt() && dragState2.requireOffset().roundToInt() == 0
-            }
-
-            NotesPage(
-                Modifier
-                    .padding(top = topBar.dp, bottom = bottomBar.dp)
-                    .offset {
-                        IntOffset(
-                            dragState
-                                .requireOffset()
-                                .roundToInt() + screenWidth.roundToInt(),
-                            dragState2
-                                .requireOffset()
-                                .roundToInt()
+                Box(
+                    modifier = Modifier
+                        .anchoredDraggable(
+                            state = dragState,
+                            enabled = appDrawerClosed,
+                            orientation = Orientation.Horizontal
                         )
-                    },
-                error = error,
-                enabled = enabled,
-                textColor = textColor,
-                updateFiles = ::updateFiles,
-                saveFile = ::saveFile,
-                saveFileOverride = ::overrideFile,
-                readFile = ::readFile,
-                saveFolder = ::saveFolder,
-                moveFile = ::moveFile,
-                deleteFiles = ::deleteFileAndChildren,
-                files = files,
-            )
+                        .anchoredDraggable(
+                            state = dragState2,
+                            enabled = true,
+                            orientation = Orientation.Vertical
+                        )
+                        .fillMaxSize()
+                        .offset {
+                            IntOffset(
+                                dragState
+                                    .requireOffset()
+                                    .roundToInt(),
+                                dragState2
+                                    .requireOffset()
+                                    .roundToInt()
+                            )
+                        }
+                )
+
+                // create app list and alphabet list when scrolled down to bottom
+                LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+                    val i = Intent(Intent.ACTION_MAIN, null)
+                    i.addCategory(Intent.CATEGORY_LAUNCHER)
+                    val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
+                    if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
+                        createAppList()
+                        packages = pk
+                    }
+                }
+
+                lazyScroll = rememberLazyListState()
+
+                AppDrawer(
+                    modifier = Modifier
+                        .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                    lazyScroll = lazyScroll,
+                    hostView = hostView.value,
+                    alphabet = alphabet,
+                    apps = apps,
+                    customScope = customScope,
+                    launchApp = ::launchApp,
+                    hideApp = ::hideApp,
+                    uninstallApp = ::uninstallApp,
+                    textColor = textColor,
+                    bottomBar = bottomBar
+                )
+
+                val error = remember {
+                    mutableStateOf(false)
+                }
+
+                val enabled = remember {
+                    mutableStateOf(false)
+                }
+
+                LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
+                    enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt() && dragState2.requireOffset().roundToInt() == 0
+                }
+
+                NotesPage(
+                    Modifier
+                        .padding(top = topBar.dp, bottom = bottomBar.dp)
+                        .offset {
+                            IntOffset(
+                                dragState
+                                    .requireOffset()
+                                    .roundToInt() + screenWidth.roundToInt(),
+                                dragState2
+                                    .requireOffset()
+                                    .roundToInt()
+                            )
+                        },
+                    error = error,
+                    enabled = enabled,
+                    textColor = textColor,
+                    updateFiles = ::updateFiles,
+                    saveFile = ::saveFile,
+                    saveFileOverride = ::overrideFile,
+                    readFile = ::readFile,
+                    saveFolder = ::saveFolder,
+                    moveFile = ::moveFile,
+                    deleteFiles = ::deleteFileAndChildren,
+                    files = files,
+                    renameRootFolder = ::renameNotesRootFolder,
+                    rootFolderName = rootFolderName
+                )
+            }
         }
+    }
+
+    private fun requestPermissions() {
+        if (Environment.isExternalStorageManager()) {
+            return
+        }
+
+        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).also {
+            it.data = Uri.parse("package:${packageName}")
+        }
+        startActivity(intent)
     }
 
     override fun onDestroy() {
@@ -481,8 +517,26 @@ class MainActivity: ComponentActivity() {
         widgetHost.deleteAppWidgetId(widgetId)
     }
 
+    private fun renameNotesRootFolder(name: String) {
+        try {
+            File("/storage/emulated/0/${rootFolderName.value}", "")
+                .renameTo(File("/storage/emulated/0/${name}", ""))
+        } catch (e: Exception) {
+            println("failed rename root folder: $e")
+            return
+        }
+
+        rootFolderName.value = name
+        sharedPref.edit().apply {
+            putString("rootName", name)
+            apply()
+        }
+
+        updateFiles()
+    }
+
     private fun saveFolder(name: String, path: String = "", showToast: Boolean = true) {
-        val folder = File(applicationContext.getExternalFilesDir(null), path + name)
+        val folder = File("/storage/emulated/0/${rootFolderName.value}", path + name) // applicationContext.getExternalFilesDir(null)
 
         if (!folder.exists()) {
             if (!folder.mkdir()) {
@@ -499,7 +553,7 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun overrideFile(name: String, folder: String, content: String, showToast: Boolean = true) {
-        val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
+        val letDirectory = File("/storage/emulated/0/${rootFolderName.value}", folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
@@ -511,7 +565,7 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun saveFile(name: String, folder: String = "", content: String, showToast: Boolean = true): Boolean {
-        val letDirectory = File(applicationContext.getExternalFilesDir(null), folder)
+        val letDirectory = File("/storage/emulated/0/${rootFolderName.value}", folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         if (file.exists()) {
@@ -725,7 +779,7 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun getFiles(path: String = ""): MutableList<CustomFile> {
-        val files = File(applicationContext.getExternalFilesDir(null), path).listFiles()
+        val files = File("/storage/emulated/0/${rootFolderName.value}", path).listFiles()
         val directoryLevel = path.count { it == '/' } + 1
 
         files?.sortWith { a, b ->

@@ -47,11 +47,16 @@ fun DialogSaveFolder(
     confirm: (name: String, path: String) -> Unit,
     cancel: () -> Unit,
 ) {
+    val outsideInteractionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = Modifier
             .zIndex(1f)
             .fillMaxSize()
-            .clickable {
+            .clickable(
+                interactionSource = outsideInteractionSource,
+                indication = null,
+            ) {
                 cancel()
             },
     ) {
@@ -308,11 +313,16 @@ fun DialogSaveFile(
     presetFileName: String,
     presetPath: String,
 ) {
+    val outsideInteractionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = Modifier
             .zIndex(1f)
             .fillMaxSize()
-            .clickable {
+            .clickable(
+                interactionSource = outsideInteractionSource,
+                indication = null,
+            ) {
                 cancel()
             },
     ) {
@@ -549,7 +559,6 @@ fun DialogSaveFile(
                             .clickable {
                                 if (fileName.value.isNotEmpty()) {
                                     confirm(fileName.value, pathName.value)
-                                    cancel()
                                 }
                             },
                         text = "Save",
@@ -570,11 +579,16 @@ fun DialogOverride(
     confirm: () -> Unit,
     cancel: () -> Unit,
 ) {
+    val outsideInteractionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = Modifier
             .zIndex(1f)
             .fillMaxSize()
-            .clickable {
+            .clickable(
+                interactionSource = outsideInteractionSource,
+                indication = null,
+            ) {
                 cancel()
             },
     ) {
@@ -637,6 +651,186 @@ fun DialogOverride(
                         fontWeight = Typography.bodyMedium.fontWeight,
                         lineHeight = Typography.bodyMedium.lineHeight,
                         color = Color.White,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DialogRenameRootFolder(
+    confirm: (name: String) -> Unit,
+    cancel: () -> Unit,
+    presetFolderName: String,
+) {
+    val outsideInteractionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .zIndex(1f)
+            .fillMaxSize()
+            .clickable(
+                interactionSource = outsideInteractionSource,
+                indication = null,
+            ) {
+                cancel()
+            },
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .width(300.dp)
+                .height(400.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(interactionSource = interactionSource, indication = null) {  }
+                .background(Color.DarkGray),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(30.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally),
+                    text = "Save note",
+                    fontFamily = Typography.bodyMedium.fontFamily,
+                    fontSize = Typography.bodyMedium.fontSize,
+                    fontWeight = Typography.bodyMedium.fontWeight,
+                    lineHeight = Typography.bodyMedium.lineHeight,
+                    color = Color.White,
+                )
+
+                val focusManager = LocalFocusManager.current
+                val focusRequester = remember { FocusRequester() }
+
+                val customTextSelectionColors = TextSelectionColors(
+                    handleColor = Color.Gray,
+                    backgroundColor = Color.DarkGray
+                )
+
+                val folderName = remember { mutableStateOf(presetFolderName) }
+                val textFieldFocused = remember { mutableStateOf(false) }
+
+                CompositionLocalProvider(
+                    LocalTextSelectionColors provides customTextSelectionColors
+                ) {
+                    BasicTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .focusRequester(focusRequester)
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    textFieldFocused.value = true
+                                }
+                            }
+                            .background(Color.White),
+                        value = folderName.value,
+                        onValueChange = {
+                            folderName.value = it
+                        },
+                        cursorBrush = Brush.verticalGradient(
+                            0.00f to Color.Black,
+                            0.15f to Color.Black,
+                            0.15f to Color.Black,
+                            0.75f to Color.Black,
+                            0.75f to Color.Black,
+                            1.00f to Color.Black,
+                        ),
+                        textStyle = TextStyle(
+                            textAlign = TextAlign.Start,
+                            color = Color.Black,
+                            fontFamily = Typography.titleMedium.fontFamily,
+                            fontSize = Typography.titleMedium.fontSize,
+                            lineHeight = Typography.titleMedium.lineHeight,
+                            letterSpacing = Typography.titleMedium.letterSpacing,
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            autoCorrectEnabled = false,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                textFieldFocused.value = false
+                            }
+                        ),
+                        singleLine = true,
+                        maxLines = 1,
+                        visualTransformation = VisualTransformation.None,
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+                                if (folderName.value.isEmpty()) {
+                                    Text(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                            .padding(5.dp),
+                                        text = "Name the file",
+                                        textAlign = TextAlign.Left,
+                                        fontFamily = FontFamily(
+                                            Font(R.font.roboto_italic)
+                                        ),
+                                        fontSize = Typography.titleMedium.fontSize,
+                                        fontWeight = Typography.titleMedium.fontWeight,
+                                        lineHeight = Typography.titleMedium.lineHeight,
+                                        color = Color.Gray
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                            .padding(5.dp)
+                                    ) {
+                                        innerTextField()
+                                    }
+                                }
+                            }
+                        },
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                cancel()
+                            },
+                        text = "Cancel",
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontSize = Typography.bodyMedium.fontSize,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        lineHeight = Typography.bodyMedium.lineHeight,
+                        color = Color.White,
+                    )
+
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                if (folderName.value.isNotEmpty()) {
+                                    confirm(folderName.value)
+                                }
+                            },
+                        text = "Save",
+                        fontFamily = Typography.bodyMedium.fontFamily,
+                        fontSize = Typography.bodyMedium.fontSize,
+                        fontWeight = Typography.bodyMedium.fontWeight,
+                        lineHeight = Typography.bodyMedium.lineHeight,
+                        color = if (folderName.value.isNotEmpty()) Color.White else Color.Gray,
                     )
                 }
             }

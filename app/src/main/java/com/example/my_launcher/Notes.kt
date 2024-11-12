@@ -80,6 +80,8 @@ fun NotesPage(
     saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
     moveFile: (sourceFilePaths: String, targetFile: MainActivity.CustomFile) -> Unit,
     deleteFiles: (sourceFile: MainActivity.CustomFile) -> Unit,
+    rootFolderName: MutableState<String>,
+    renameRootFolder: (String) -> Unit,
     files: List<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -93,6 +95,7 @@ fun NotesPage(
     val showSaveFileDialog = remember { mutableStateOf(false) }
     val showSaveFolderDialog = remember { mutableStateOf(false) }
     val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
+    val showRenameRootFolder = remember { mutableStateOf(false) }
 
     val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
 
@@ -146,6 +149,19 @@ fun NotesPage(
                 showSaveFileDialog.value = false
                 showSaveFileOverrideDialog.value = false
             },
+        )
+    }
+
+    if (showRenameRootFolder.value) {
+        DialogRenameRootFolder(
+            confirm = { name: String ->
+                renameRootFolder(name)
+                showRenameRootFolder.value = false
+            },
+            cancel = {
+                showRenameRootFolder.value = false
+            },
+            presetFolderName = rootFolderName.value
         )
     }
 
@@ -401,11 +417,29 @@ fun NotesPage(
                         },
                     )
             ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .background(Color.Yellow)
+                        .clickable {
+                            showRenameRootFolder.value = true
+                        }
+                        .padding(start = 5.dp),
+                    text = rootFolderName.value,
+                    color = textColor,
+                    fontFamily = Typography.titleLarge.fontFamily,
+                    fontSize = Typography.titleLarge.fontSize,
+                    fontWeight = Typography.titleLarge.fontWeight,
+                    lineHeight = Typography.titleLarge.lineHeight,
+                )
+
                 val autoSaveFile = files.find { it.file.nameWithoutExtension == "tmpfileforautosave" }
                 if (autoSaveFile != null) {
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopStart)
+                            .padding(top = 60.dp)
                             .fillMaxWidth()
                             .height(50.dp)
                             .clickable {
@@ -450,7 +484,7 @@ fun NotesPage(
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(top = 60.dp, bottom = 60.dp)
+                        .padding(top = 120.dp, bottom = 60.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     files.forEach { file ->
