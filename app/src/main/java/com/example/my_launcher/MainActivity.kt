@@ -134,7 +134,7 @@ class MainActivity: ComponentActivity() {
     private lateinit var hostView: MutableState<AppWidgetHostView>
 
     private var files = mutableStateListOf<CustomFile>()
-    private var rootFolderName = mutableStateOf("FolderNotFound")
+    private var rootFolderName = mutableStateOf("Notes")
 
     class CustomFile(
         val file: File,
@@ -330,8 +330,16 @@ class MainActivity: ComponentActivity() {
         lifecycleScope.launch {
             sharedPref = getSharedPreferences("mylauncher", MODE_PRIVATE)
             val rootName = sharedPref.getString("rootName", null)
-            if (rootName != null)
+            if (rootName != null && findRootFolder(rootName)) {
                 rootFolderName.value = rootName
+            }
+            else {
+                sharedPref.edit().apply {
+                    putString("rootName", "Notes")
+                    apply()
+                }
+                rootFolderName.value = "Notes"
+            }
 
             setContent {
                 val isDarkMode = isSystemInDarkTheme()
@@ -509,6 +517,18 @@ class MainActivity: ComponentActivity() {
         super.onDestroy()
         widgetHost.stopListening()
         widgetHost.deleteAppWidgetId(widgetId)
+    }
+
+    private fun findRootFolder(name: String): Boolean {
+        return File("/storage/emulated/0/", name).exists()
+
+        /*File("/storage/emulated/0/", "").list()?.forEach {
+            if (it == name) {
+                return true
+            }
+        }
+
+        return false*/
     }
 
     private fun renameNotesRootFolder(name: String) {
