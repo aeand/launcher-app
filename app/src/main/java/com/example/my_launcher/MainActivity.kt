@@ -80,10 +80,8 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- finish move folder function. So I can move folders and all its children
 - when selecting files add an option for deleting selected files
 - store notes in folder in root
-- move title down to bottom instead of top
 */
 
 /* Intent list that would be useful

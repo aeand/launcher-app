@@ -65,9 +65,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileNotFoundException
-
-
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -174,91 +171,9 @@ fun NotesPage(
         ) {
             BasicTextField(
                 modifier = Modifier
-                    .padding(start = 20.dp, top = 20.dp, end = 20.dp)
-                    .fillMaxWidth()
-                    .height(70.dp)
-                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                    .focusRequester(focusRequester)
-                    .onFocusChanged {
-                        if (it.isFocused) {
-                            textFieldFocused.value = true
-                            showDirMenu.value = false
-                        }
-                    }
-                    .background(Color.White),
-                value = title.value,
-                onValueChange = { it: String ->
-                    title.value = it
-                },
-                cursorBrush = Brush.verticalGradient(
-                    0.00f to Color.Black,
-                    0.15f to Color.Black,
-                    0.15f to Color.Black,
-                    0.75f to Color.Black,
-                    0.75f to Color.Black,
-                    1.00f to Color.Black,
-                ),
-                enabled = enabled.value,
-                textStyle = TextStyle(
-                    textAlign = TextAlign.Start,
-                    color = if (error.value) Color.Red else Color.Black,
-                    fontFamily = Typography.titleMedium.fontFamily,
-                    fontSize = Typography.titleMedium.fontSize,
-                    lineHeight = Typography.titleMedium.lineHeight,
-                    letterSpacing = Typography.titleMedium.letterSpacing,
-                ),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        textFieldFocused.value = false
-                    }
-                ),
-                singleLine = false,
-                maxLines = 1,
-                visualTransformation = VisualTransformation.None,
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(start = 10.dp, top = 10.dp, end = 10.dp)
-                    ) {
-                        if (title.value.isEmpty()) {
-                            Text(
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart),
-                                text = "Title",
-                                textAlign = TextAlign.Left,
-                                fontFamily = FontFamily(roboto["italic"]!!),
-                                fontSize = Typography.titleMedium.fontSize,
-                                fontWeight = Typography.titleMedium.fontWeight,
-                                lineHeight = Typography.titleMedium.lineHeight,
-                                color = Color.Gray
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart)
-                            ) {
-                                innerTextField()
-                            }
-                        }
-                    }
-                },
-                onTextLayout = {},
-                interactionSource = interactionSource,
-                minLines = 1,
-            )
-
-            BasicTextField(
-                modifier = Modifier
-                    .padding(start = 20.dp, top = 90.dp, end = 20.dp, bottom = 50.dp)
+                    .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 90.dp)
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp))
+                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
                     .focusRequester(focusRequester)
                     .onFocusChanged {
                         if (it.isFocused) {
@@ -306,7 +221,7 @@ fun NotesPage(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(start = 10.dp, end = 10.dp, bottom = 10.dp)
+                            .padding(start = 10.dp, top = 10.dp, end = 10.dp)
                     ) {
                         if (text.value.isEmpty()) {
                             Text(
@@ -323,6 +238,89 @@ fun NotesPage(
                             )
                         } else {
                             innerTextField()
+                        }
+                    }
+                },
+                onTextLayout = {},
+                interactionSource = interactionSource,
+                minLines = 1,
+            )
+
+            BasicTextField(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 20.dp, bottom = 50.dp, end = 20.dp)
+                    .fillMaxWidth()
+                    .height(70.dp)
+                    .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp))
+                    .focusRequester(focusRequester)
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            textFieldFocused.value = true
+                            showDirMenu.value = false
+                        }
+                    }
+                    .background(Color.White),
+                value = title.value,
+                onValueChange = { it: String ->
+                    title.value = it
+                },
+                cursorBrush = Brush.verticalGradient(
+                    0.00f to Color.Black,
+                    0.15f to Color.Black,
+                    0.15f to Color.Black,
+                    0.75f to Color.Black,
+                    0.75f to Color.Black,
+                    1.00f to Color.Black,
+                ),
+                enabled = enabled.value,
+                textStyle = TextStyle(
+                    textAlign = TextAlign.Start,
+                    color = if (error.value) Color.Red else Color.Black,
+                    fontFamily = Typography.titleMedium.fontFamily,
+                    fontSize = Typography.titleMedium.fontSize,
+                    lineHeight = Typography.titleMedium.lineHeight,
+                    letterSpacing = Typography.titleMedium.letterSpacing,
+                ),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        textFieldFocused.value = false
+                    }
+                ),
+                singleLine = false,
+                maxLines = 1,
+                visualTransformation = VisualTransformation.None,
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 10.dp, end = 10.dp)
+                    ) {
+                        if (title.value.isEmpty()) {
+                            Text(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart),
+                                text = "Title",
+                                textAlign = TextAlign.Left,
+                                fontFamily = FontFamily(roboto["italic"]!!),
+                                fontSize = Typography.titleMedium.fontSize,
+                                fontWeight = Typography.titleMedium.fontWeight,
+                                lineHeight = Typography.titleMedium.lineHeight,
+                                color = Color.Gray
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                            ) {
+                                innerTextField()
+                            }
                         }
                     }
                 },
