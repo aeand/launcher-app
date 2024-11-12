@@ -245,7 +245,7 @@ fun DialogSaveFolder(
                                         modifier = Modifier
                                             .align(Alignment.CenterStart)
                                             .padding(5.dp),
-                                        text = "Name the file",
+                                        text = "Name the folder",
                                         textAlign = TextAlign.Left,
                                         fontFamily = FontFamily(
                                             Font(R.font.roboto_italic)
