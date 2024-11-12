@@ -79,6 +79,7 @@ fun NotesPage(
     readFile: (file: File) -> String,
     saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
     moveFile: (sourceFilePaths: String, targetFile: MainActivity.CustomFile) -> Unit,
+    deleteFiles: (sourceFile: MainActivity.CustomFile) -> Unit,
     files: List<MainActivity.CustomFile>,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -577,31 +578,50 @@ fun NotesPage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clickable {
-                                text.value = ""
-                                title.value = ""
-                                path.value = ""
-                                showDirMenu.value = !showDirMenu.value
-                            },
-                        painter = painterResource(R.drawable.plus),
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
+                    if (selectedItems.size != 0) {
+                        Icon(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clickable {
+                                    selectedItems.forEach {
+                                        val file = files.find { file -> file.file.path == it }
+                                        if (file != null)
+                                            deleteFiles(file)
+                                    }
+                                    selectedItems.clear()
+                                },
+                            painter = painterResource(R.drawable.bin),
+                            contentDescription = null,
+                            tint = Color.White,
+                        )
+                    }
+                    else {
+                        Icon(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clickable {
+                                    text.value = ""
+                                    title.value = ""
+                                    path.value = ""
+                                    showDirMenu.value = !showDirMenu.value
+                                },
+                            painter = painterResource(R.drawable.plus),
+                            contentDescription = null,
+                            tint = Color.White,
+                        )
 
-                    Icon(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clickable {
-                                showDirMenu.value = !showDirMenu.value
-                                showSaveFolderDialog.value = true
-                            },
-                        painter = painterResource(R.drawable.folder),
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
+                        Icon(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clickable {
+                                    showDirMenu.value = !showDirMenu.value
+                                    showSaveFolderDialog.value = true
+                                },
+                            painter = painterResource(R.drawable.folder),
+                            contentDescription = null,
+                            tint = Color.White,
+                        )
+                    }
 
                     Icon(
                         modifier = Modifier

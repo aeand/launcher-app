@@ -80,7 +80,6 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- when selecting files add an option for deleting selected files
 - store notes in folder in root
 */
 
@@ -450,6 +449,7 @@ class MainActivity: ComponentActivity() {
                 readFile = ::readFile,
                 saveFolder = ::saveFolder,
                 moveFile = ::moveFile,
+                deleteFiles = ::deleteFileAndChildren,
                 files = files,
             )
         }
