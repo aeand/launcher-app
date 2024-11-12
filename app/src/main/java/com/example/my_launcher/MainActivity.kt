@@ -24,6 +24,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
 import androidx.compose.animation.core.tween
@@ -74,7 +75,6 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
 - blur background when list is open
-- make home button open the wallpaper view
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
 */
@@ -107,6 +107,7 @@ https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
 */
 
+@OptIn(ExperimentalFoundationApi::class)
 class MainActivity: ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
@@ -115,6 +116,9 @@ class MainActivity: ComponentActivity() {
     private var apps = mutableStateListOf<ApplicationInformation>()
     private var alphabet = mutableStateListOf<String>()
     private lateinit var lazyScroll: LazyListState
+
+    private lateinit var dragState: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
+    private lateinit var dragState2: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
 
     private lateinit var widgetHost: AppWidgetHost
     private lateinit var widgetManager: AppWidgetManager
@@ -150,7 +154,6 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -276,6 +279,25 @@ class MainActivity: ComponentActivity() {
                         createAppList()
                         customScope.launch {
                             lazyScroll.scrollToItem(0)
+                            dragState.updateAnchors(DraggableAnchors {
+                                Start at 0f
+                                End at 0f
+                            })
+
+                            dragState.updateAnchors(DraggableAnchors {
+                                Start at 0f
+                                End at -1080f
+                            })
+
+                            dragState2.updateAnchors(DraggableAnchors {
+                                Start at 0f
+                                End at 0f
+                            })
+
+                            dragState2.updateAnchors(DraggableAnchors {
+                                Start at 0f
+                                End at -2340f
+                            })
                         }
                     }
 
@@ -311,7 +333,6 @@ class MainActivity: ComponentActivity() {
             LaunchedEffect(true) {
                 customScope.launch {
                     delay(900000) // every 15 min
-
                     hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
                     hostView.value.setAppWidget(widgetId, duoWidget)
                 }
@@ -332,7 +353,7 @@ class MainActivity: ComponentActivity() {
             val bottomBar = 48f
 
             val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-            val dragState = remember {
+            dragState = remember {
                 AnchoredDraggableState(
                     initialValue = Start,
                     anchors = DraggableAnchors {
@@ -345,7 +366,7 @@ class MainActivity: ComponentActivity() {
                     decayAnimationSpec = decayAnimationSpec
                 )
             }
-            val dragState2 = remember {
+            dragState2 = remember {
                 AnchoredDraggableState(
                     initialValue = Start,
                     anchors = DraggableAnchors {
@@ -423,8 +444,7 @@ class MainActivity: ComponentActivity() {
             }
 
             LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
-                enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt()
-                        && dragState2.requireOffset().roundToInt() == 0
+                enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt() && dragState2.requireOffset().roundToInt() == 0
             }
 
             NotesPage(
