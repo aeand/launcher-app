@@ -83,6 +83,7 @@ fun NotesPage(
     rootFolderName: MutableState<String>,
     renameRootFolder: (String) -> Unit,
     files: List<MainActivity.CustomFile>,
+    rootPath: String,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val textFieldFocused = remember { mutableStateOf(false) }
@@ -97,8 +98,6 @@ fun NotesPage(
     val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
     val showRenameRootFolder = remember { mutableStateOf(false) }
 
-    val appPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
-
     LaunchedEffect(text.value) {
         this.launch {
             delay(3000)
@@ -110,9 +109,9 @@ fun NotesPage(
 
     if (showSaveFileDialog.value) {
         DialogSaveFile(
-            confirm = { name: String, folderPath: String ->
+            confirm = { name: String ->
                 if (name.isNotEmpty()) {
-                    if (!saveFile(name, folderPath, text.value, true)) {
+                    if (!saveFile(name, path.value, text.value, true)) {
                         showSaveFileOverrideDialog.value = true
                     }
 
@@ -123,14 +122,13 @@ fun NotesPage(
                 showSaveFileDialog.value = false
             },
             presetFileName = title.value,
-            presetPath = path.value,
         )
     }
 
     if (showSaveFolderDialog.value) {
         DialogSaveFolder(
-            confirm = { folderName: String, folderPath: String ->
-                saveFolder(folderName, folderPath, true)
+            confirm = { folderName: String ->
+                saveFolder(folderName, path.value, true)
                 showSaveFolderDialog.value = false
             },
             cancel = {
@@ -453,7 +451,7 @@ fun NotesPage(
                                     text.value = readFile(autoSaveFile.file)
                                     title.value = "tmpfileforautosave"
                                     path.value = autoSaveFile.file.path
-                                        .replace(appPath, "")
+                                        .replace(rootPath, "")
                                         .replace(autoSaveFile.file.name, "")
                                     showDirMenu.value = false
                                 }
@@ -521,7 +519,7 @@ fun NotesPage(
                                                         title.value = file.file.nameWithoutExtension
                                                         showDirMenu.value = false
                                                         path.value = file.file.path
-                                                            .replace(appPath, "")
+                                                            .replace(rootPath, "")
                                                             .replace(file.file.name, "")
                                                     }
                                                 } else if (file.file.isDirectory) {

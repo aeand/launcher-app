@@ -84,8 +84,8 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- add select directory to change to different directory
-- upgrade select path for file
+- bug: when file is moved, need to refresh directory to move again
+- add directory selection. So I can select a different folder to add notes to
 */
 
 /* Intent list that would be useful
@@ -487,7 +487,8 @@ class MainActivity: ComponentActivity() {
                     deleteFiles = ::deleteFileAndChildren,
                     files = files,
                     renameRootFolder = ::renameNotesRootFolder,
-                    rootFolderName = rootFolderName
+                    rootFolderName = rootFolderName,
+                    rootPath = "/storage/emulated/0/${rootFolderName.value}"
                 )
             }
         }
