@@ -12,7 +12,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -47,7 +46,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,7 +75,7 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 - refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
-- blur background when list is open
+- blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>)
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
 */
@@ -105,6 +103,41 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 - Intent.CATEGORY_SECONDARY_HOME for opening home?
 */
 
+/* TODO look into permissions
+<!-- A launcher app should be available all the time. -->
+<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+
+<uses-permission android:name="android.permission.ACCESS_RESTRICTED_SETTINGS" />
+
+<uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+<uses-permission android:name="android.permission.STATUS_BAR"/>
+<uses-permission android:name="android.permission.STATUS_BAR_SERVICE"/>
+<uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />
+
+<!-- Useful permissions lists
+https://stuff.mit.edu/afs/sipb/project/android/docs/reference/android/Manifest.permission.html#BIND_ACCESSIBILITY_SERVICE
+https://manifestdestiny.reveb.la/permissions/android.permission.system_overlay_window/index.html
+-->
+
+<uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
+<uses-permission android:name="android.permission.CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS"/>
+<uses-permission android:name="android.permission.VIBRATE"/>
+<uses-permission android:name="android.permission.START_TASKS_FROM_RECENTS"/>
+<uses-permission android:name="android.permission.REMOVE_TASKS"/>
+<uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>
+<uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
+<uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW"/> could be used for systembar partial open
+<uses-permission android:name="android.permission.STOP_APP_SWITCHES"/>
+<uses-permission android:name="android.permission.READ_FRAME_BUFFER"/>
+<uses-permission android:name="android.permission.MANAGE_ACCESSIBILITY"/>
+<uses-permission android:name="android.permission.MONITOR_INPUT"/>
+<uses-permission android:name="android.permission.ALLOW_SLIPPERY_TOUCHES"/>
+<uses-permission android:name="android.permission.ACCESS_SHORTCUTS"/>
+<uses-permission android:name="android.permission.SYSTEM_APPLICATION_OVERLAY" />
+<!-- Permission required to access profiles which are otherwise hidden from being visible via APIs, e.g. private profile.-->
+<uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES_FULL" />
+*/
+
 /* Inspiration
 https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
@@ -128,7 +161,7 @@ class MainActivity: ComponentActivity() {
     private var widgetId: Int = 0
     private lateinit var duoWidget: AppWidgetProviderInfo
     private lateinit var options: Bundle
-    private lateinit var hostView: MutableState<AppWidgetHostView>
+    private lateinit var hostView: AppWidgetHostView
 
     private var files = mutableStateListOf<CustomFile>()
     private var rootFolderName = "Notes"
@@ -152,8 +185,8 @@ class MainActivity: ComponentActivity() {
         if (result.resultCode == RESULT_OK) {
             println("onActivityResult: ${widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)}")
             if (widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)) {
-                hostView = mutableStateOf(widgetHost.createView(applicationContext, widgetId, duoWidget))
-                hostView.value.setAppWidget(widgetId, duoWidget)
+                hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
+                hostView.setAppWidget(widgetId, duoWidget)
             }
         }
     }
@@ -186,11 +219,9 @@ class MainActivity: ComponentActivity() {
             }
 
             LaunchedEffect(true) {
-                customScope.launch {
-                    delay(900000) // every 15 min
-                    hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
-                    hostView.value.setAppWidget(widgetId, duoWidget)
-                }
+                duoWidget.updatePeriodMillis.toLong() // every 15 min
+                hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
+                hostView.setAppWidget(widgetId, duoWidget)
             }
 
             Text(
@@ -279,7 +310,7 @@ class MainActivity: ComponentActivity() {
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = lazyScroll,
-                hostView = hostView.value,
+                hostView = hostView,
                 alphabet = alphabet,
                 apps = apps,
                 customScope = customScope,
@@ -346,7 +377,7 @@ class MainActivity: ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         widgetHost.stopListening()
-        widgetHost.deleteAppWidgetId(widgetId)
+        widgetHost.deleteAppWidgetId(widgetId) // needed?
     }
 
     private fun saveFolder(name: String, path: String = "", showToast: Boolean = true) {
@@ -738,17 +769,17 @@ class MainActivity: ComponentActivity() {
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
         options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
 
-        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget.provider)
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
-
         if (!widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider)) {
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget.provider)
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
+
             requestWidgetPermissionsLauncher.launch(intent)
         }
 
-        hostView = mutableStateOf(widgetHost.createView(applicationContext, widgetId, duoWidget))
-        hostView.value.setAppWidget(widgetId, duoWidget)
+        hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
+        hostView.setAppWidget(widgetId, duoWidget)
     }
 
     private fun registerReceiver() {
