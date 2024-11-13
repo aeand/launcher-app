@@ -74,10 +74,10 @@ fun NotesPage(
     error: MutableState<Boolean>,
     textColor: Color,
     updateFiles: () -> Unit,
-    saveFile: (name: String, path: String, content: String, showToast: Boolean) -> Boolean,
-    saveFileOverride: (name: String, path: String, content: String, showToast: Boolean) -> Unit,
+    saveFile: (name: String, path: String, content: String) -> Boolean,
+    saveFileOverride: (name: String, path: String, content: String) -> Unit,
     readFile: (file: File) -> String,
-    saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
+    saveFolder: (name: String, path: String) -> Unit,
     moveFile: (sourceFilePaths: String, targetFile: MainActivity.CustomFile) -> Unit,
     deleteFiles: (sourceFile: MainActivity.CustomFile) -> Unit,
     rootFolderName: String,
@@ -100,7 +100,7 @@ fun NotesPage(
         this.launch {
             delay(3000)
             if (text.value != "") {
-                saveFile("tmpfileforautosave", "", text.value, false)
+                saveFile("tmpfileforautosave", "", text.value)
             }
         }
     }
@@ -109,7 +109,7 @@ fun NotesPage(
         DialogSaveFile(
             confirm = { name: String ->
                 if (name.isNotEmpty()) {
-                    if (!saveFile(name, path.value, text.value, true)) {
+                    if (!saveFile(name, path.value, text.value)) {
                         showSaveFileOverrideDialog.value = true
                     }
 
@@ -126,7 +126,7 @@ fun NotesPage(
     if (showSaveFolderDialog.value) {
         DialogSaveFolder(
             confirm = { folderName: String ->
-                saveFolder(folderName, path.value, true)
+                saveFolder(folderName, path.value)
                 showSaveFolderDialog.value = false
             },
             cancel = {
@@ -138,7 +138,7 @@ fun NotesPage(
     if (showSaveFileOverrideDialog.value) {
         DialogOverride(
             confirm = {
-                saveFileOverride(title.value, path.value, text.value, true)
+                saveFileOverride(title.value, path.value, text.value)
                 showSaveFileOverrideDialog.value = false
             },
             cancel = {

@@ -20,7 +20,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -382,7 +381,7 @@ class MainActivity: ComponentActivity() {
         widgetHost.deleteAppWidgetId(widgetId) // needed?
     }
 
-    private fun saveFolder(name: String, path: String = "", showToast: Boolean = true) {
+    private fun saveFolder(name: String, path: String = "") {
         val folder = File("/storage/emulated/0/${rootFolderName}", path + name) // applicationContext.getExternalFilesDir(null)
 
         if (!folder.exists()) {
@@ -394,24 +393,18 @@ class MainActivity: ComponentActivity() {
         }
 
         updateFiles()
-
-        if (showToast)
-            Toast.makeText(applicationContext, "Folder saved", Toast.LENGTH_SHORT).show()
     }
 
-    private fun overrideFile(name: String, folder: String, content: String, showToast: Boolean = true) {
+    private fun overrideFile(name: String, folder: String, content: String) {
         val letDirectory = File("/storage/emulated/0/${rootFolderName}", folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
 
         updateFiles()
-
-        if (showToast)
-            Toast.makeText(applicationContext, "Note overridden", Toast.LENGTH_SHORT).show()
     }
 
-    private fun saveFile(name: String, folder: String = "", content: String, showToast: Boolean = true): Boolean {
+    private fun saveFile(name: String, folder: String = "", content: String): Boolean {
         val letDirectory = File("/storage/emulated/0/${rootFolderName}", folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
@@ -423,9 +416,6 @@ class MainActivity: ComponentActivity() {
 
         updateFiles()
 
-        if (showToast)
-            Toast.makeText(applicationContext, "Note saved", Toast.LENGTH_SHORT).show()
-
         return true
     }
 
@@ -435,7 +425,7 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    private fun moveFile(sourceFilePaths: String, targetFile: CustomFile) {
+    fun moveFile(sourceFilePaths: String, targetFile: CustomFile) {
         val pathList = mutableListOf<String>()
         if (sourceFilePaths.contains("_-middle-_")) {
             sourceFilePaths.split("_-middle-_").forEach { path ->
@@ -457,7 +447,6 @@ class MainActivity: ComponentActivity() {
         }
 
         val rootPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
-        var showToast = false
 
         sourceFileList.forEach { sourceFile ->
             if (sourceFile.file.path == targetFile.file.path) {
@@ -497,7 +486,6 @@ class MainActivity: ComponentActivity() {
 
                         try {
                             sourceFile.file.delete()
-                            showToast = true
                             updateFiles()
                             return@forEach
                         } catch (e: Exception) {
@@ -513,6 +501,7 @@ class MainActivity: ComponentActivity() {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isFile) {
+                                //TODO found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
                                 println("error: found file with same name as source file")
                                 return@forEach
                             }
@@ -523,7 +512,6 @@ class MainActivity: ComponentActivity() {
                         sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
                         try {
                             sourceFile.file.delete()
-                            showToast = true
                             updateFiles()
                             return@forEach
                         } catch (e: Exception) {
@@ -536,7 +524,7 @@ class MainActivity: ComponentActivity() {
                     }
                 }
                 else {
-                    println("error: target file is not file or folder")
+                    println("error: target file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
                     return@forEach
                 }
             }
@@ -563,6 +551,7 @@ class MainActivity: ComponentActivity() {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
+                                //TODO found issue where I want to copy folder up a level or two.
                                 println("error: folder with that name already exists")
                                 return@forEach
                             }
@@ -572,18 +561,15 @@ class MainActivity: ComponentActivity() {
                     copyFolderAndChildren(sourceFile, targetFile.file.path)
                 }
                 else {
-                    println("error: target file is not file or folder")
+                    println("error: target file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
                     return@forEach
                 }
             }
             else {
-                println("error: source file is not file or folder")
+                println("error: source file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
                 return@forEach
             }
         }
-
-        if (showToast)
-            Toast.makeText(applicationContext, "Note moved", Toast.LENGTH_SHORT).show()
     }
 
     private fun copyFolderAndChildren(sourceFile: CustomFile, targetPath: String) {
