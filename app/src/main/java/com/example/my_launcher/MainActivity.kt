@@ -81,7 +81,8 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 */
 
 /* TODO Notes
-- bug: when file is moved, need to refresh directory to move again
+- bug: when file is moved, need to refresh directory to move again (problem is that the file doesn't exist)
+- bug: moving folder to root when it's already in root deletes the folder.
 */
 
 /* Intent list that would be useful
