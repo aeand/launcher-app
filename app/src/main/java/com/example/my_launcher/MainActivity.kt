@@ -60,7 +60,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,7 +84,6 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 
 /* TODO Notes
 - bug: when file is moved, need to refresh directory to move again
-- add directory selection. So I can select a different folder to add notes to
 */
 
 /* Intent list that would be useful
@@ -134,7 +132,7 @@ class MainActivity: ComponentActivity() {
     private lateinit var hostView: MutableState<AppWidgetHostView>
 
     private var files = mutableStateListOf<CustomFile>()
-    private var rootFolderName = mutableStateOf("Notes")
+    private var rootFolderName = "Notes"
 
     class CustomFile(
         val file: File,
@@ -327,178 +325,162 @@ class MainActivity: ComponentActivity() {
         updateFiles()
         requestPermissions()
 
-        lifecycleScope.launch {
-            sharedPref = getSharedPreferences("mylauncher", MODE_PRIVATE)
-            val rootName = sharedPref.getString("rootName", null)
-            if (rootName != null && findRootFolder(rootName)) {
-                rootFolderName.value = rootName
-            }
-            else {
-                sharedPref.edit().apply {
-                    putString("rootName", "Notes")
-                    apply()
-                }
-                rootFolderName.value = "Notes"
-            }
-
-            setContent {
-                val isDarkMode = isSystemInDarkTheme()
-                val context = LocalContext.current as ComponentActivity
-                DisposableEffect(isDarkMode) {
-                    context.enableEdgeToEdge(
-                        statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                        navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                    )
-
-                    onDispose { }
-                }
-
-                LaunchedEffect(true) {
-                    customScope.launch {
-                        delay(900000) // every 15 min
-                        hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
-                        hostView.value.setAppWidget(widgetId, duoWidget)
-                    }
-                }
-
-                Text(
-                    modifier = Modifier
-                        .padding(start = 19.dp, top = 30.dp),
-                    text = date,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight(600),
-                    color = textColor,
+        setContent {
+            val isDarkMode = isSystemInDarkTheme()
+            val context = LocalContext.current as ComponentActivity
+            DisposableEffect(isDarkMode) {
+                context.enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+                    navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
                 )
 
-                val screenWidth = 1080f
-                val screenHeight = 2340f
-                val topBar = 32f
-                val bottomBar = 48f
+                onDispose { }
+            }
 
-                val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-                dragState = remember {
-                    AnchoredDraggableState(
-                        initialValue = Start,
-                        anchors = DraggableAnchors {
-                            Start at 0f
-                            End at -screenWidth
-                        },
-                        positionalThreshold = { d -> d * 0.9f},
-                        velocityThreshold = { Float.POSITIVE_INFINITY },
-                        snapAnimationSpec = tween(),
-                        decayAnimationSpec = decayAnimationSpec
-                    )
+            LaunchedEffect(true) {
+                customScope.launch {
+                    delay(900000) // every 15 min
+                    hostView.value = widgetHost.createView(applicationContext, widgetId, duoWidget)
+                    hostView.value.setAppWidget(widgetId, duoWidget)
                 }
-                dragState2 = remember {
-                    AnchoredDraggableState(
-                        initialValue = Start,
-                        anchors = DraggableAnchors {
-                            Start at 0f
-                            End at -screenHeight
-                        },
-                        positionalThreshold = { d -> d * 0.9f},
-                        velocityThreshold = { Float.POSITIVE_INFINITY },
-                        snapAnimationSpec = tween(),
-                        decayAnimationSpec = decayAnimationSpec
+            }
+
+            Text(
+                modifier = Modifier
+                    .padding(start = 19.dp, top = 30.dp),
+                text = date,
+                fontSize = 11.sp,
+                fontWeight = FontWeight(600),
+                color = textColor,
+            )
+
+            val screenWidth = 1080f
+            val screenHeight = 2340f
+            val topBar = 32f
+            val bottomBar = 48f
+
+            val decayAnimationSpec = rememberSplineBasedDecay<Float>()
+            dragState = remember {
+                AnchoredDraggableState(
+                    initialValue = Start,
+                    anchors = DraggableAnchors {
+                        Start at 0f
+                        End at -screenWidth
+                    },
+                    positionalThreshold = { d -> d * 0.9f},
+                    velocityThreshold = { Float.POSITIVE_INFINITY },
+                    snapAnimationSpec = tween(),
+                    decayAnimationSpec = decayAnimationSpec
+                )
+            }
+            dragState2 = remember {
+                AnchoredDraggableState(
+                    initialValue = Start,
+                    anchors = DraggableAnchors {
+                        Start at 0f
+                        End at -screenHeight
+                    },
+                    positionalThreshold = { d -> d * 0.9f},
+                    velocityThreshold = { Float.POSITIVE_INFINITY },
+                    snapAnimationSpec = tween(),
+                    decayAnimationSpec = decayAnimationSpec
+                )
+            }
+
+            val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
+
+            Box(
+                modifier = Modifier
+                    .anchoredDraggable(
+                        state = dragState,
+                        enabled = appDrawerClosed,
+                        orientation = Orientation.Horizontal
                     )
-                }
-
-                val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
-
-                Box(
-                    modifier = Modifier
-                        .anchoredDraggable(
-                            state = dragState,
-                            enabled = appDrawerClosed,
-                            orientation = Orientation.Horizontal
+                    .anchoredDraggable(
+                        state = dragState2,
+                        enabled = true,
+                        orientation = Orientation.Vertical
+                    )
+                    .fillMaxSize()
+                    .offset {
+                        IntOffset(
+                            dragState
+                                .requireOffset()
+                                .roundToInt(),
+                            dragState2
+                                .requireOffset()
+                                .roundToInt()
                         )
-                        .anchoredDraggable(
-                            state = dragState2,
-                            enabled = true,
-                            orientation = Orientation.Vertical
-                        )
-                        .fillMaxSize()
-                        .offset {
-                            IntOffset(
-                                dragState
-                                    .requireOffset()
-                                    .roundToInt(),
-                                dragState2
-                                    .requireOffset()
-                                    .roundToInt()
-                            )
-                        }
-                )
-
-                // create app list and alphabet list when scrolled down to bottom
-                LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
-                    val i = Intent(Intent.ACTION_MAIN, null)
-                    i.addCategory(Intent.CATEGORY_LAUNCHER)
-                    val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
-                    if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
-                        createAppList()
-                        packages = pk
                     }
+            )
+
+            // create app list and alphabet list when scrolled down to bottom
+            LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+                val i = Intent(Intent.ACTION_MAIN, null)
+                i.addCategory(Intent.CATEGORY_LAUNCHER)
+                val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
+                if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
+                    createAppList()
+                    packages = pk
                 }
-
-                lazyScroll = rememberLazyListState()
-
-                AppDrawer(
-                    modifier = Modifier
-                        .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
-                    lazyScroll = lazyScroll,
-                    hostView = hostView.value,
-                    alphabet = alphabet,
-                    apps = apps,
-                    customScope = customScope,
-                    launchApp = ::launchApp,
-                    hideApp = ::hideApp,
-                    uninstallApp = ::uninstallApp,
-                    textColor = textColor,
-                    bottomBar = bottomBar
-                )
-
-                val error = remember {
-                    mutableStateOf(false)
-                }
-
-                val enabled = remember {
-                    mutableStateOf(false)
-                }
-
-                LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
-                    enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt() && dragState2.requireOffset().roundToInt() == 0
-                }
-
-                NotesPage(
-                    Modifier
-                        .padding(top = topBar.dp, bottom = bottomBar.dp)
-                        .offset {
-                            IntOffset(
-                                dragState
-                                    .requireOffset()
-                                    .roundToInt() + screenWidth.roundToInt(),
-                                dragState2
-                                    .requireOffset()
-                                    .roundToInt()
-                            )
-                        },
-                    error = error,
-                    enabled = enabled,
-                    textColor = textColor,
-                    updateFiles = ::updateFiles,
-                    saveFile = ::saveFile,
-                    saveFileOverride = ::overrideFile,
-                    readFile = ::readFile,
-                    saveFolder = ::saveFolder,
-                    moveFile = ::moveFile,
-                    deleteFiles = ::deleteFileAndChildren,
-                    files = files,
-                    renameRootFolder = ::renameNotesRootFolder,
-                    rootFolderName = rootFolderName,
-                    rootPath = "/storage/emulated/0/${rootFolderName.value}"
-                )
             }
+
+            lazyScroll = rememberLazyListState()
+
+            AppDrawer(
+                modifier = Modifier
+                    .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                lazyScroll = lazyScroll,
+                hostView = hostView.value,
+                alphabet = alphabet,
+                apps = apps,
+                customScope = customScope,
+                launchApp = ::launchApp,
+                hideApp = ::hideApp,
+                uninstallApp = ::uninstallApp,
+                textColor = textColor,
+                bottomBar = bottomBar
+            )
+
+            val error = remember {
+                mutableStateOf(false)
+            }
+
+            val enabled = remember {
+                mutableStateOf(false)
+            }
+
+            LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
+                enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt() && dragState2.requireOffset().roundToInt() == 0
+            }
+
+            NotesPage(
+                Modifier
+                    .padding(top = topBar.dp, bottom = bottomBar.dp)
+                    .offset {
+                        IntOffset(
+                            dragState
+                                .requireOffset()
+                                .roundToInt() + screenWidth.roundToInt(),
+                            dragState2
+                                .requireOffset()
+                                .roundToInt()
+                        )
+                    },
+                error = error,
+                enabled = enabled,
+                textColor = textColor,
+                updateFiles = ::updateFiles,
+                saveFile = ::saveFile,
+                saveFileOverride = ::overrideFile,
+                readFile = ::readFile,
+                saveFolder = ::saveFolder,
+                moveFile = ::moveFile,
+                deleteFiles = ::deleteFileAndChildren,
+                files = files,
+                rootFolderName = rootFolderName,
+                rootPath = "/storage/emulated/0/${rootFolderName}"
+            )
         }
     }
 
@@ -519,45 +501,8 @@ class MainActivity: ComponentActivity() {
         widgetHost.deleteAppWidgetId(widgetId)
     }
 
-    private fun findRootFolder(name: String): Boolean {
-        return File("/storage/emulated/0/", name).exists()
-
-        /*File("/storage/emulated/0/", "").list()?.forEach {
-            if (it == name) {
-                return true
-            }
-        }
-
-        return false*/
-    }
-
-    private fun renameNotesRootFolder(name: String) {
-        File("/storage/emulated/0/", "").list()?.forEach {
-            if (it == name) {
-                println("error: folder with that name already exists")
-                return
-            }
-        }
-
-        try {
-            File("/storage/emulated/0/${rootFolderName.value}", "")
-                .renameTo(File("/storage/emulated/0/${name}", ""))
-        } catch (e: Exception) {
-            println("error: failed rename root folder: $e")
-            return
-        }
-
-        rootFolderName.value = name
-        sharedPref.edit().apply {
-            putString("rootName", name)
-            apply()
-        }
-
-        updateFiles()
-    }
-
     private fun saveFolder(name: String, path: String = "", showToast: Boolean = true) {
-        val folder = File("/storage/emulated/0/${rootFolderName.value}", path + name) // applicationContext.getExternalFilesDir(null)
+        val folder = File("/storage/emulated/0/${rootFolderName}", path + name) // applicationContext.getExternalFilesDir(null)
 
         if (!folder.exists()) {
             if (!folder.mkdir()) {
@@ -574,7 +519,7 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun overrideFile(name: String, folder: String, content: String, showToast: Boolean = true) {
-        val letDirectory = File("/storage/emulated/0/${rootFolderName.value}", folder)
+        val letDirectory = File("/storage/emulated/0/${rootFolderName}", folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
@@ -586,7 +531,7 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun saveFile(name: String, folder: String = "", content: String, showToast: Boolean = true): Boolean {
-        val letDirectory = File("/storage/emulated/0/${rootFolderName.value}", folder)
+        val letDirectory = File("/storage/emulated/0/${rootFolderName}", folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         if (file.exists()) {
@@ -653,7 +598,7 @@ class MainActivity: ComponentActivity() {
                         return@forEach
                     }
 
-                    val filesInPath = File("/storage/emulated/0/${rootFolderName.value}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    val filesInPath = File("/storage/emulated/0/${rootFolderName}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
                         println("error: found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
                         return@forEach
@@ -718,7 +663,7 @@ class MainActivity: ComponentActivity() {
                 if (targetFile.file.isFile) {
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
-                    val filesInPath = File("/storage/emulated/0/${rootFolderName.value}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    val filesInPath = File("/storage/emulated/0/${rootFolderName}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
                         println("error: found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
                         return@forEach
@@ -795,7 +740,7 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun getFiles(path: String = ""): MutableList<CustomFile> {
-        val files = File("/storage/emulated/0/${rootFolderName.value}", path).listFiles()
+        val files = File("/storage/emulated/0/${rootFolderName}", path).listFiles()
         val directoryLevel = path.count { it == '/' } + 1
 
         files?.sortWith { a, b ->

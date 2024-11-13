@@ -80,8 +80,7 @@ fun NotesPage(
     saveFolder: (name: String, path: String, showToast: Boolean) -> Unit,
     moveFile: (sourceFilePaths: String, targetFile: MainActivity.CustomFile) -> Unit,
     deleteFiles: (sourceFile: MainActivity.CustomFile) -> Unit,
-    rootFolderName: MutableState<String>,
-    renameRootFolder: (String) -> Unit,
+    rootFolderName: String,
     files: List<MainActivity.CustomFile>,
     rootPath: String,
 ) {
@@ -96,7 +95,6 @@ fun NotesPage(
     val showSaveFileDialog = remember { mutableStateOf(false) }
     val showSaveFolderDialog = remember { mutableStateOf(false) }
     val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
-    val showRenameRootFolder = remember { mutableStateOf(false) }
 
     LaunchedEffect(text.value) {
         this.launch {
@@ -147,19 +145,6 @@ fun NotesPage(
                 showSaveFileDialog.value = false
                 showSaveFileOverrideDialog.value = false
             },
-        )
-    }
-
-    if (showRenameRootFolder.value) {
-        DialogRenameRootFolder(
-            confirm = { name: String ->
-                renameRootFolder(name)
-                showRenameRootFolder.value = false
-            },
-            cancel = {
-                showRenameRootFolder.value = false
-            },
-            presetFolderName = rootFolderName.value
         )
     }
 
@@ -402,7 +387,7 @@ fun NotesPage(
                                         event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
                                     moveFile(
                                         draggedFilePath, MainActivity.CustomFile(
-                                            file = File("/storage/emulated/0/${rootFolderName.value}", ""),
+                                            file = File("/storage/emulated/0/${rootFolderName}", ""),
                                             children = null,
                                             indent = 1,
                                             hidden = true
@@ -419,11 +404,8 @@ fun NotesPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .clickable {
-                            showRenameRootFolder.value = true
-                        }
                         .padding(start = 5.dp),
-                    text = rootFolderName.value,
+                    text = rootFolderName,
                     color = textColor,
                     fontFamily = Typography.titleLarge.fontFamily,
                     fontSize = Typography.titleLarge.fontSize,
