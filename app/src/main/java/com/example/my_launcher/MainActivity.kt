@@ -141,6 +141,7 @@ https://manifestdestiny.reveb.la/permissions/android.permission.system_overlay_w
 /* Inspiration
 https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
+https://github.com/markusfisch/PieLauncher/tree/master
 */
 
 @OptIn(ExperimentalFoundationApi::class)
