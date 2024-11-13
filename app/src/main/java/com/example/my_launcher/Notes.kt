@@ -363,7 +363,6 @@ fun NotesPage(
         }
 
         if (showDirMenu.value) {
-            val context = LocalContext.current
             val selectedItems = remember { mutableStateListOf<String>() }
 
             Box(
