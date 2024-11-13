@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
@@ -82,6 +81,8 @@ The hitbox for button J broke when the app was alone in J (could be the letters 
 /* TODO Notes
 - bug: when file is moved, need to refresh directory to move again (problem is that the file doesn't exist)
 - bug: moving folder to root when it's already in root deletes the folder.
+- bug: found issue where I want to copy folder up a level or two.
+- bug: found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
 */
 
 /* Intent list that would be useful
@@ -501,7 +502,6 @@ class MainActivity: ComponentActivity() {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isFile) {
-                                //TODO found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
                                 println("error: found file with same name as source file")
                                 return@forEach
                             }
@@ -551,7 +551,6 @@ class MainActivity: ComponentActivity() {
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
-                                //TODO found issue where I want to copy folder up a level or two.
                                 println("error: folder with that name already exists")
                                 return@forEach
                             }
