@@ -61,9 +61,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.my_launcher.DialogOverride
-import com.example.my_launcher.DialogSaveFile
-import com.example.my_launcher.DialogSaveFolder
 import com.example.my_launcher.MainActivity
 import com.example.my_launcher.R
 import com.example.my_launcher.Typography

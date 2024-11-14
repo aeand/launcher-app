@@ -1,4 +1,4 @@
-package com.example.my_launcher
+package com.example.my_launcher.notes
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.example.my_launcher.R
+import com.example.my_launcher.Typography
 
 @Composable
 fun DialogSaveFolder(
