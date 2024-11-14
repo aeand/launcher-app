@@ -1,4 +1,4 @@
-package com.example.my_launcher
+package com.example.my_launcher.notes
 
 import android.content.ClipData
 import android.content.ClipDescription
@@ -61,6 +61,13 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.my_launcher.DialogOverride
+import com.example.my_launcher.DialogSaveFile
+import com.example.my_launcher.DialogSaveFolder
+import com.example.my_launcher.MainActivity
+import com.example.my_launcher.R
+import com.example.my_launcher.Typography
+import com.example.my_launcher.roboto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -382,7 +389,10 @@ fun NotesPage(
                                     val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
                                     moveFile(
                                         draggedFilePath, MainActivity.CustomFile(
-                                            file = File("/storage/emulated/0/${rootFolderName}", ""),
+                                            file = File(
+                                                "/storage/emulated/0/${rootFolderName}",
+                                                ""
+                                            ),
                                             children = null,
                                             indent = 1,
                                             hidden = true
