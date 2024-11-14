@@ -8,9 +8,10 @@ import java.io.FileInputStream
 class Notes {
     var files = mutableStateListOf<CustomFile>()
     var rootFolderName = "Notes"
+    private var root = "/storage/emulated/0/${rootFolderName}"
 
     fun saveFolder(name: String, path: String = "") {
-        val folder = File("/storage/emulated/0/${rootFolderName}", path + name) // applicationContext.getExternalFilesDir(null)
+        val folder = File(root, path + name) // applicationContext.getExternalFilesDir(null)
 
         if (!folder.exists()) {
             if (!folder.mkdir()) {
@@ -24,7 +25,7 @@ class Notes {
     }
 
     fun overrideFile(name: String, folder: String, content: String) {
-        val letDirectory = File("/storage/emulated/0/${rootFolderName}", folder)
+        val letDirectory = File(root, folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
@@ -33,7 +34,7 @@ class Notes {
     }
 
     fun saveFile(name: String, folder: String = "", content: String): Boolean {
-        val letDirectory = File("/storage/emulated/0/${rootFolderName}", folder)
+        val letDirectory = File(root, folder)
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         if (file.exists()) {
@@ -74,16 +75,20 @@ class Notes {
             }
         }
 
-        val rootPath = "/storage/emulated/0/Android/data/com.example.my_launcher/files/"
-
         sourceFileList.forEach { sourceFile ->
             if (sourceFile.file.path == targetFile.file.path) {
                 println("error: file is targeting the source file")
                 return@forEach
             }
 
+            if (root == targetFile.file.path && targetFile.file.path == sourceFile.file.path.replace("/${sourceFile.file.name}", "")) {
+                println("file is already in root")
+                return@forEach
+            }
+
             if (sourceFile.file.isFile) {
                 if (targetFile.file.isFile) {
+                    println("file to file")
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
                     if (sourceFile.file.name == targetFile.file.name) {
@@ -96,9 +101,9 @@ class Notes {
                         return@forEach
                     }
 
-                    val filesInPath = File("/storage/emulated/0/${rootFolderName}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    val filesInPath = File(root, targetFile.file.path.replace(root, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
-                        println("error: found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
+                        println("error: found no files in ${root + targetFile.file.path.replace(root, "").replace(targetFile.file.name, "")}")
                         return@forEach
                     }
 
@@ -109,46 +114,28 @@ class Notes {
                         }
                     }
 
-                    try {
-                        sourceFile.file.copyTo(File("$targetFilePath/${sourceFile.file.name}"))
-
-                        try {
-                            sourceFile.file.delete()
-                            updateFiles()
-                            return@forEach
-                        } catch (e: Exception) {
-                            println("error: delete failed $e")
-                            return@forEach
-                        }
-                    } catch (e: Exception) {
-                        println("error: copy failed $e")
-                        return@forEach
-                    }
+                    copyFile(sourceFile, "$targetFilePath/${sourceFile.file.name}")
+                    if (canDeleteFile(sourceFile, targetFile, targetFile.file.path))
+                        deleteFile(sourceFile)
+                    updateFiles()
                 }
                 else if (targetFile.file.isDirectory) {
-                    if (targetFile.children != null) {
-                        for (file in targetFile.children) {
-                            if (sourceFile.file.name == file.file.name && file.file.isFile) {
+                    println("file to dir")
+
+                    val listOfFilesInDir = targetFile.file.listFiles()
+                    if (listOfFilesInDir != null) {
+                        for (file in listOfFilesInDir) {
+                            if (sourceFile.file.name == file.name && file.isFile) {
                                 println("error: found file with same name as source file")
                                 return@forEach
                             }
                         }
                     }
 
-                    try {
-                        sourceFile.file.copyTo(File("${targetFile.file.path}/${sourceFile.file.name}"))
-                        try {
-                            sourceFile.file.delete()
-                            updateFiles()
-                            return@forEach
-                        } catch (e: Exception) {
-                            println("error: delete failed $e")
-                            return@forEach
-                        }
-                    } catch (e: Exception) {
-                        println("error: copy failed $e")
-                        return@forEach
-                    }
+                    copyFile(sourceFile, "${targetFile.file.path}/${sourceFile.file.name}")
+                    if (canDeleteFile(sourceFile, targetFile, targetFile.file.path))
+                        deleteFile(sourceFile)
+                    updateFiles()
                 }
                 else {
                     println("error: target file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
@@ -157,11 +144,12 @@ class Notes {
             }
             else if (sourceFile.file.isDirectory) {
                 if (targetFile.file.isFile) {
+                    println("dir to file")
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
-                    val filesInPath = File("/storage/emulated/0/${rootFolderName}", targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")).listFiles()
+                    val filesInPath = File(root, targetFile.file.path.replace(root, "").replace(targetFile.file.name, "")).listFiles()
                     if (filesInPath == null) {
-                        println("error: found no files in ${rootPath + targetFile.file.path.replace(rootPath, "").replace(targetFile.file.name, "")}")
+                        println("error: found no files in ${root + targetFile.file.path.replace(root, "").replace(targetFile.file.name, "")}")
                         return@forEach
                     }
 
@@ -172,9 +160,14 @@ class Notes {
                         }
                     }
 
-                    copyFolderAndChildren(sourceFile, targetFilePath)
+                    copyFile(sourceFile, "$targetFilePath/${sourceFile.file.name}")
+                    if (canDeleteFile(sourceFile, targetFile, targetFilePath))
+                        deleteFile(sourceFile)
+                    updateFiles()
                 }
                 else if (targetFile.file.isDirectory) {
+                    println("dir to dir")
+
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
@@ -184,7 +177,10 @@ class Notes {
                         }
                     }
 
-                    copyFolderAndChildren(sourceFile, targetFile.file.path)
+                    copyFile(sourceFile, "${targetFile.file.path}/${sourceFile.file.name}")
+                    if (canDeleteFile(sourceFile, targetFile, targetFile.file.path))
+                        deleteFile(sourceFile)
+                    updateFiles()
                 }
                 else {
                     println("error: target file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
@@ -198,27 +194,76 @@ class Notes {
         }
     }
 
-    fun copyFolderAndChildren(sourceFile: CustomFile, targetPath: String) {
-        try {
-            sourceFile.file.copyRecursively(File("$targetPath/${sourceFile.file.name}"))
-
+    private fun copyFile(file: CustomFile, path: String) {
+        if (file.file.isFile) {
             try {
-                sourceFile.file.deleteRecursively()
+            file.file.copyTo(File(path))
             } catch (e: Exception) {
-                println("error: delete failed $e")
+                println("error: file copy failed $e")
             }
-        } catch (e: Exception) {
-            println("error: copy failed $e")
         }
-
-        updateFiles()
+        else if (file.file.isDirectory) {
+            try {
+                file.file.copyRecursively(File(path))
+            } catch (e: Exception) {
+                println("error: folder copy failed $e")
+            }
+        }
     }
 
-    fun deleteFileAndChildren(sourceFile: CustomFile) {
+    private fun canDeleteFile(sourceFile: CustomFile, targetFile: CustomFile, targetPath: String): Boolean {
+        if (sourceFile.file.isFile) {
+            return sourceFile.file.exists() && File(targetPath + "/${sourceFile.file.name}").exists()
+        }
+        else if (sourceFile.file.isDirectory) {
+            if (!sourceFile.file.exists() || !File(targetPath + "/${sourceFile.file.name}").exists()) {
+                println("source file and/or target file doesn't exist")
+                return false
+            }
+
+            if (sourceFile.children != null) {
+                val targetChildren = getFiles(targetPath.replace(root, ""))
+                for (sourceChild in sourceFile.children) {
+                    var foundCopy = false
+                    val relativePath = sourceChild.file.path.replace(sourceFile.file.path, "")
+
+                    for (copiedChild in targetChildren) {
+                        val relativePath2 = copiedChild.file.path.replace("${targetFile.file.path}/${sourceFile.file.name}", "")
+
+                        if (sourceChild.file.name == copiedChild.file.name && relativePath == relativePath2) {
+                            foundCopy = true
+                            break
+                        }
+                    }
+
+                    if (!foundCopy) {
+                        println("didn't find corresponding child to: ${sourceChild.file.name}")
+                        return false
+                    }
+                }
+
+                return true
+            }
+            else {
+                return sourceFile.file.exists() && File(targetPath + "/${sourceFile.file.name}").exists()
+            }
+        }
+        else {
+            updateFiles()
+            return false
+        }
+    }
+
+    fun deleteFile(file: CustomFile) {
         try {
-            sourceFile.file.deleteRecursively()
+            if (file.file.isFile) {
+                file.file.delete()
+            }
+            else if (file.file.isDirectory) {
+                file.file.deleteRecursively()
+            }
         } catch (e: Exception) {
-            println("error: delete failed $e")
+            println("error: delete file failure $e")
         }
 
         updateFiles()
@@ -232,8 +277,8 @@ class Notes {
         }
     }
 
-    fun getFiles(path: String = ""): MutableList<CustomFile> {
-        val files = File("/storage/emulated/0/${rootFolderName}", path).listFiles()
+    private fun getFiles(path: String = ""): MutableList<CustomFile> {
+        val files = File(root, path).listFiles()
         val directoryLevel = path.count { it == '/' } + 1
 
         files?.sortWith { a, b ->

@@ -469,7 +469,7 @@ fun NotesPage(
                 ) {
                     files.forEach { file ->
                         if (!file.hidden && file.file.nameWithoutExtension != "tmpfileforautosave") {
-                            val expanded = remember { mutableStateOf(true) }
+                            val expanded = remember { mutableStateOf(!file.hidden) }
                             val selected = remember { mutableStateOf(false) }
 
                             LaunchedEffect(selectedItems.size == 0) {

@@ -78,14 +78,14 @@ import kotlin.math.roundToInt
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
 - use expand statusbar when swiping down
--
 */
 
 /* TODO Notes
+- make the sorting case insensitive
 - bug: when file is moved, need to refresh directory to move again (problem is that the file doesn't exist)
-- bug: moving folder to root when it's already in root deletes the folder.
 - bug: found issue where I want to copy folder up a level or two.
 - bug: found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
+- automatically open keyboard when opening one of the dialogs
 */
 
 /* Inspiration
@@ -304,7 +304,7 @@ class MainActivity: ComponentActivity() {
                 readFile = notes::readFile,
                 saveFolder = notes::saveFolder,
                 moveFile = notes::moveFile,
-                deleteFiles = notes::deleteFileAndChildren,
+                deleteFiles = notes::deleteFile,
                 files= notes.files,
                 rootFolderName = notes.rootFolderName,
                 rootPath = "/storage/emulated/0/${notes.rootFolderName}"
