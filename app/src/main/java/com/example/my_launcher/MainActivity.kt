@@ -74,7 +74,7 @@ import kotlin.math.roundToInt
 - refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
-- blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>)
+- blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>) (https://proandroiddev.com/creating-dynamic-background-blur-with-jetpack-compose-in-android-c53bef7fb98a)
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
 */
@@ -84,25 +84,6 @@ import kotlin.math.roundToInt
 - bug: moving folder to root when it's already in root deletes the folder.
 - bug: found issue where I want to copy folder up a level or two.
 - bug: found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
-*/
-
-/* Intent list that would be useful
-- Intent.ACTION_CREATE_REMINDER for implementing reminders
-- Intent.ACTION_CREATE_NOTE for implementing notes
-- Intent.ACTION_SEARCH for implementing search
-- Intent.ACTION_MEDIA_BUTTON for detecting volume? buttons
-- Intent.ACTION_SHUTDOWN for detecting shutdown
-- Intent.ACTION_SET_WALLPAPER for setting wallpapers
-- Intent.ACTION_LAUNCH_CAPTURE_CONTENT_ACTIVITY_FOR_NOTE for potential screenshot previews or similar
-- Intent.ACTION_VIEW_PERMISSION_USAGE for checking permissions
-- Intent.CATEGORY_CAR_DOCK for drivvler
-- Intent.CATEGORY_CAR_MODE for drivvler
-- Intent.CATEGORY_HOME for opening home activity
-- Intent.CATEGORY_INFO for fetching more info from app
-- Intent.CATEGORY_LAUNCHER for opening launcher, maybe my app
-- Intent.CATEGORY_LEANBACK_LAUNCHER for opening leanback launcher, maybe my app
-- Intent.CATEGORY_PREFERENCE opening preferences
-- Intent.CATEGORY_SECONDARY_HOME for opening home?
 */
 
 /* TODO look into permissions
@@ -524,111 +505,9 @@ class MainActivity: ComponentActivity() {
     }
 
     private fun registerReceiver() {
-        val list = listOf(
-            Intent.ACTION_APPLICATION_LOCALE_CHANGED, // broadcast some app locale has changed
-            Intent.ACTION_APPLICATION_PREFERENCES, // intent for adjusting app preferences. recommended for all apps with settings
-            Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED, // broadcast app restrictions changed
-            Intent.ACTION_BATTERY_CHANGED, // sticky broadcast Has charging state, level, and more info
-            Intent.ACTION_BATTERY_LOW, // broadcast battery is low
-            Intent.ACTION_BATTERY_OKAY, // broadcast battery is okay after being low
-            Intent.ACTION_BOOT_COMPLETED, // broadcast permissions only once after the user has finished booting
-            Intent.ACTION_CAMERA_BUTTON, // broadcast camera button is pressed. Broadcast includes EXTRA_KEY_EVENT
-            Intent.ACTION_CHOOSER, // opens an activity picker. Alternative to the standard picker
-            Intent.ACTION_CLOSE_SYSTEM_DIALOGS, // broadcast user action to dismiss temporary system dialog
-            Intent.ACTION_CONFIGURATION_CHANGED, // broadcast orientation, locale, etc has changed. UI will be rebuilt aka. system will stop and start app
-            Intent.ACTION_DATE_CHANGED, // broadcast date has changed
-            Intent.ACTION_DOCK_EVENT, // sticky broadcast changes in physical docking state
-            Intent.ACTION_DREAMING_STARTED, // broadcast system started dreaming
-            Intent.ACTION_DREAMING_STOPPED, // broadcast system stopped dreaming
-            Intent.ACTION_HEADSET_PLUG, // broadcast wired headset plugged in or out
-            Intent.ACTION_INPUT_METHOD_CHANGED, // broadcast input method changed
-            Intent.ACTION_LAUNCH_CAPTURE_CONTENT_ACTIVITY_FOR_NOTE, // Use with startActivityForResult to start a system activity that captures content on the screen to take a screenshot and present it to the user for editing
-            Intent.ACTION_LOCALE_CHANGED, // broadcast device locale changed
-            Intent.ACTION_LOCKED_BOOT_COMPLETED, // broadcast when device has booted but still is in locked state
-            Intent.ACTION_MANAGED_PROFILE_UNLOCKED, // broadcast received by primary user when a managed profile is unlocked. There are more profile related actions
-            Intent.ACTION_MANAGE_NETWORK_USAGE, // shows settings for managing network data usage
-            Intent.ACTION_MANAGE_PACKAGE_STORAGE, // broadcast Indicates low memory condition notification acknowledged by user
-            Intent.ACTION_MANAGE_UNUSED_APPS, // opens UI to handle unused apps
-            Intent.ACTION_MEDIA_BAD_REMOVAL, // broadcast SD card removed from slot but mount point was not unmounted
-            Intent.ACTION_MEDIA_BUTTON, // media button was pressed. contains EXTRA_KEY_EVENT
-            Intent.ACTION_MY_PACKAGE_REPLACED, // broadcast a new version of your app has been installed over an existing one
-            Intent.ACTION_MY_PACKAGE_SUSPENDED, // broadcast Sent to a package that has been suspended by the system
-            Intent.ACTION_MY_PACKAGE_UNSUSPENDED, // broadcast Sent to a package that has been unsuspended
-            Intent.ACTION_PACKAGES_SUSPENDED, // broadcast packages have been suspended
-            Intent.ACTION_PACKAGES_UNSUSPENDED, // broadcast Packages have been unsuspended
-            Intent.ACTION_PACKAGE_ADDED, // broadcast new package installed. contains data with name
-            Intent.ACTION_PACKAGE_CHANGED, // broadcast a package has been changed
-            Intent.ACTION_PACKAGE_DATA_CLEARED, // broadcast user has cleared the data of a package
-            Intent.ACTION_PACKAGE_FIRST_LAUNCH, // broadcast app launched for the first time
-            Intent.ACTION_PACKAGE_FULLY_REMOVED, // broadcast package has been completely removed from device
-            Intent.ACTION_PACKAGE_INSTALL, // deprecated broadcast trigger download and install of package
-            Intent.ACTION_PACKAGE_NEEDS_VERIFICATION, // broadcast to the system package verifier when a package needs to be verified
-            Intent.ACTION_PACKAGE_REMOVED, // broadcast app has been removed
-            Intent.ACTION_PACKAGE_REPLACED, // broadcast new version of an application package has been installed
-            Intent.ACTION_PACKAGE_RESTARTED, // broadcast user has restarted a package
-            Intent.ACTION_PACKAGE_VERIFIED, // broadcast Sent to the system package verifier when a package is verified
-            Intent.ACTION_PASTE, // create item in given container, initializing it from the current clipboard
-            Intent.ACTION_POWER_CONNECTED, // broadcast External power has been connected to the device. will wake device
-            Intent.ACTION_POWER_DISCONNECTED, // broadcast External power has been removed from device
-            Intent.ACTION_POWER_USAGE_SUMMARY, // shows power usage info to user
-            Intent.ACTION_PROVIDER_CHANGED, // broadcast providers content changed
-            Intent.ACTION_SCREEN_OFF, // broadcast device goes to sleep and becomes non-interactive
-            Intent.ACTION_SCREEN_ON, // broadcast device wakes up and becomes interactive
-            Intent.ACTION_SEARCH, // perform a search
-            Intent.ACTION_SEARCH_LONG_PRESS, // start action associated with long pressing on a search key
-            Intent.ACTION_SET_WALLPAPER, // show settings for choosing wallpaper
-            Intent.ACTION_SHOW_APP_INFO, // will show app information
-            Intent.ACTION_SHUTDOWN, // broadcast device is shutting down
-            Intent.ACTION_TIMEZONE_CHANGED, // broadcast timezone has changed. includes EXTRA_TIMEZONE
-            //Intent.ACTION_TIME_CHANGED, // broadcast The time was set
-            //Intent.ACTION_TIME_TICK, // broadcast time has changed. sent every minute. only receiver
-            Intent.ACTION_UID_REMOVED, // broadcast a uid has been removed from the system. includes EXTRA_UID and EXTRA_REPLACING
-            Intent.ACTION_UMS_CONNECTED, // deprecated broadcast the device has entered USB mass storage mode
-            Intent.ACTION_UMS_DISCONNECTED, // deprecated broadcast the device has exited USB mass storage mode
-            //Intent.ACTION_UNARCHIVE_PACKAGE // broadcast sent to the responsible installer. archived package when unarchival is requested
-            Intent.ACTION_VIEW_PERMISSION_USAGE, // launch UI to show information about the usage of a given permission group
-            Intent.ACTION_VIEW_PERMISSION_USAGE_FOR_PERIOD, // launch UI to show info about the usage of a given permission group in a given period
-            Intent.ACTION_WALLPAPER_CHANGED, // deprecated broadcast the current system wallpaper has changed
-            Intent.ACTION_WEB_SEARCH, // perform a web search
-            //Intent.CAPTURE_CONTENT_FOR_NOTE_BLOCKED_BY_ADMIN // a response code used with EXTRA_CAPTURE_CONTENT_FOR_NOTE_STATUS_CODE
-            //Intent.CAPTURE_CONTENT_FOR_NOTE_FAILED // A response code used with EXTRA_CAPTURE_CONTENT_FOR_NOTE_STATUS_CODE to indicate that something went wrong
-            //Intent.CAPTURE_CONTENT_FOR_NOTE_SUCCESS // A response code used with EXTRA_CAPTURE_CONTENT_FOR_NOTE_STATUS_CODE to indicate that the request was a success
-            //Intent.CAPTURE_CONTENT_FOR_NOTE_USER_CANCELED // A response code used with EXTRA_CAPTURE_CONTENT_FOR_NOTE_STATUS_CODE to indicate that user canceled the content capture flow
-            //Intent.CAPTURE_CONTENT_FOR_NOTE_WINDOW_MODE_UNSUPPORTED // A response code used with EXTRA_CAPTURE_CONTENT_FOR_NOTE_STATUS_CODE to indicate that the intent action ACTION_LAUNCH_CAPTURE_CONTENT_ACTIVITY_FOR_NOTE was started by an activity that is running in a non-supported window mode
-            Intent.CATEGORY_ACCESSIBILITY_SHORTCUT_TARGET, // the accessibility shortcut is global gesture for users with disabilities to trigger an important for them accessibility
-            Intent.CATEGORY_ALTERNATIVE, // Set if the activity should be considered as an alternative action to the data the user is currently viewing
-            Intent.CATEGORY_APP_BROWSER, // Used with ACTION_MAIN to launch the browser application
-            Intent.CATEGORY_BROWSABLE, // Activities that can be safely invoked from a browser must support this category
-            Intent.CATEGORY_CAR_DOCK, // An activity to run when device is inserted into a car dock
-            Intent.CATEGORY_CAR_MODE, // Used to indicate that the activity can be used in a car environment
-            Intent.CATEGORY_HOME, // This is the home activity, that is the first activity that is displayed when the device boots
-            Intent.CATEGORY_INFO, // Provides information about the package it is in; typically used if a package does not contain a CATEGORY_LAUNCHER to provide a front-door to the user without having to be shown in the all apps list
-            Intent.CATEGORY_LAUNCHER, // Should be displayed in the top-level launcher
-            Intent.CATEGORY_LEANBACK_LAUNCHER, // Indicates an activity optimized for Leanback mode, and that should be displayed in the Leanback launcher
-            Intent.CATEGORY_PREFERENCE, // This activity is a preference panel
-            Intent.CATEGORY_SAMPLE_CODE, // To be used as a sample code example (not part of the normal user experience)
-            Intent.CATEGORY_SECONDARY_HOME, // The home activity shown on secondary displays that support showing home activities
-            // Skipped out on the EXTRA_
-            Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT.toString(), // This flag is not normally set by application code, but set for you by the system as described in the launchMode documentation for the singleTask mode
-            Intent.FLAG_ACTIVITY_CLEAR_TOP.toString(), // too long
-            //Intent.FILL_IN_CLIP_DATA // Use with fillIn to allow the current ClipData to be overwritten, even if it is already set.
-        )
-
         val filters = IntentFilter()
-        list.forEach {
-            filters.addAction(it)
-        }
-
         receiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                list.forEach {
-                    when (intent.action) {
-                        it -> {
-                            println("Intent: " + it.split("android.intent.action.")[1])
-                        }
-                    }
-                }
-
                 when (intent.action) {
                     Intent.ACTION_APPLICATION_LOCALE_CHANGED,
                     Intent.ACTION_MY_PACKAGE_REPLACED,
@@ -638,6 +517,16 @@ class MainActivity: ComponentActivity() {
                     Intent.ACTION_PACKAGE_REPLACED,
                     Intent.ACTION_UID_REMOVED -> { // for uninstall
                         createAppList()
+                    }
+
+                    Intent.ACTION_APPLICATION_PREFERENCES, // intent for adjusting app preferences. recommended for all apps with settings
+                    Intent.ACTION_PACKAGE_CHANGED, // broadcast a package has been changed
+                    Intent.ACTION_PACKAGE_INSTALL, // deprecated broadcast trigger download and install of package
+                    -> { }
+
+                    Intent.ACTION_MEDIA_BUTTON -> {
+                        println("ACTION_MEDIA_BUTTON")
+                        println(intent.extras)
                     }
 
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
@@ -667,7 +556,8 @@ class MainActivity: ComponentActivity() {
                     }
 
                     Intent.ACTION_DATE_CHANGED,
-                    Intent.ACTION_TIMEZONE_CHANGED -> {
+                    Intent.ACTION_TIMEZONE_CHANGED,
+                    Intent.ACTION_TIME_CHANGED -> {
                         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
                     }
                 }
