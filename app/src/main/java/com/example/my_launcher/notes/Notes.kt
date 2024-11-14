@@ -82,13 +82,12 @@ class Notes {
             }
 
             if (root == targetFile.file.path && targetFile.file.path == sourceFile.file.path.replace("/${sourceFile.file.name}", "")) {
-                println("file is already in root")
+                println("error: file is already in root")
                 return@forEach
             }
 
             if (sourceFile.file.isFile) {
                 if (targetFile.file.isFile) {
-                    println("file to file")
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
                     if (sourceFile.file.name == targetFile.file.name) {
@@ -120,8 +119,6 @@ class Notes {
                     updateFiles()
                 }
                 else if (targetFile.file.isDirectory) {
-                    println("file to dir")
-
                     val listOfFilesInDir = targetFile.file.listFiles()
                     if (listOfFilesInDir != null) {
                         for (file in listOfFilesInDir) {
@@ -166,8 +163,6 @@ class Notes {
                     updateFiles()
                 }
                 else if (targetFile.file.isDirectory) {
-                    println("dir to dir")
-
                     if (targetFile.children != null) {
                         for (file in targetFile.children) {
                             if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
@@ -217,7 +212,7 @@ class Notes {
         }
         else if (sourceFile.file.isDirectory) {
             if (!sourceFile.file.exists() || !File(targetPath + "/${sourceFile.file.name}").exists()) {
-                println("source file and/or target file doesn't exist")
+                println("error: source file and/or target file doesn't exist")
                 return false
             }
 
@@ -237,7 +232,7 @@ class Notes {
                     }
 
                     if (!foundCopy) {
-                        println("didn't find corresponding child to: ${sourceChild.file.name}")
+                        println("error: didn't find corresponding child to: ${sourceChild.file.name}")
                         return false
                     }
                 }
