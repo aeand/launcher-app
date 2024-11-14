@@ -86,41 +86,6 @@ import kotlin.math.roundToInt
 - bug: found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
 */
 
-/* TODO look into permissions
-<!-- A launcher app should be available all the time. -->
-<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-
-<uses-permission android:name="android.permission.ACCESS_RESTRICTED_SETTINGS" />
-
-<uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-<uses-permission android:name="android.permission.STATUS_BAR"/>
-<uses-permission android:name="android.permission.STATUS_BAR_SERVICE"/>
-<uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />
-
-<!-- Useful permissions lists
-https://stuff.mit.edu/afs/sipb/project/android/docs/reference/android/Manifest.permission.html#BIND_ACCESSIBILITY_SERVICE
-https://manifestdestiny.reveb.la/permissions/android.permission.system_overlay_window/index.html
--->
-
-<uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
-<uses-permission android:name="android.permission.CONTROL_REMOTE_APP_TRANSITION_ANIMATIONS"/>
-<uses-permission android:name="android.permission.VIBRATE"/>
-<uses-permission android:name="android.permission.START_TASKS_FROM_RECENTS"/>
-<uses-permission android:name="android.permission.REMOVE_TASKS"/>
-<uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>
-<uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
-<uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW"/> could be used for systembar partial open
-<uses-permission android:name="android.permission.STOP_APP_SWITCHES"/>
-<uses-permission android:name="android.permission.READ_FRAME_BUFFER"/>
-<uses-permission android:name="android.permission.MANAGE_ACCESSIBILITY"/>
-<uses-permission android:name="android.permission.MONITOR_INPUT"/>
-<uses-permission android:name="android.permission.ALLOW_SLIPPERY_TOUCHES"/>
-<uses-permission android:name="android.permission.ACCESS_SHORTCUTS"/>
-<uses-permission android:name="android.permission.SYSTEM_APPLICATION_OVERLAY" />
-<!-- Permission required to access profiles which are otherwise hidden from being visible via APIs, e.g. private profile.-->
-<uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES_FULL" />
-*/
-
 /* Inspiration
 https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
