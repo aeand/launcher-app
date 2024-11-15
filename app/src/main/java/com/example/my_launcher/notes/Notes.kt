@@ -11,7 +11,7 @@ class Notes {
     private var root = "/storage/emulated/0/${rootFolderName}"
 
     fun saveFolder(name: String, path: String = "") {
-        val folder = File(root, path + name) // applicationContext.getExternalFilesDir(null)
+        val folder = File(root, path + name)
 
         if (!folder.exists()) {
             if (!folder.mkdir()) {
@@ -278,6 +278,9 @@ class Notes {
 
         files?.sortWith { a, b ->
             a.name.uppercase().compareTo(b.name.uppercase())
+        }
+
+        files?.sortWith { a, b ->
             a.isFile.compareTo(b.isFile)
         }
 

@@ -152,7 +152,6 @@ class MainActivity: ComponentActivity() {
         createAppList()
         createDuolingoWidget()
         val notes = Notes()
-        notes.updateFiles()
         requestPermissions()
 
         setContent {

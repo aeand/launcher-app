@@ -512,7 +512,7 @@ fun NotesPage(
                                                     updateFiles()
                                                 }
                                             },
-                                            onLongPress = { offset ->
+                                            onLongPress = {
                                                 if (selected.value) {
                                                     var result = ""
                                                     selectedItems.forEachIndexed { index, path ->
