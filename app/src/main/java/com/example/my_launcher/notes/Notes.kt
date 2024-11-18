@@ -158,10 +158,13 @@ class Notes {
                 }
                 else if (targetFile.file.isDirectory) {
                     if (targetFile.children != null) {
-                        for (file in targetFile.children) {
-                            if (sourceFile.file.name == file.file.name && file.file.isDirectory) {
-                                println("error: folder with that name already exists")
-                                return@forEach
+                        val children = targetFile.file.listFiles()
+                        if (children != null) {
+                            for (file in children) {
+                                if (sourceFile.file.name == file.name && file.isDirectory) {
+                                    println("error: folder with that name already exists")
+                                    return@forEach
+                                }
                             }
                         }
                     }

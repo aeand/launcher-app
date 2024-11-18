@@ -97,7 +97,7 @@ fun NotesPage(
     val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
 
     val files = remember { mutableStateListOf<Notes.CustomFile>() }
-    var previousFiles = remember { mutableListOf<Notes.CustomFile>() }
+    val previousFiles = remember { mutableListOf<Notes.CustomFile>() }
 
     LaunchedEffect(files.size == 0) {
         if (files.size == 0) {
