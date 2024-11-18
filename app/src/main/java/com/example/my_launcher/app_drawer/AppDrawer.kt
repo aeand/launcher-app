@@ -115,25 +115,20 @@ class AppDrawer(
     }
 
     fun createAppList() {
-        val packages = getPackages()
-
-        val appList = mutableListOf<ApplicationInformation>()
-        packages.forEach { app ->
-            val appInfo = ApplicationInformation()
-            appInfo.label = app.loadLabel(packageManager).toString()
-            appInfo.packageName = app.activityInfo.packageName
-            appInfo.icon = app.loadIcon(packageManager)
-            val previousApp = apps.find { it.packageName?.lowercase() == appInfo.packageName!!.lowercase() }
-            if (previousApp != null)
-                appInfo.hidden = previousApp.hidden
-            else
-                appInfo.hidden = false
-
-            appList.add(appInfo)
-        }
-        appList.sortWith { a, b ->
-            a.label?.uppercase()!!.compareTo(b.label?.uppercase()!!)
-        }
+        val appList = getPackages()
+            .map { app ->
+                ApplicationInformation()
+                    .apply {
+                        label = app.loadLabel(packageManager).toString()
+                        packageName = app.activityInfo.packageName
+                        icon = app.loadIcon(packageManager)
+                        val previousApp = apps.find { it.packageName?.lowercase() == packageName!!.lowercase() }
+                        hidden = if (previousApp != null) previousApp.hidden else false
+                    }
+            }
+            .sortedWith { a, b ->
+                a.label?.uppercase()!!.compareTo(b.label?.uppercase()!!)
+            }
 
         apps.clear()
         appList.forEach {
