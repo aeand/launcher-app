@@ -78,6 +78,10 @@ class AppDrawer(
         if (packageName == null)
             return
 
+        if (getPackages().find { it.activityInfo.packageName == packageName } == null) {
+            return
+        }
+
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         activity.startActivity(launchIntent)
     }
