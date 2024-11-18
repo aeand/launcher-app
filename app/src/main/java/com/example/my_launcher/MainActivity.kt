@@ -82,8 +82,6 @@ Add a low alpha, blurred background to app list
 */
 
 /* TODO Notes
-- bug: found issue where I want to copy folder up a level or two.
-- bug: found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
 - automatically open keyboard when opening one of the dialogs
 */
 
