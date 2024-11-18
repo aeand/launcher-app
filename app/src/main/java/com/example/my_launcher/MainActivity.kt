@@ -1,13 +1,6 @@
 package com.example.my_launcher
 
-import android.R.attr.maxHeight
-import android.R.attr.maxWidth
-import android.R.attr.minHeight
 import android.annotation.SuppressLint
-import android.appwidget.AppWidgetHost
-import android.appwidget.AppWidgetHostView
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProviderInfo
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -44,7 +37,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
