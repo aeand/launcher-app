@@ -1,4 +1,4 @@
-package com.example.my_launcher
+package com.example.my_launcher.app_drawer
 
 import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHostView
@@ -48,6 +48,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.my_launcher.R
+import com.example.my_launcher.Typography
+import com.example.my_launcher.rememberDrawablePainter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -61,7 +64,7 @@ fun AppDrawer(
     hostView: AppWidgetHostView?,
     customScope: CoroutineScope,
     textColor: Color,
-    apps: List<MainActivity.ApplicationInformation>,
+    apps: List<AppDrawer.ApplicationInformation>,
     launchApp: (String?) -> Unit,
     hideApp: (String?) -> Unit,
     uninstallApp: (String?) -> Unit,

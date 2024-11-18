@@ -15,7 +15,6 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -57,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.my_launcher.app_drawer.AppDrawer
 import com.example.my_launcher.notes.Notes
 import com.example.my_launcher.notes.NotesPage
 import kotlinx.coroutines.CoroutineScope
@@ -89,38 +89,24 @@ https://github.com/markusfisch/PieLauncher/tree/master
 
 @OptIn(ExperimentalFoundationApi::class)
 class MainActivity: ComponentActivity() {
+    private lateinit var appDrawer: AppDrawer
+
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
 
     private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-    private var apps = mutableStateListOf<ApplicationInformation>()
-    private var alphabet = mutableStateListOf<String>()
     private lateinit var lazyScroll: LazyListState
 
     private lateinit var dragState: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
     private lateinit var dragState2: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
 
-    private lateinit var widgetHost: AppWidgetHost
-    private lateinit var widgetManager: AppWidgetManager
-    private var widgetId: Int = 0
-    private lateinit var duoWidget: AppWidgetProviderInfo
-    private lateinit var options: Bundle
-    private lateinit var hostView: AppWidgetHostView
-
-    class ApplicationInformation {
-        var label: String? = null
-        var packageName: String? = null
-        var icon: Drawable? = null
-        var hidden: Boolean? = null
-    }
-
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
         if (result.resultCode == RESULT_OK) {
-            println("onActivityResult: ${widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)}")
-            if (widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider, options)) {
-                hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
-                hostView.setAppWidget(widgetId, duoWidget)
+            println("onActivityResult: ${appDrawer.widgetManager.bindAppWidgetIdIfAllowed(appDrawer.widgetId, appDrawer.duoWidget.provider, appDrawer.options)}")
+            if (appDrawer.widgetManager.bindAppWidgetIdIfAllowed(appDrawer.widgetId, appDrawer.duoWidget.provider, appDrawer.options)) {
+                appDrawer.hostView = appDrawer.widgetHost.createView(applicationContext, appDrawer.widgetId, appDrawer.duoWidget)
+                appDrawer.hostView.setAppWidget(appDrawer.widgetId, appDrawer.duoWidget)
             }
         }
     }
@@ -131,12 +117,14 @@ class MainActivity: ComponentActivity() {
         @SuppressLint("SourceLockedOrientationActivity")
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
+        appDrawer = AppDrawer(this, applicationContext, packageManager, requestWidgetPermissionsLauncher)
+
         registerReceiver()
         val textColor = Color.White
         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-        var packages = getPackages()
-        createAppList()
-        createDuolingoWidget()
+        var packages = appDrawer.getPackages()
+        appDrawer.createAppList()
+        appDrawer.createDuolingoWidget()
         val notes = Notes()
         requestPermissions()
 
@@ -153,9 +141,9 @@ class MainActivity: ComponentActivity() {
             }
 
             LaunchedEffect(true) {
-                duoWidget.updatePeriodMillis.toLong() // every 15 min
-                hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
-                hostView.setAppWidget(widgetId, duoWidget)
+                appDrawer.duoWidget.updatePeriodMillis.toLong() // every 30 min
+                appDrawer.hostView = appDrawer.widgetHost.createView(applicationContext, appDrawer.widgetId, appDrawer.duoWidget)
+                appDrawer.hostView.setAppWidget(appDrawer.widgetId, appDrawer.duoWidget)
             }
 
             Text(
@@ -233,7 +221,7 @@ class MainActivity: ComponentActivity() {
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
                 val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
                 if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
-                    createAppList()
+                    appDrawer.createAppList()
                     packages = pk
                 }
             }
@@ -244,13 +232,13 @@ class MainActivity: ComponentActivity() {
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = lazyScroll,
-                hostView = hostView,
-                alphabet = alphabet,
-                apps = apps,
+                hostView = appDrawer.hostView,
+                alphabet = appDrawer.alphabet,
+                apps = appDrawer.apps,
                 customScope = customScope,
-                launchApp = ::launchApp,
-                hideApp = ::hideApp,
-                uninstallApp = ::uninstallApp,
+                launchApp = { app -> appDrawer.launchApp(app) },
+                hideApp = { app -> appDrawer.hideApp(app) },
+                uninstallApp = { app -> appDrawer.uninstallApp(app) },
                 textColor = textColor,
                 bottomBar = bottomBar
             )
@@ -296,6 +284,11 @@ class MainActivity: ComponentActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        appDrawer.deleteWidget()
+    }
+
     private fun requestPermissions() {
         if (Environment.isExternalStorageManager()) {
             return
@@ -304,42 +297,6 @@ class MainActivity: ComponentActivity() {
         val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).also {
             it.data = Uri.parse("package:${packageName}")
         }
-        startActivity(intent)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        widgetHost.stopListening()
-        widgetHost.deleteAppWidgetId(widgetId) // needed?
-    }
-
-    private fun launchApp(packageName: String?) {
-        if (packageName == null)
-            return
-
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        startActivity(launchIntent)
-    }
-
-    private fun hideApp(packageName: String?) {
-        val app = apps.find { it.packageName?.lowercase() == packageName?.lowercase() }
-        apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden = !app?.hidden!!
-    }
-
-    private fun uninstallApp(packageName: String?) {
-        if (packageName == null)
-            return
-
-        val packageIntent = Intent(Intent.ACTION_MAIN, null)
-        packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-        val packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
-        val app = packages.find { it.activityInfo.packageName.lowercase() == packageName.lowercase() }
-
-        if (app == null)
-            return
-
-        val intent = Intent(Intent.ACTION_DELETE)
-        intent.data = Uri.parse("package:${app.activityInfo.packageName}")
         startActivity(intent)
     }
 
@@ -356,105 +313,6 @@ class MainActivity: ComponentActivity() {
         }
     }
 
-    private fun getPackages(): List<ResolveInfo> {
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
-    }
-
-    private fun createAppList() {
-        val packages = getPackages()
-
-        val appList = mutableListOf<ApplicationInformation>()
-        packages.forEach { app ->
-            val appInfo = ApplicationInformation()
-            appInfo.label = app.loadLabel(packageManager).toString()
-            appInfo.packageName = app.activityInfo.packageName
-            appInfo.icon = app.loadIcon(packageManager)
-            val previousApp = apps.find { it.packageName?.lowercase() == appInfo.packageName!!.lowercase() }
-            if (previousApp != null)
-                appInfo.hidden = previousApp.hidden
-            else
-                appInfo.hidden = false
-
-            appList.add(appInfo)
-        }
-        appList.sortWith { a, b ->
-            a.label?.uppercase()!!.compareTo(b.label?.uppercase()!!)
-        }
-
-        apps.clear()
-        appList.forEach {
-            apps.add(it)
-        }
-
-        createAlphabetList(apps)
-    }
-
-    private fun createAlphabetList(apps: List<ApplicationInformation>) {
-        val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
-        val alphabetList = tempAlphabet.subList(1, tempAlphabet.size)
-        alphabetList.sortWith { a, b ->
-            a.compareTo(b)
-        }
-        alphabetList.add("å")
-        alphabetList.add("ä")
-        alphabetList.add("ö")
-
-        val removeLetters = mutableListOf<String>()
-        alphabetList.forEach { letter ->
-            var result = false
-            apps.forEach { app ->
-                if (!result) {
-                    if (app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                        result = true
-                    }
-                }
-            }
-
-            if (!result) {
-                removeLetters.add(letter)
-            }
-        }
-
-        removeLetters.forEach { letter ->
-            alphabetList.remove(letter)
-        }
-
-        alphabet.clear()
-        alphabetList.forEach {
-            alphabet.add(it)
-        }
-    }
-
-    private fun createDuolingoWidget() {
-        widgetHost = AppWidgetHost(applicationContext, 0)
-        widgetHost.startListening()
-        widgetManager = AppWidgetManager.getInstance(applicationContext)
-        duoWidget = widgetManager.installedProviders.find {
-            it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider")
-        }!!
-        widgetId = widgetHost.allocateAppWidgetId()
-
-        options = Bundle()
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, maxWidth)
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
-
-        if (!widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider)) {
-            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget.provider)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
-
-            requestWidgetPermissionsLauncher.launch(intent)
-        }
-
-        hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
-        hostView.setAppWidget(widgetId, duoWidget)
-    }
-
     private fun registerReceiver() {
         val filters = IntentFilter()
         receiver = object: BroadcastReceiver() {
@@ -467,7 +325,7 @@ class MainActivity: ComponentActivity() {
                     Intent.ACTION_PACKAGE_REMOVED,
                     Intent.ACTION_PACKAGE_REPLACED,
                     Intent.ACTION_UID_REMOVED -> { // for uninstall
-                        createAppList()
+                        appDrawer.createAppList()
                     }
 
                     Intent.ACTION_APPLICATION_PREFERENCES, // intent for adjusting app preferences. recommended for all apps with settings
@@ -481,7 +339,7 @@ class MainActivity: ComponentActivity() {
                     }
 
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
-                        createAppList()
+                        appDrawer.createAppList()
                         customScope.launch {
                             lazyScroll.scrollToItem(0)
                             dragState.updateAnchors(DraggableAnchors {
