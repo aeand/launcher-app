@@ -81,10 +81,6 @@ Add a low alpha, blurred background to app list
 - use expand statusbar when swiping down
 */
 
-/* TODO Notes
-- automatically open keyboard when opening one of the dialogs
-*/
-
 /* Inspiration
 https://www.youtube.com/watch?v=aVg3RkfNtqE
 https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
