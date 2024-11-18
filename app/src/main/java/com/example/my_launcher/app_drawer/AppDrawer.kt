@@ -144,37 +144,26 @@ class AppDrawer(
     }
 
     fun createAlphabetList(apps: List<ApplicationInformation>) {
-        val tempAlphabet = "1234567890qwertyuiopasdfghjklzxcvbnm".split("").dropLast(1).toMutableList()
-        val alphabetList = tempAlphabet.subList(1, tempAlphabet.size)
-        alphabetList.sortWith { a, b ->
+        val letters = "1234567890qwertyuiopasdfghjklzxcvbnm"
+            .split("")
+            .dropLast(1)
+            .drop(1)
+            .toMutableList()
+
+        letters.sortWith { a, b ->
             a.compareTo(b)
         }
-        alphabetList.add("å")
-        alphabetList.add("ä")
-        alphabetList.add("ö")
 
-        val removeLetters = mutableListOf<String>()
-        alphabetList.forEach { letter ->
-            var result = false
-            apps.forEach { app ->
-                if (!result) {
-                    if (app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                        result = true
-                    }
-                }
-            }
+        letters.add("å")
+        letters.add("ä")
+        letters.add("ö")
 
-            if (!result) {
-                removeLetters.add(letter)
-            }
-        }
-
-        removeLetters.forEach { letter ->
-            alphabetList.remove(letter)
+        val filteredLetters = letters.filter { letter ->
+            apps.find { app -> app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar() } != null
         }
 
         alphabet.clear()
-        alphabetList.forEach {
+        filteredLetters.forEach {
             alphabet.add(it)
         }
     }

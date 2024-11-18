@@ -61,7 +61,7 @@ import kotlin.math.roundToInt
 
 /* TODO Launcher
 - check out recompositions. reduce them as much as possible
-- check logs when running app. There are a fair few reds
+- fix widget host (error logs and not updating)
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
 - Fix app select background (currently grey)
@@ -71,6 +71,7 @@ Add a low alpha, blurred background to app list
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
 - use expand statusbar when swiping down
+- create custom dialog for hide/uninstall app
 */
 
 /* Inspiration
@@ -209,12 +210,14 @@ class MainActivity: ComponentActivity() {
 
             // create app list and alphabet list when scrolled down to bottom
             LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
-                val i = Intent(Intent.ACTION_MAIN, null)
-                i.addCategory(Intent.CATEGORY_LAUNCHER)
-                val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
-                if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
-                    appDrawer.createAppList()
-                    packages = pk
+                if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+                    val i = Intent(Intent.ACTION_MAIN, null)
+                    i.addCategory(Intent.CATEGORY_LAUNCHER)
+                    val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
+                    if (packages.size != pk.size || packages.toSet() != pk.toSet()) {
+                        appDrawer.createAppList()
+                        packages = pk
+                    }
                 }
             }
 
@@ -232,7 +235,7 @@ class MainActivity: ComponentActivity() {
                 hideApp = { app -> appDrawer.hideApp(app) },
                 uninstallApp = { app -> appDrawer.uninstallApp(app) },
                 textColor = textColor,
-                bottomBar = bottomBar
+                bottomBar = bottomBar,
             )
 
             val error = remember {
