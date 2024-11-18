@@ -1,14 +1,18 @@
 package com.example.my_launcher.notes
 
-import androidx.compose.runtime.mutableStateListOf
-import com.example.my_launcher.MainActivity.CustomFile
 import java.io.File
 import java.io.FileInputStream
 
 class Notes {
-    var files = mutableStateListOf<CustomFile>()
-    var rootFolderName = "Notes"
-    private var root = "/storage/emulated/0/${rootFolderName}"
+    class CustomFile(
+        val file: File,
+        val children: MutableList<CustomFile>?,
+        val indent: Int,
+        var hidden: Boolean,
+    )
+
+    val rootFolderName = "Notes"
+    val root = "/storage/emulated/0/${rootFolderName}"
 
     fun saveFolder(name: String, path: String = "") {
         val folder = File(root, path + name)
@@ -20,8 +24,6 @@ class Notes {
                 folder.mkdirs()
             }
         }
-
-        updateFiles()
     }
 
     fun overrideFile(name: String, folder: String, content: String) {
@@ -29,8 +31,6 @@ class Notes {
         letDirectory.mkdirs()
         val file = File(letDirectory, "$name.txt")
         file.writeText(content)
-
-        updateFiles()
     }
 
     fun saveFile(name: String, folder: String = "", content: String): Boolean {
@@ -42,8 +42,6 @@ class Notes {
         }
 
         file.writeText(content)
-
-        updateFiles()
 
         return true
     }
@@ -67,7 +65,7 @@ class Notes {
 
         val sourceFileList = mutableListOf<CustomFile>()
         pathList.forEach { path ->
-            val file = files.find { file ->
+            val file = getFiles().find { file ->
                 file.file.name == path.takeLastWhile { s -> s != '/' } &&  file.file.path == path
             }
             if (file != null) {
@@ -116,7 +114,6 @@ class Notes {
                     copyFile(sourceFile, "$targetFilePath/${sourceFile.file.name}")
                     if (canDeleteFile(sourceFile, targetFile, targetFile.file.path))
                         deleteFile(sourceFile)
-                    updateFiles()
                 }
                 else if (targetFile.file.isDirectory) {
                     val listOfFilesInDir = targetFile.file.listFiles()
@@ -132,7 +129,6 @@ class Notes {
                     copyFile(sourceFile, "${targetFile.file.path}/${sourceFile.file.name}")
                     if (canDeleteFile(sourceFile, targetFile, targetFile.file.path))
                         deleteFile(sourceFile)
-                    updateFiles()
                 }
                 else {
                     println("error: target file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
@@ -141,7 +137,6 @@ class Notes {
             }
             else if (sourceFile.file.isDirectory) {
                 if (targetFile.file.isFile) {
-                    println("dir to file")
                     val targetFilePath = targetFile.file.path.replace("/${targetFile.file.name}", "")
 
                     val filesInPath = File(root, targetFile.file.path.replace(root, "").replace(targetFile.file.name, "")).listFiles()
@@ -160,7 +155,6 @@ class Notes {
                     copyFile(sourceFile, "$targetFilePath/${sourceFile.file.name}")
                     if (canDeleteFile(sourceFile, targetFile, targetFilePath))
                         deleteFile(sourceFile)
-                    updateFiles()
                 }
                 else if (targetFile.file.isDirectory) {
                     if (targetFile.children != null) {
@@ -175,7 +169,6 @@ class Notes {
                     copyFile(sourceFile, "${targetFile.file.path}/${sourceFile.file.name}")
                     if (canDeleteFile(sourceFile, targetFile, targetFile.file.path))
                         deleteFile(sourceFile)
-                    updateFiles()
                 }
                 else {
                     println("error: target file is not file or folder ${sourceFile.file.exists()} ${targetFile.file.exists()}")
@@ -244,12 +237,11 @@ class Notes {
             }
         }
         else {
-            updateFiles()
             return false
         }
     }
 
-    fun deleteFile(file: CustomFile) {
+    fun deleteFile(file: CustomFile){
         try {
             if (file.file.isFile) {
                 file.file.delete()
@@ -260,19 +252,9 @@ class Notes {
         } catch (e: Exception) {
             println("error: delete file failure $e")
         }
-
-        updateFiles()
     }
 
-    fun updateFiles() {
-        files.clear()
-        getFiles().forEach {
-            if (it.file.exists())
-                files.add(it)
-        }
-    }
-
-    private fun getFiles(path: String = ""): MutableList<CustomFile> {
+    fun getFiles(path: String = ""): MutableList<CustomFile> {
         val files = File(root, path).listFiles()
         val directoryLevel = path.count { it == '/' } + 1
 

@@ -11,7 +11,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,14 +20,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,7 +60,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.my_launcher.MainActivity
 import com.example.my_launcher.R
 import com.example.my_launcher.Typography
 import com.example.my_launcher.roboto
@@ -76,15 +74,14 @@ fun NotesPage(
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
     textColor: Color,
-    updateFiles: () -> Unit,
+    getFiles: () -> MutableList<Notes.CustomFile>,
     saveFile: (name: String, path: String, content: String) -> Boolean,
     saveFileOverride: (name: String, path: String, content: String) -> Unit,
     readFile: (file: File) -> String,
     saveFolder: (name: String, path: String) -> Unit,
-    moveFile: (sourceFilePaths: String, targetFile: MainActivity.CustomFile) -> Unit,
-    deleteFiles: (sourceFile: MainActivity.CustomFile) -> Unit,
+    moveFile: (sourceFilePaths: String, targetFile: Notes.CustomFile) -> Unit,
+    deleteFiles: (sourceFile: Notes.CustomFile) -> Unit,
     rootFolderName: String,
-    files: List<MainActivity.CustomFile>,
     rootPath: String,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -98,6 +95,21 @@ fun NotesPage(
     val showSaveFileDialog = remember { mutableStateOf(false) }
     val showSaveFolderDialog = remember { mutableStateOf(false) }
     val showSaveFileOverrideDialog = remember { mutableStateOf(false) }
+
+    val files = remember { mutableStateListOf<Notes.CustomFile>() }
+    var previousFiles = remember { mutableListOf<Notes.CustomFile>() }
+
+    LaunchedEffect(files.size == 0) {
+        if (files.size == 0) {
+            getFiles().forEach { files.add(it) }
+            files.forEach { file ->
+                val previousFile = previousFiles.find { prevFile -> prevFile.file.path == file.file.path }
+                file.hidden = previousFile?.hidden ?: false
+            }
+
+            previousFiles.clear()
+        }
+    }
 
     LaunchedEffect(text.value) {
         this.launch {
@@ -117,6 +129,8 @@ fun NotesPage(
                     }
 
                     showSaveFileDialog.value = false
+                    files.forEach { previousFiles.add(it) }
+                    files.clear()
                 }
             },
             cancel = {
@@ -130,6 +144,8 @@ fun NotesPage(
         DialogSaveFolder(
             confirm = { folderName: String ->
                 saveFolder(folderName, path.value)
+                files.forEach { previousFiles.add(it) }
+                files.clear()
                 showSaveFolderDialog.value = false
             },
             cancel = {
@@ -142,6 +158,8 @@ fun NotesPage(
         DialogOverride(
             confirm = {
                 saveFileOverride(title.value, path.value, text.value)
+                files.forEach { previousFiles.add(it) }
+                files.clear()
                 showSaveFileOverrideDialog.value = false
             },
             cancel = {
@@ -356,7 +374,6 @@ fun NotesPage(
                     .align(Alignment.BottomEnd)
                     .size(50.dp)
                     .clickable {
-                        updateFiles()
                         showDirMenu.value = !showDirMenu.value
                     },
                 painter = painterResource(R.drawable.burger_menu),
@@ -380,26 +397,26 @@ fun NotesPage(
                         shouldStartDragAndDrop = { event ->
                             event.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
                         },
-                        target = remember {
-                            object : DragAndDropTarget {
-                                override fun onDrop(event: DragAndDropEvent): Boolean {
-                                    val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
-                                    moveFile(
-                                        draggedFilePath, MainActivity.CustomFile(
-                                            file = File(
-                                                "/storage/emulated/0/${rootFolderName}",
-                                                ""
-                                            ),
-                                            children = null,
-                                            indent = 1,
-                                            hidden = true
-                                        )
+                        target = object: DragAndDropTarget {
+                            override fun onDrop(event: DragAndDropEvent): Boolean {
+                                val draggedFilePath = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
+                                moveFile(
+                                    draggedFilePath, Notes.CustomFile(
+                                        file = File(
+                                            rootPath,
+                                            ""
+                                        ),
+                                        children = null,
+                                        indent = 1,
+                                        hidden = true,
                                     )
-                                    selectedItems.clear()
-                                    return true
-                                }
+                                )
+                                selectedItems.clear()
+                                files.forEach { previousFiles.add(it) }
+                                files.clear()
+                                return true
                             }
-                        },
+                        }
                     )
             ) {
                 Text(
@@ -461,33 +478,25 @@ fun NotesPage(
                     }
                 }
 
-                Column(
+                val hiddenItems = remember { mutableListOf<String>() }
+
+                LazyColumn(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(top = 120.dp, bottom = 60.dp)
-                        .verticalScroll(rememberScrollState())
                 ) {
-                    files.forEach { file ->
+                    items(files) { file ->
                         if (!file.hidden && file.file.nameWithoutExtension != "tmpfileforautosave") {
-                            val expanded = remember { mutableStateOf(!file.hidden) }
-                            val selected = remember { mutableStateOf(false) }
-
-                            LaunchedEffect(selectedItems.size == 0) {
-                                if (selectedItems.size == 0) selected.value = false
-                            }
-
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp)
-                                    .background(if (selected.value) Color.Gray else Color.Transparent)
                                     .dragAndDropSource {
                                         detectTapGestures(
                                             onTap = {
                                                 if (selectedItems.size > 0) {
                                                     if (selectedItems.contains(file.file.path)) selectedItems.remove(file.file.path)
                                                     else selectedItems.add(file.file.path)
-                                                    selected.value = !selected.value
                                                 } else if (file.file.isFile) {
                                                     if (text.value != "") {
                                                         val match = files.find { it.file.nameWithoutExtension == title.value }
@@ -504,16 +513,24 @@ fun NotesPage(
                                                             .replace(file.file.name, "")
                                                     }
                                                 } else if (file.file.isDirectory) {
-                                                    expanded.value = !expanded.value
-                                                    file.children?.forEach { child ->
-                                                        files.find { child.file == it.file }?.hidden = !expanded.value
+                                                    if (hiddenItems.find { it == file.file.path } != null) {
+                                                        hiddenItems.remove(file.file.path)
+                                                        file.children?.forEach { it.hidden = false }
                                                     }
-                                                } else {
-                                                    updateFiles()
+                                                    else {
+                                                        hiddenItems.add(file.file.path)
+                                                        file.children?.forEach { it.hidden = true }
+                                                    }
+
+                                                    files.forEach { previousFiles.add(it) }
+                                                    files.clear()
+                                                 } else {
+                                                    files.forEach { previousFiles.add(it) }
+                                                    files.clear()
                                                 }
                                             },
                                             onLongPress = {
-                                                if (selected.value) {
+                                                if (selectedItems.find { it == file.file.path } != null) {
                                                     var result = ""
                                                     selectedItems.forEachIndexed { index, path ->
                                                         result += if (index != selectedItems.size - 1) path + "_-middle-_" else path
@@ -526,7 +543,6 @@ fun NotesPage(
                                                     )
                                                 } else {
                                                     selectedItems.add(file.file.path)
-                                                    selected.value = true
                                                 }
                                             }
                                         )
@@ -535,22 +551,24 @@ fun NotesPage(
                                         shouldStartDragAndDrop = { event ->
                                             event.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
                                         },
-                                        target = remember {
-                                            object : DragAndDropTarget {
-                                                override fun onDrop(event: DragAndDropEvent): Boolean {
-                                                    val filePaths = event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString()
-                                                    moveFile(filePaths, file)
-                                                    selectedItems.clear()
-                                                    return true
-                                                }
+                                        target = object: DragAndDropTarget {
+                                            override fun onDrop(event: DragAndDropEvent): Boolean {
+                                                moveFile(event.toAndroidDragEvent().clipData?.getItemAt(0)?.text.toString(), file)
+                                                selectedItems.clear()
+                                                files.forEach { previousFiles.add(it) }
+                                                files.clear()
+
+                                                return true
                                             }
-                                        },
+                                        }
                                     )
+                                    .background(if (selectedItems.find { it == file.file.path } != null) Color.Gray else Color.Transparent)
+
                             ) {
                                 Icon(
                                     modifier = Modifier
                                         .padding(start = (5 * file.indent).dp, top = 10.dp, bottom = 10.dp),
-                                    painter = painterResource(if (file.file.isFile) R.drawable.file else if (expanded.value) R.drawable.open_folder else R.drawable.folder),
+                                    painter = painterResource(if (file.file.isFile) R.drawable.file else if (hiddenItems.find { it == file.file.path } == null) R.drawable.open_folder else R.drawable.folder),
                                     contentDescription = null,
                                     tint = Color.White,
                                 )
@@ -584,8 +602,11 @@ fun NotesPage(
                                 .clickable {
                                     selectedItems.forEach {
                                         val file = files.find { file -> file.file.path == it }
-                                        if (file != null)
+                                        if (file != null) {
                                             deleteFiles(file)
+                                            files.forEach { previousFiles.add(it) }
+                                            files.clear()
+                                        }
                                     }
                                     selectedItems.clear()
                                 },
@@ -637,4 +658,3 @@ fun NotesPage(
         }
     }
 }
-

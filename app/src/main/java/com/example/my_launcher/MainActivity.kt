@@ -61,8 +61,6 @@ import com.example.my_launcher.notes.Notes
 import com.example.my_launcher.notes.NotesPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileInputStream
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -70,19 +68,20 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO Launcher
+- check out recompositions. reduce them as much as possible
+- check logs when running app. There are a fair few reds
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
 - Fix app select background (currently grey)
 - set text color dynamically depending on background color
 - blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>) (https://proandroiddev.com/creating-dynamic-background-blur-with-jetpack-compose-in-android-c53bef7fb98a)
+Add a low alpha, blurred background to app list
 - make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
 - use expand statusbar when swiping down
 */
 
 /* TODO Notes
-- make the sorting case insensitive
-- bug: when file is moved, need to refresh directory to move again (problem is that the file doesn't exist)
 - bug: found issue where I want to copy folder up a level or two.
 - bug: found issue where I can't copy file from a folder to a parent to that folder (aka move it up the hierarchy)
 - automatically open keyboard when opening one of the dialogs
@@ -113,13 +112,6 @@ class MainActivity: ComponentActivity() {
     private lateinit var duoWidget: AppWidgetProviderInfo
     private lateinit var options: Bundle
     private lateinit var hostView: AppWidgetHostView
-
-    class CustomFile(
-        val file: File,
-        val children: MutableList<CustomFile>?,
-        val indent: Int,
-        var hidden: Boolean,
-    )
 
     class ApplicationInformation {
         var label: String? = null
@@ -297,16 +289,15 @@ class MainActivity: ComponentActivity() {
                 error = error,
                 enabled = enabled,
                 textColor = textColor,
-                updateFiles = notes::updateFiles,
+                getFiles = notes::getFiles,
                 saveFile = notes::saveFile,
                 saveFileOverride = notes::overrideFile,
                 readFile = notes::readFile,
                 saveFolder = notes::saveFolder,
                 moveFile = notes::moveFile,
                 deleteFiles = notes::deleteFile,
-                files= notes.files,
                 rootFolderName = notes.rootFolderName,
-                rootPath = "/storage/emulated/0/${notes.rootFolderName}"
+                rootPath = notes.root,
             )
         }
     }
