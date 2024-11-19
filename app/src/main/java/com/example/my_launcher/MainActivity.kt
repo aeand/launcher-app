@@ -38,7 +38,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,8 +48,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.my_launcher.app_drawer.AppDrawer
-import com.example.my_launcher.notes.Notes
-import com.example.my_launcher.notes.NotesPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -82,7 +79,6 @@ class MainActivity: ComponentActivity() {
     private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
     private lateinit var listState: LazyListState
     private lateinit var dragState: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
-    private lateinit var dragState2: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
 
@@ -110,7 +106,6 @@ class MainActivity: ComponentActivity() {
         var packages = appDrawer.getPackages()
         appDrawer.createAppList()
         appDrawer.createDuolingoWidget()
-        val notes = Notes()
         requestPermissions()
 
         enableEdgeToEdge(
@@ -138,26 +133,11 @@ class MainActivity: ComponentActivity() {
                 color = Color.White,
             )
 
-            val screenWidth = 1080f
             val screenHeight = 2340f
-            val topBar = 32f
             val bottomBar = 48f
 
             val decayAnimationSpec = rememberSplineBasedDecay<Float>()
             dragState = remember {
-                AnchoredDraggableState(
-                    initialValue = Start,
-                    anchors = DraggableAnchors {
-                        Start at 0f
-                        End at -screenWidth
-                    },
-                    positionalThreshold = { d -> d * 0.9f},
-                    velocityThreshold = { Float.POSITIVE_INFINITY },
-                    snapAnimationSpec = tween(),
-                    decayAnimationSpec = decayAnimationSpec
-                )
-            }
-            dragState2 = remember {
                 AnchoredDraggableState(
                     initialValue = Start,
                     anchors = DraggableAnchors {
@@ -171,12 +151,8 @@ class MainActivity: ComponentActivity() {
                 )
             }
 
-            LaunchedEffect(dragState2.lastVelocity) {
-                println(dragState2.lastVelocity)
-            }
-
             val floatAnim = animateFloatAsState(
-                targetValue = if (dragState2.lastVelocity < 0) 0.5f else 0f,
+                targetValue = if (dragState.lastVelocity < 0) 0.5f else 0f,
                 tween(
                     durationMillis = 1000,
                     easing = LinearEasing,
@@ -185,27 +161,18 @@ class MainActivity: ComponentActivity() {
             )
             window.setDimAmount(floatAnim.value)
 
-            val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
-
             Box(
                 modifier = Modifier
                     .anchoredDraggable(
                         state = dragState,
-                        enabled = appDrawerClosed,
-                        orientation = Orientation.Horizontal
-                    )
-                    .anchoredDraggable(
-                        state = dragState2,
                         enabled = true,
                         orientation = Orientation.Vertical
                     )
                     .fillMaxSize()
                     .offset {
                         IntOffset(
+                            0,
                             dragState
-                                .requireOffset()
-                                .roundToInt(),
-                            dragState2
                                 .requireOffset()
                                 .roundToInt()
                         )
@@ -213,8 +180,8 @@ class MainActivity: ComponentActivity() {
             )
 
             // create app list and alphabet list when scrolled down to bottom
-            LaunchedEffect(dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
-                if (dragState2.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+            LaunchedEffect(dragState.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
+                if (dragState.requireOffset().roundToInt() == -screenHeight.roundToInt()) {
                     val i = Intent(Intent.ACTION_MAIN, null)
                     i.addCategory(Intent.CATEGORY_LAUNCHER)
                     val pk: List<ResolveInfo> = packageManager.queryIntentActivities(i, PackageManager.GET_META_DATA)
@@ -229,7 +196,7 @@ class MainActivity: ComponentActivity() {
 
             AppDrawer(
                 modifier = Modifier
-                    .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
+                    .offset { IntOffset(0, dragState.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = listState,
                 hostView = appDrawer.hostView,
                 alphabet = appDrawer.alphabet,
@@ -240,39 +207,6 @@ class MainActivity: ComponentActivity() {
                 uninstallApp = { app -> appDrawer.uninstallApp(app) },
                 textColor = Color.White,
                 bottomBar = bottomBar,
-            )
-
-            val enabled = remember {
-                mutableStateOf(false)
-            }
-
-            LaunchedEffect(dragState.requireOffset().roundToInt() == -screenWidth.roundToInt(), dragState2.requireOffset().roundToInt() != 0) {
-                enabled.value = dragState.requireOffset().roundToInt() == -screenWidth.roundToInt() && dragState2.requireOffset().roundToInt() == 0
-            }
-
-            NotesPage(
-                Modifier
-                    .padding(top = topBar.dp, bottom = bottomBar.dp)
-                    .offset {
-                        IntOffset(
-                            dragState
-                                .requireOffset()
-                                .roundToInt() + screenWidth.roundToInt(),
-                            dragState2
-                                .requireOffset()
-                                .roundToInt()
-                        )
-                    },
-                enabled = enabled,
-                getFiles = notes::getFiles,
-                saveFile = notes::saveFile,
-                saveFileOverride = notes::overrideFile,
-                readFile = notes::readFile,
-                saveFolder = notes::saveFolder,
-                moveFile = notes::moveFile,
-                deleteFiles = notes::deleteFile,
-                rootFolderName = notes.rootFolderName,
-                rootPath = notes.root,
             )
         }
     }
@@ -291,16 +225,6 @@ class MainActivity: ComponentActivity() {
             })
 
             dragState.updateAnchors(DraggableAnchors {
-                Start at 0f
-                End at -1080f
-            })
-
-            dragState2.updateAnchors(DraggableAnchors {
-                Start at 0f
-                End at 0f
-            })
-
-            dragState2.updateAnchors(DraggableAnchors {
                 Start at 0f
                 End at -2340f
             })
