@@ -14,6 +14,7 @@ import android.os.Environment
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,11 +70,8 @@ FIXES
 - Fix app select background (currently grey)
 
 FEATURES
-- set text color dynamically depending on background color
 - blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>) (https://proandroiddev.com/creating-dynamic-background-blur-with-jetpack-compose-in-android-c53bef7fb98a)
 Add a low alpha, blurred background to app list
-- open statusbar by swiping down by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
-- Handle back button event, BackHandler { }
 - create custom dialog for hide/uninstall app
 
 PERFORMANCE
@@ -120,7 +118,6 @@ class MainActivity: ComponentActivity() {
         appDrawer = AppDrawer(this, applicationContext, packageManager, requestWidgetPermissionsLauncher)
 
         registerReceiver()
-        val textColor = Color.White
         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         var packages = appDrawer.getPackages()
         appDrawer.createAppList()
@@ -129,6 +126,10 @@ class MainActivity: ComponentActivity() {
         requestPermissions()
 
         setContent {
+            BackHandler {
+                backToHome()
+            }
+
             val isDarkMode = isSystemInDarkTheme()
             val context = LocalContext.current as ComponentActivity
             DisposableEffect(isDarkMode) {
@@ -152,7 +153,7 @@ class MainActivity: ComponentActivity() {
                 text = date,
                 fontSize = 11.sp,
                 fontWeight = FontWeight(600),
-                color = textColor,
+                color = Color.White,
             )
 
             val screenWidth = 1080f
@@ -241,7 +242,7 @@ class MainActivity: ComponentActivity() {
                 launchApp = { app -> appDrawer.launchApp(app) },
                 hideApp = { app -> appDrawer.hideApp(app) },
                 uninstallApp = { app -> appDrawer.uninstallApp(app) },
-                textColor = textColor,
+                textColor = Color.White,
                 bottomBar = bottomBar,
             )
 
@@ -272,7 +273,6 @@ class MainActivity: ComponentActivity() {
                     },
                 error = error,
                 enabled = enabled,
-                textColor = textColor,
                 getFiles = notes::getFiles,
                 saveFile = notes::saveFile,
                 saveFileOverride = notes::overrideFile,
@@ -289,6 +289,31 @@ class MainActivity: ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         appDrawer.deleteWidget()
+    }
+
+    private fun backToHome() {
+        customScope.launch {
+            lazyScroll.scrollToItem(0)
+            dragState.updateAnchors(DraggableAnchors {
+                Start at 0f
+                End at 0f
+            })
+
+            dragState.updateAnchors(DraggableAnchors {
+                Start at 0f
+                End at -1080f
+            })
+
+            dragState2.updateAnchors(DraggableAnchors {
+                Start at 0f
+                End at 0f
+            })
+
+            dragState2.updateAnchors(DraggableAnchors {
+                Start at 0f
+                End at -2340f
+            })
+        }
     }
 
     private fun requestPermissions() {
@@ -342,28 +367,7 @@ class MainActivity: ComponentActivity() {
 
                     Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
                         appDrawer.createAppList()
-                        customScope.launch {
-                            lazyScroll.scrollToItem(0)
-                            dragState.updateAnchors(DraggableAnchors {
-                                Start at 0f
-                                End at 0f
-                            })
-
-                            dragState.updateAnchors(DraggableAnchors {
-                                Start at 0f
-                                End at -1080f
-                            })
-
-                            dragState2.updateAnchors(DraggableAnchors {
-                                Start at 0f
-                                End at 0f
-                            })
-
-                            dragState2.updateAnchors(DraggableAnchors {
-                                Start at 0f
-                                End at -2340f
-                            })
-                        }
+                        backToHome()
                     }
 
                     Intent.ACTION_DATE_CHANGED,

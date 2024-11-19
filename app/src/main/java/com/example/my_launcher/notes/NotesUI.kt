@@ -73,7 +73,6 @@ fun NotesPage(
     modifier: Modifier,
     enabled: MutableState<Boolean>,
     error: MutableState<Boolean>,
-    textColor: Color,
     getFiles: () -> MutableList<Notes.CustomFile>,
     saveFile: (name: String, path: String, content: String) -> Boolean,
     saveFileOverride: (name: String, path: String, content: String) -> Unit,
@@ -361,7 +360,7 @@ fun NotesPage(
                     showSaveFileDialog.value = true
                 },
             text = "Save",
-            color = textColor,
+            color = Color.White,
             fontFamily = Typography.bodyLarge.fontFamily,
             fontSize = Typography.bodyLarge.fontSize,
             fontWeight = Typography.bodyLarge.fontWeight,
@@ -425,7 +424,7 @@ fun NotesPage(
                         .height(50.dp)
                         .padding(start = 5.dp),
                     text = rootFolderName,
-                    color = textColor,
+                    color = Color.White,
                     fontFamily = Typography.titleLarge.fontFamily,
                     fontSize = Typography.titleLarge.fontSize,
                     fontWeight = Typography.titleLarge.fontWeight,
@@ -469,7 +468,7 @@ fun NotesPage(
                             modifier = Modifier
                                 .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
                             text = "Auto save",
-                            color = textColor,
+                            color = Color.White,
                             fontFamily = Typography.bodyLarge.fontFamily,
                             fontSize = Typography.bodyLarge.fontSize,
                             fontWeight = Typography.bodyLarge.fontWeight,
@@ -577,7 +576,7 @@ fun NotesPage(
                                     modifier = Modifier
                                         .padding(start = 5.dp, top = 10.dp, bottom = 10.dp),
                                     text = if (file.file.isFile) file.file.nameWithoutExtension else file.file.name,
-                                    color = textColor,
+                                    color = Color.White,
                                     fontFamily = Typography.bodyLarge.fontFamily,
                                     fontSize = Typography.bodyLarge.fontSize,
                                     fontWeight = Typography.bodyLarge.fontWeight,
