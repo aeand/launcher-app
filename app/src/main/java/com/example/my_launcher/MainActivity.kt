@@ -21,6 +21,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -57,21 +59,15 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO Launcher
-
 FIXES
 - fix widget host (error logs and not updating)
 - fix app & alphabet list not updating when uninstalling app (look at files in notes)
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
-- Fix app select background (currently grey)
-
-FEATURES
-- blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>) (https://proandroiddev.com/creating-dynamic-background-blur-with-jetpack-compose-in-android-c53bef7fb98a)
-Add a low alpha, blurred background to app list
+- fix app select background (currently grey)
 
 PERFORMANCE
 - check out recompositions. reduce them as much as possible
-
 */
 
 /* Inspiration
@@ -174,6 +170,20 @@ class MainActivity: ComponentActivity() {
                     decayAnimationSpec = decayAnimationSpec
                 )
             }
+
+            LaunchedEffect(dragState2.lastVelocity) {
+                println(dragState2.lastVelocity)
+            }
+
+            val floatAnim = animateFloatAsState(
+                targetValue = if (dragState2.lastVelocity < 0) 0.5f else 0f,
+                tween(
+                    durationMillis = 1000,
+                    easing = LinearEasing,
+                ),
+                label = "",
+            )
+            window.setDimAmount(floatAnim.value)
 
             val appDrawerClosed = dragState2.requireOffset().roundToInt() == 0
 
