@@ -56,22 +56,16 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO Launcher
-FIXES
+- check out recompositions. reduce them as much as possible
+
 - fix widget host (error logs and not updating)
 - fix app & alphabet list not updating when uninstalling app (look at files in notes)
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
 - fix app select background (currently grey)
-
-PERFORMANCE
-- check out recompositions. reduce them as much as possible
 */
 
-/* Inspiration
-https://www.youtube.com/watch?v=aVg3RkfNtqE
-https://medium.com/@muhammadzaeemkhan/top-9-open-source-android-launchers-you-need-to-try-56c5f975e2f8
-https://github.com/markusfisch/PieLauncher/tree/master
-*/
+// Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
 
 @OptIn(ExperimentalFoundationApi::class)
 class MainActivity: ComponentActivity() {
