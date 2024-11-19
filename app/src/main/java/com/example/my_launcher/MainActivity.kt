@@ -72,7 +72,6 @@ FIXES
 FEATURES
 - blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>) (https://proandroiddev.com/creating-dynamic-background-blur-with-jetpack-compose-in-android-c53bef7fb98a)
 Add a low alpha, blurred background to app list
-- create custom dialog for hide/uninstall app
 
 PERFORMANCE
 - check out recompositions. reduce them as much as possible

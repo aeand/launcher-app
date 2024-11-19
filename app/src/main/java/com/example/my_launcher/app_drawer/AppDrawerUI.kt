@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,6 +73,32 @@ fun AppDrawer(
     bottomBar: Float,
 ) {
     val showAllApps = remember { mutableStateOf(false) }
+    val showDialog = remember { mutableStateOf(false) }
+    val selectedApp = remember { mutableStateOf<AppDrawer.ApplicationInformation?>(null) }
+
+    if (showDialog.value) {
+        AppDrawerDialog(
+            hide = {
+                if (selectedApp.value != null)
+                    hideApp(selectedApp.value!!.packageName)
+
+                selectedApp.value = null
+                showDialog.value = false
+            },
+            uninstall = {
+                if (selectedApp.value != null)
+                    uninstallApp(selectedApp.value!!.packageName)
+
+                selectedApp.value = null
+                showDialog.value = false
+            },
+            cancel = {
+                selectedApp.value = null
+                showDialog.value = false
+            },
+            selectedApp = selectedApp
+        )
+    }
 
     Box(
         modifier = modifier
@@ -142,7 +169,6 @@ fun AppDrawer(
                 apps.forEach { app ->
                     item {
                         if (showAllApps.value || !app.hidden!!) {
-                            val showOptions = remember { mutableStateOf(false) }
                             val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
 
                             if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
@@ -173,85 +199,6 @@ fun AppDrawer(
                                 }
                             }
 
-                            if (showOptions.value) {
-                                AlertDialog(
-                                    //icon = {  },
-                                    title = {
-                                        Text(
-                                            text = "ACTION",
-                                            fontFamily = Typography.bodyMedium.fontFamily,
-                                            fontSize = Typography.bodyMedium.fontSize,
-                                            fontWeight = Typography.bodyMedium.fontWeight,
-                                            lineHeight = Typography.bodyMedium.lineHeight,
-                                            color = textColor
-                                        )
-                                    },
-                                    text = {
-                                        Text(
-                                            text = "What to do with ${app.label}?",
-                                            fontFamily = Typography.bodyMedium.fontFamily,
-                                            fontSize = Typography.bodyMedium.fontSize,
-                                            fontWeight = Typography.bodyMedium.fontWeight,
-                                            lineHeight = Typography.bodyMedium.lineHeight,
-                                            color = textColor
-                                        )
-                                    },
-                                    onDismissRequest = {
-                                        showOptions.value = false
-                                    },
-                                    confirmButton = {
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(end = 10.dp)
-                                                .width(100.dp)
-                                                .height(40.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(Color.DarkGray)
-                                        ) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .align(Alignment.Center)
-                                                    .clickable {
-                                                        uninstallApp(app.packageName)
-                                                        showOptions.value = false
-                                                    },
-                                                text = "uninstall",
-                                                fontFamily = Typography.bodyMedium.fontFamily,
-                                                fontSize = Typography.bodyMedium.fontSize,
-                                                fontWeight = Typography.bodyMedium.fontWeight,
-                                                lineHeight = Typography.bodyMedium.lineHeight,
-                                                color = textColor
-                                            )
-                                        }
-                                    },
-                                    dismissButton = {
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(start = 10.dp)
-                                                .width(100.dp)
-                                                .height(40.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(Color.DarkGray)
-                                        ) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .align(Alignment.Center)
-                                                    .clickable {
-                                                        showOptions.value = false
-                                                        hideApp(app.packageName)
-                                                    },
-                                                text = if (app.hidden != null && app.hidden!!) "show" else "hide",
-                                                fontFamily = Typography.bodyMedium.fontFamily,
-                                                fontSize = Typography.bodyMedium.fontSize,
-                                                fontWeight = Typography.bodyMedium.fontWeight,
-                                                lineHeight = Typography.bodyMedium.lineHeight,
-                                                color = textColor
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-
                             Row(
                                 modifier = Modifier
                                     .padding(bottom = 20.dp)
@@ -260,7 +207,8 @@ fun AppDrawer(
                                             launchApp(app.packageName)
                                         },
                                         onLongClick = {
-                                            showOptions.value = true
+                                            selectedApp.value = app
+                                            showDialog.value = true
                                         },
                                     )
                             ) {
