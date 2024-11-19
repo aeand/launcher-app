@@ -106,7 +106,6 @@ class MainActivity: ComponentActivity() {
         var packages = appDrawer.getPackages()
         appDrawer.createAppList()
         appDrawer.createDuolingoWidget()
-        requestPermissions()
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
@@ -229,17 +228,6 @@ class MainActivity: ComponentActivity() {
                 End at -2340f
             })
         }
-    }
-
-    private fun requestPermissions() {
-        if (Environment.isExternalStorageManager()) {
-            return
-        }
-
-        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).also {
-            it.data = Uri.parse("package:${packageName}")
-        }
-        startActivity(intent)
     }
 
     private fun registerReceiver() {

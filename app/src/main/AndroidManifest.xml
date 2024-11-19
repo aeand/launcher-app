@@ -12,8 +12,6 @@
     <!-- from quicksteps manifest: Permission required to start a WidgetPickerActivity. -->
     <permission android:name="${applicationId}.permission.START_WIDGET_PICKER_ACTIVITY" android:protectionLevel="signature|privileged" />
 
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
