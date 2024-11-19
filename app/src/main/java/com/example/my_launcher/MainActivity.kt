@@ -28,7 +28,6 @@ import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -36,7 +35,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.AndroidUiDispatcher
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -54,7 +51,6 @@ import com.example.my_launcher.notes.Notes
 import com.example.my_launcher.notes.NotesPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -87,15 +83,12 @@ https://github.com/markusfisch/PieLauncher/tree/master
 @OptIn(ExperimentalFoundationApi::class)
 class MainActivity: ComponentActivity() {
     private lateinit var appDrawer: AppDrawer
-
-    private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
-    private lateinit var receiver: BroadcastReceiver
-
     private var date: String = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-    private lateinit var lazyScroll: LazyListState
-
+    private lateinit var listState: LazyListState
     private lateinit var dragState: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
     private lateinit var dragState2: AnchoredDraggableState<AnimatedContentTransitionScope. SlideDirection>
+    private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
+    private lateinit var receiver: BroadcastReceiver
 
     private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         println(result)
@@ -124,20 +117,14 @@ class MainActivity: ComponentActivity() {
         val notes = Notes()
         requestPermissions()
 
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+            navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+        )
+
         setContent {
             BackHandler {
                 backToHome()
-            }
-
-            val isDarkMode = isSystemInDarkTheme()
-            val context = LocalContext.current as ComponentActivity
-            DisposableEffect(isDarkMode) {
-                context.enableEdgeToEdge(
-                    statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                    navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-                )
-
-                onDispose { }
             }
 
             LaunchedEffect(true) {
@@ -228,12 +215,12 @@ class MainActivity: ComponentActivity() {
                 }
             }
 
-            lazyScroll = rememberLazyListState()
+            listState = rememberLazyListState()
 
             AppDrawer(
                 modifier = Modifier
                     .offset { IntOffset(0, dragState2.requireOffset().roundToInt() + screenHeight.roundToInt()) },
-                lazyScroll = lazyScroll,
+                lazyScroll = listState,
                 hostView = appDrawer.hostView,
                 alphabet = appDrawer.alphabet,
                 apps = appDrawer.apps,
@@ -244,10 +231,6 @@ class MainActivity: ComponentActivity() {
                 textColor = Color.White,
                 bottomBar = bottomBar,
             )
-
-            val error = remember {
-                mutableStateOf(false)
-            }
 
             val enabled = remember {
                 mutableStateOf(false)
@@ -270,7 +253,6 @@ class MainActivity: ComponentActivity() {
                                 .roundToInt()
                         )
                     },
-                error = error,
                 enabled = enabled,
                 getFiles = notes::getFiles,
                 saveFile = notes::saveFile,
@@ -292,7 +274,7 @@ class MainActivity: ComponentActivity() {
 
     private fun backToHome() {
         customScope.launch {
-            lazyScroll.scrollToItem(0)
+            listState.scrollToItem(0)
             dragState.updateAnchors(DraggableAnchors {
                 Start at 0f
                 End at 0f
@@ -324,19 +306,6 @@ class MainActivity: ComponentActivity() {
             it.data = Uri.parse("package:${packageName}")
         }
         startActivity(intent)
-    }
-
-    @SuppressLint("WrongConstant")
-    private fun setExpandNotificationDrawer(expand: Boolean) {
-        try {
-            val statusBarService = applicationContext.getSystemService("statusbar")
-            val methodName = if (expand) "expandNotificationsPanel" else "collapsePanels"
-            val statusBarManager: Class<*> = Class.forName("android.app.StatusBarManager")
-            val method: Method = statusBarManager.getMethod(methodName)
-            method.invoke(statusBarService)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     private fun registerReceiver() {

@@ -72,7 +72,6 @@ import java.io.File
 fun NotesPage(
     modifier: Modifier,
     enabled: MutableState<Boolean>,
-    error: MutableState<Boolean>,
     getFiles: () -> MutableList<Notes.CustomFile>,
     saveFile: (name: String, path: String, content: String) -> Boolean,
     saveFileOverride: (name: String, path: String, content: String) -> Unit,
@@ -217,7 +216,6 @@ fun NotesPage(
                 enabled = enabled.value,
                 textStyle = TextStyle(
                     textAlign = TextAlign.Start,
-                    color = if (error.value) Color.Red else Color.Black,
                     fontFamily = Typography.titleMedium.fontFamily,
                     fontSize = Typography.titleMedium.fontSize,
                     lineHeight = Typography.titleMedium.lineHeight,
@@ -296,7 +294,6 @@ fun NotesPage(
                 enabled = enabled.value,
                 textStyle = TextStyle(
                     textAlign = TextAlign.Start,
-                    color = if (error.value) Color.Red else Color.Black,
                     fontFamily = Typography.titleMedium.fontFamily,
                     fontSize = Typography.titleMedium.fontSize,
                     lineHeight = Typography.titleMedium.lineHeight,
