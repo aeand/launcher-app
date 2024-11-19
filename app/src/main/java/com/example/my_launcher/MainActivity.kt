@@ -60,19 +60,25 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /* TODO Launcher
-- check out recompositions. reduce them as much as possible
+
+FIXES
 - fix widget host (error logs and not updating)
 - fix app & alphabet list not updating when uninstalling app (look at files in notes)
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
 - Fix app select background (currently grey)
+
+FEATURES
 - set text color dynamically depending on background color
 - blur background when list is open (https://source.android.com/docs/core/display/window-blurs) (theme: <item name="android:backgroundDimAmount">0</item>) (https://proandroiddev.com/creating-dynamic-background-blur-with-jetpack-compose-in-android-c53bef7fb98a)
 Add a low alpha, blurred background to app list
-- make it swipeable to open the status bar by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
+- open statusbar by swiping down by using permission EXPAND_STATUS_BAR (use setExpandNotificationDrawer(true))
 - Handle back button event, BackHandler { }
-- use expand statusbar when swiping down
 - create custom dialog for hide/uninstall app
+
+PERFORMANCE
+- check out recompositions. reduce them as much as possible
+
 */
 
 /* Inspiration
