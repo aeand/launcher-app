@@ -59,6 +59,7 @@ import kotlin.math.roundToInt
 - check out recompositions. reduce them as much as possible
 
 - bug: when hiding first app in letter list the letter diappears
+- detect swipe down and open statusbar
 - fix hidden apps resetting when app dies
 - fix widget host (error logs and not updating)
 - fix app & alphabet list not updating when uninstalling app (look at files in notes)
