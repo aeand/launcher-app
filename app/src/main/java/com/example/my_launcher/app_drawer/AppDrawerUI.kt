@@ -62,7 +62,6 @@ import kotlin.math.roundToInt
 fun AppDrawer(
     modifier: Modifier,
     lazyScroll: LazyListState,
-    hostView: AppWidgetHostView?,
     customScope: CoroutineScope,
     textColor: Color,
     apps: List<AppDrawer.ApplicationInformation>,
@@ -124,15 +123,6 @@ fun AppDrawer(
                 painter = painterResource(id = if (showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
                 contentDescription = null,
                 tint = textColor
-            )
-
-            AndroidView(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(0.dp, (-50).dp)
-                    .width(350.dp)
-                    .height(200.dp),
-                factory = { hostView!! }
             )
 
             Icon(

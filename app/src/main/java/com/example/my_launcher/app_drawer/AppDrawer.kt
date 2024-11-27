@@ -1,28 +1,16 @@
 package com.example.my_launcher.app_drawer
 
-import android.R.attr.maxHeight
-import android.R.attr.maxWidth
-import android.R.attr.minHeight
 import android.app.Activity
-import android.appwidget.AppWidgetHost
-import android.appwidget.AppWidgetHostView
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProviderInfo
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Bundle
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.mutableStateListOf
 
 class AppDrawer(
     private val activity: Activity,
-    private val applicationContext: Context,
     private val packageManager: PackageManager,
-    private val requestWidgetPermissionsLauncher: ActivityResultLauncher<Intent>
 ) {
     class ApplicationInformation {
         var label: String? = null
@@ -33,46 +21,6 @@ class AppDrawer(
 
     var apps = mutableStateListOf<ApplicationInformation>()
     var alphabet = mutableStateListOf<String>()
-
-    lateinit var widgetHost: AppWidgetHost
-    lateinit var widgetManager: AppWidgetManager
-    var widgetId: Int = 0
-    lateinit var duoWidget: AppWidgetProviderInfo
-    lateinit var options: Bundle
-    lateinit var hostView: AppWidgetHostView
-
-    fun createDuolingoWidget() {
-        widgetHost = AppWidgetHost(applicationContext, 0)
-        widgetHost.startListening()
-        widgetManager = AppWidgetManager.getInstance(applicationContext)
-        duoWidget = widgetManager.installedProviders.find {
-            it.activityInfo.name.contains("com.duolingo.streak.streakWidget.MediumStreakWidgetProvider")
-        }!!
-        widgetId = widgetHost.allocateAppWidgetId()
-
-        options = Bundle()
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, maxWidth)
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, minHeight)
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, maxWidth)
-        options.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, maxHeight)
-
-        if (!widgetManager.bindAppWidgetIdIfAllowed(widgetId, duoWidget.provider)) {
-            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, duoWidget.provider)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_OPTIONS, options)
-
-            requestWidgetPermissionsLauncher.launch(intent)
-        }
-
-        hostView = widgetHost.createView(applicationContext, widgetId, duoWidget)
-        hostView.setAppWidget(widgetId, duoWidget)
-    }
-
-    fun deleteWidget() {
-        widgetHost.stopListening()
-        widgetHost.deleteAppWidgetId(widgetId)
-    }
 
     fun launchApp(packageName: String?) {
         if (packageName == null)

@@ -8,16 +8,12 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.End
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Companion.Start
@@ -58,7 +54,6 @@ import kotlin.math.roundToInt
 /* TODO Launcher
 - check out recompositions. reduce them as much as possible
 
-- fix widget host (error logs and not updating)
 - fix app & alphabet list not updating when uninstalling app (look at files in notes)
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
@@ -76,30 +71,18 @@ class MainActivity: ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
     private lateinit var receiver: BroadcastReceiver
 
-    private var requestWidgetPermissionsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        println(result)
-        if (result.resultCode == RESULT_OK) {
-            println("onActivityResult: ${appDrawer.widgetManager.bindAppWidgetIdIfAllowed(appDrawer.widgetId, appDrawer.duoWidget.provider, appDrawer.options)}")
-            if (appDrawer.widgetManager.bindAppWidgetIdIfAllowed(appDrawer.widgetId, appDrawer.duoWidget.provider, appDrawer.options)) {
-                appDrawer.hostView = appDrawer.widgetHost.createView(applicationContext, appDrawer.widgetId, appDrawer.duoWidget)
-                appDrawer.hostView.setAppWidget(appDrawer.widgetId, appDrawer.duoWidget)
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         @SuppressLint("SourceLockedOrientationActivity")
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        appDrawer = AppDrawer(this, applicationContext, packageManager, requestWidgetPermissionsLauncher)
+        appDrawer = AppDrawer(this, packageManager)
 
         registerReceiver()
         date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
         var packages = appDrawer.getPackages()
         appDrawer.createAppList()
-        appDrawer.createDuolingoWidget()
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
@@ -109,12 +92,6 @@ class MainActivity: ComponentActivity() {
         setContent {
             BackHandler {
                 backToHome()
-            }
-
-            LaunchedEffect(true) {
-                appDrawer.duoWidget.updatePeriodMillis.toLong() // every 30 min
-                appDrawer.hostView = appDrawer.widgetHost.createView(applicationContext, appDrawer.widgetId, appDrawer.duoWidget)
-                appDrawer.hostView.setAppWidget(appDrawer.widgetId, appDrawer.duoWidget)
             }
 
             Text(
@@ -191,7 +168,6 @@ class MainActivity: ComponentActivity() {
                 modifier = Modifier
                     .offset { IntOffset(0, dragState.requireOffset().roundToInt() + screenHeight.roundToInt()) },
                 lazyScroll = listState,
-                hostView = appDrawer.hostView,
                 alphabet = appDrawer.alphabet,
                 apps = appDrawer.apps,
                 customScope = customScope,
@@ -202,11 +178,6 @@ class MainActivity: ComponentActivity() {
                 bottomBar = bottomBar,
             )
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        appDrawer.deleteWidget()
     }
 
     private fun backToHome() {
