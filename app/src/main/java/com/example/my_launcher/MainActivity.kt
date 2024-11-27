@@ -54,6 +54,9 @@ import kotlin.math.roundToInt
 /* TODO Launcher
 - check out recompositions. reduce them as much as possible
 
+- bug: when hiding first app in letter list the letter diappears
+- detect swipe down and open statusbar
+- fix hidden apps resetting when app dies
 - fix app & alphabet list not updating when uninstalling app (look at files in notes)
 - bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 - refresh app list after install
