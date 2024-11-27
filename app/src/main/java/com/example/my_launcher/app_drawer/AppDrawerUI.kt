@@ -169,7 +169,7 @@ fun AppDrawer(
                 apps.forEach { app ->
                     item {
                         if (showAllApps.value || !app.hidden!!) {
-                            val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! }!!
+                            val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! && it.hidden == false }!!
 
                             if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
                                 Row(
