@@ -37,10 +37,13 @@ import androidx.compose.ui.unit.sp
 import com.example.my_launcher.app_drawer.AppDrawer
 import com.example.my_launcher.app_drawer.AppDrawerUI
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 /*
 bugs:
@@ -52,7 +55,6 @@ when installed a completely new app and updating the lists. The hitbox for butto
 when hiding first app in letter list the letter disappears
 showing apps reveals discord in C category
 
-update date
 fix delay on startup by doing intents on non-blocking main thread
 check out recompositions. reduce them as much as possible
 fix hidden apps resetting when app dies
@@ -64,8 +66,8 @@ fix app select background (currently grey)
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
 
 object AppColors {
-    val textColor = Color.White
-    val background = Color.Transparent
+    var textColor = Color.White
+    var background = Color.Transparent
 }
 
 class MainActivity : ComponentActivity() {
@@ -76,7 +78,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val appDrawer = AppDrawer(this, packageManager, customScope)
-        val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
+        var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
 
         @SuppressLint("SourceLockedOrientationActivity")
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -94,6 +96,28 @@ class MainActivity : ComponentActivity() {
             val pagerState = rememberPagerState(pageCount = {
                 2
             })
+
+            // DATE
+            LaunchedEffect(true) {
+                val calendar = Calendar.getInstance()
+                val today = calendar.time
+                calendar.add(Calendar.DAY_OF_YEAR, 1)
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val tomorrow = calendar.time
+
+                var seconds = TimeUnit.MILLISECONDS.toSeconds(tomorrow.time - today.time)
+                while (true) {
+                    seconds += 1
+                    if (seconds > 3600) {
+                        date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
+                        seconds = 1
+                    }
+                    delay(1000)
+                }
+            }
 
             // DIMMER
             val floatAnim = animateFloatAsState(
