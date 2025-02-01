@@ -83,19 +83,6 @@ object AppColors {
 9. add settings. I wanna hide specific apps
 */
 
-/*
-bug: app crashed when showing hidden apps. because i hide apps in ö
-bug: alphabet doesn't udate when hiding apps
-make scroll snappier
-make scroll faster by reducing the height of appdrawer
-bug: can init drag down when at bottom. Which will active the dim effect
-also fix dimmer not always enabling. Might need more things
-update date manually. I don't always get the event update
-fix delay on startup by doing intents on non-blocking main thread
-bug: when trying to show an app in show all apps list. it says hide. still works though
-showing apps reveals discord in C category
-*/
-
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
 
