@@ -23,6 +23,7 @@ class AppDrawer(
         var hidden: Boolean? = null
     }
 
+    var packages: List<ResolveInfo> = listOf()
     var apps = mutableStateListOf<ApplicationInformation>()
     var alphabet = mutableStateListOf<String>()
 
@@ -34,7 +35,7 @@ class AppDrawer(
         if (packageName == null)
             return
 
-        if (getPackages().find { it.activityInfo.packageName == packageName } == null) {
+        if (packages.find { it.activityInfo.packageName == packageName } == null) {
             return
         }
 
@@ -67,14 +68,15 @@ class AppDrawer(
         activity.startActivity(intent)
     }
 
-    fun getPackages(): List<ResolveInfo> {
+    private fun getPackages() {
         val intent = Intent(Intent.ACTION_MAIN, null)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+        packages = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
     }
 
     fun createAppList() {
-        val appList = getPackages()
+        getPackages()
+        val appList = packages
             .map { app ->
                 ApplicationInformation()
                     .apply {
@@ -98,7 +100,7 @@ class AppDrawer(
         createAlphabetList(apps)
     }
 
-    fun createAlphabetList(apps: List<ApplicationInformation>) {
+    private fun createAlphabetList(apps: List<ApplicationInformation>) {
         val letters = "1234567890qwertyuiopasdfghjklzxcvbnm"
             .split("")
             .dropLast(1)
