@@ -6,11 +6,15 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.mutableStateListOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class AppDrawer(
     private val activity: Activity,
     private val packageManager: PackageManager,
+    private val customScope: CoroutineScope,
 ) {
     class ApplicationInformation {
         var label: String? = null
@@ -21,6 +25,10 @@ class AppDrawer(
 
     var apps = mutableStateListOf<ApplicationInformation>()
     var alphabet = mutableStateListOf<String>()
+
+    init {
+        createAppList()
+    }
 
     fun launchApp(packageName: String?) {
         if (packageName == null)
@@ -36,7 +44,8 @@ class AppDrawer(
 
     fun hideApp(packageName: String?) {
         val app = apps.find { it.packageName?.lowercase() == packageName?.lowercase() }
-        apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden = !app?.hidden!!
+        apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden =
+            !app?.hidden!!
     }
 
     fun uninstallApp(packageName: String?) {
@@ -45,8 +54,10 @@ class AppDrawer(
 
         val packageIntent = Intent(Intent.ACTION_MAIN, null)
         packageIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-        val packages: List<ResolveInfo> = packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
-        val app = packages.find { it.activityInfo.packageName.lowercase() == packageName.lowercase() }
+        val packages: List<ResolveInfo> =
+            packageManager.queryIntentActivities(packageIntent, PackageManager.GET_META_DATA)
+        val app =
+            packages.find { it.activityInfo.packageName.lowercase() == packageName.lowercase() }
 
         if (app == null)
             return
@@ -70,7 +81,8 @@ class AppDrawer(
                         label = app.loadLabel(packageManager).toString()
                         packageName = app.activityInfo.packageName
                         icon = app.loadIcon(packageManager)
-                        val previousApp = apps.find { it.packageName?.lowercase() == packageName!!.lowercase() }
+                        val previousApp =
+                            apps.find { it.packageName?.lowercase() == packageName!!.lowercase() }
                         hidden = if (previousApp != null) previousApp.hidden else false
                     }
             }
@@ -108,6 +120,18 @@ class AppDrawer(
         alphabet.clear()
         filteredLetters.forEach {
             alphabet.add(it)
+        }
+    }
+
+    fun scrollToFirstItem(letter: String, lazyScroll: LazyListState) {
+        customScope.launch {
+
+            apps.forEachIndexed { index, app ->
+                if (app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                    lazyScroll.animateScrollToItem(index)
+                    return@launch
+                }
+            }
         }
     }
 }

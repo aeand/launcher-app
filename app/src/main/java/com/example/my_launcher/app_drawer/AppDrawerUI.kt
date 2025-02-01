@@ -53,51 +53,46 @@ import kotlin.math.roundToInt
 @SuppressLint("UseOfNonLambdaOffsetOverload")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppDrawer(
+fun AppDrawerUI(
     modifier: Modifier,
+    appDrawer: AppDrawer,
     lazyScroll: LazyListState,
     customScope: CoroutineScope,
     textColor: Color,
-    apps: List<AppDrawer.ApplicationInformation>,
-    launchApp: (String?) -> Unit,
-    hideApp: (String?) -> Unit,
-    uninstallApp: (String?) -> Unit,
-    alphabet: List<String>,
-    bottomBar: Float,
 ) {
     val showAllApps = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
     val selectedApp = remember { mutableStateOf<AppDrawer.ApplicationInformation?>(null) }
-
-    if (showDialog.value) {
-        AppDrawerDialog(
-            hide = {
-                if (selectedApp.value != null)
-                    hideApp(selectedApp.value!!.packageName)
-
-                selectedApp.value = null
-                showDialog.value = false
-            },
-            uninstall = {
-                if (selectedApp.value != null)
-                    uninstallApp(selectedApp.value!!.packageName)
-
-                selectedApp.value = null
-                showDialog.value = false
-            },
-            cancel = {
-                selectedApp.value = null
-                showDialog.value = false
-            },
-            selectedApp = selectedApp
-        )
-    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(start = 10.dp, end = 10.dp)
     ) {
+        if (showDialog.value) {
+            AppDrawerDialog(
+                hide = {
+                    if (selectedApp.value != null)
+                        appDrawer.hideApp(selectedApp.value!!.packageName)
+
+                    selectedApp.value = null
+                    showDialog.value = false
+                },
+                uninstall = {
+                    if (selectedApp.value != null)
+                        appDrawer.uninstallApp(selectedApp.value!!.packageName)
+
+                    selectedApp.value = null
+                    showDialog.value = false
+                },
+                cancel = {
+                    selectedApp.value = null
+                    showDialog.value = false
+                },
+                selectedApp = selectedApp
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -140,8 +135,7 @@ fun AppDrawer(
                 .padding(start = 10.dp, end = 10.dp)
                 .fillMaxWidth()
                 .fillMaxHeight(0.6f)
-                .align(Alignment.BottomEnd)
-                .padding(bottom = bottomBar.dp),
+                .align(Alignment.BottomEnd),
             horizontalArrangement = Arrangement.End
         ) {
             LazyColumn(
@@ -150,10 +144,13 @@ fun AppDrawer(
                 state = lazyScroll,
                 horizontalAlignment = Alignment.End
             ) {
-                apps.forEach { app ->
+                appDrawer.apps.forEach { app ->
                     item {
                         if (showAllApps.value || !app.hidden!!) {
-                            val firstAppWithLetter = apps.find { it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!! && it.hidden == false }!!
+                            val firstAppWithLetter = appDrawer.apps.find {
+                                it.label?.uppercase()
+                                    ?.startsWith(app.label?.uppercase()!![0])!! && it.hidden == false
+                            }!!
 
                             if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
                                 Row(
@@ -188,7 +185,7 @@ fun AppDrawer(
                                     .padding(bottom = 20.dp)
                                     .combinedClickable(
                                         onClick = {
-                                            launchApp(app.packageName)
+                                            appDrawer.launchApp(app.packageName)
                                         },
                                         onLongClick = {
                                             selectedApp.value = app
@@ -232,7 +229,7 @@ fun AppDrawer(
                     .fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                alphabet.forEach { letter ->
+                appDrawer.alphabet.forEach { letter ->
                     Text(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
@@ -244,23 +241,7 @@ fun AppDrawer(
                                             offsetY = -150f
                                             awaitRelease()
                                         } finally {
-                                            customScope.launch {
-                                                var i = 0
-                                                var found = false
-
-                                                apps.forEachIndexed { index, app ->
-                                                    if (
-                                                        !found
-                                                        && app.label != null
-                                                        && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()
-                                                    ) {
-                                                        i = index
-                                                        found = true
-                                                    }
-                                                }
-
-                                                lazyScroll.animateScrollToItem(i)
-                                            }
+                                            appDrawer.scrollToFirstItem(selectedLetter, lazyScroll)
 
                                             offsetY = 0f
                                             selectedLetter = ""

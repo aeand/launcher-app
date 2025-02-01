@@ -32,28 +32,27 @@ fun AppDrawerDialog(
     cancel: () -> Unit,
     selectedApp: MutableState<AppDrawer.ApplicationInformation?>,
 ) {
-    val outsideInteractionSource = remember { MutableInteractionSource() }
-
     Box(
         modifier = Modifier
             .zIndex(1f)
             .fillMaxSize()
             .clickable(
-                interactionSource = outsideInteractionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = null,
             ) {
                 cancel()
             }
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
                 .width(300.dp)
                 .height(200.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .clickable(interactionSource = interactionSource, indication = null) {  }
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { }
                 .background(Color.DarkGray),
         ) {
             Column(
