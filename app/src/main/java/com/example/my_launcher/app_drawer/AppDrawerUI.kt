@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.my_launcher.AppColors
 import com.example.my_launcher.R
 import com.example.my_launcher.Typography
 import com.example.my_launcher.rememberDrawablePainter
@@ -58,7 +59,6 @@ fun AppDrawerUI(
     appDrawer: AppDrawer,
     lazyScroll: LazyListState,
     customScope: CoroutineScope,
-    textColor: Color,
 ) {
     val showAllApps = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
@@ -111,7 +111,7 @@ fun AppDrawerUI(
                     },
                 painter = painterResource(id = if (showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
                 contentDescription = null,
-                tint = textColor
+                tint = AppColors.textColor
             )
 
             Icon(
@@ -126,7 +126,7 @@ fun AppDrawerUI(
                     },
                 imageVector = Icons.Rounded.KeyboardArrowUp,
                 contentDescription = null,
-                tint = textColor
+                tint = AppColors.textColor
             )
         }
 
@@ -175,7 +175,7 @@ fun AppDrawerUI(
                                         fontSize = Typography.bodyMedium.fontSize,
                                         fontWeight = Typography.bodyMedium.fontWeight,
                                         lineHeight = Typography.bodyMedium.lineHeight,
-                                        color = textColor,
+                                        color = AppColors.textColor,
                                     )
                                 }
                             }
@@ -199,7 +199,7 @@ fun AppDrawerUI(
                                         .padding(end = 10.dp)
                                         .width(300.dp),
                                     text = "${app.label}",
-                                    color = textColor,
+                                    color = AppColors.textColor,
                                     fontFamily = Typography.titleMedium.fontFamily,
                                     fontSize = Typography.titleMedium.fontSize,
                                     fontWeight = Typography.titleMedium.fontWeight,
@@ -263,7 +263,7 @@ fun AppDrawerUI(
                                     )
                             },
                         text = letter.uppercase(),
-                        color = textColor,
+                        color = AppColors.textColor,
                         fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
                         fontWeight = FontWeight(600)
                     )

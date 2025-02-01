@@ -17,7 +17,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -25,7 +24,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.AndroidUiDispatcher
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,24 +43,20 @@ import java.util.Date
 import java.util.Locale
 
 /*
-bug: app crashed when showing hidden apps. because i hide apps in ö
-bug: alphabet doesn't udate when hiding apps
-bug: can init drag down when at bottom. Which will active the dim effect
-bug: when trying to show an app in show all apps list. it says hide. still works though
-make scroll snappier
-make scroll faster by reducing the height of appdrawer
-also fix dimmer not always enabling. Might need more things
-update date manually. I don't always get the event update
-fix delay on startup by doing intents on non-blocking main thread
+bugs:
+app crashed when showing hidden apps. because i hide apps in ö
+alphabet doesn't udate when hiding apps
+can init drag down when at bottom. Which will active the dim effect
+when trying to show an app in show all apps list. it says hide. still works though
+when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
+when hiding first app in letter list the letter disappears
 showing apps reveals discord in C category
 
-update date when date changes
+update date
+fix delay on startup by doing intents on non-blocking main thread
 check out recompositions. reduce them as much as possible
-bug: when hiding first app in letter list the letter disappears
-detect swipe down and open status bar
 fix hidden apps resetting when app dies
 fix app & alphabet list not updating when uninstalling app (look at files in notes)
-bug: when installed a completely new app and updating the lists. The hitbox for button J broke when the app was alone in J (could be the letters hitboxes being incorrect or commpletely off)
 refresh app list after install
 fix app select background (currently grey)
 */
@@ -71,8 +64,8 @@ fix app select background (currently grey)
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
 
 object AppColors {
-    val white = Color.White
-    val transparent = Color.Transparent
+    val textColor = Color.White
+    val background = Color.Transparent
 }
 
 class MainActivity : ComponentActivity() {
@@ -83,7 +76,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val appDrawer = AppDrawer(this, packageManager, customScope)
-        val textColor = AppColors.white
         val date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
 
         @SuppressLint("SourceLockedOrientationActivity")
@@ -93,8 +85,8 @@ class MainActivity : ComponentActivity() {
         appDrawer.createAppList()
 
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
-            navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+            statusBarStyle = SystemBarStyle.dark(AppColors.background.toArgb()),
+            navigationBarStyle = SystemBarStyle.dark(AppColors.background.toArgb()),
         )
 
         setContent {
@@ -103,17 +95,7 @@ class MainActivity : ComponentActivity() {
                 2
             })
 
-            val isDarkMode = isSystemInDarkTheme()
-            val context = LocalContext.current as ComponentActivity
-            DisposableEffect(isDarkMode) {
-                context.enableEdgeToEdge(
-                    statusBarStyle = SystemBarStyle.dark(AppColors.transparent.toArgb()),
-                    navigationBarStyle = SystemBarStyle.dark(AppColors.transparent.toArgb()),
-                )
-
-                onDispose { }
-            }
-
+            // DIMMER
             val floatAnim = animateFloatAsState(
                 targetValue = if (isAppDrawerActive.value) 0.5f else 0f,
                 tween(
@@ -124,6 +106,7 @@ class MainActivity : ComponentActivity() {
             )
             window.setDimAmount(floatAnim.value)
 
+            // UPDATE APP LIST
             LaunchedEffect(isAppDrawerActive.value) {
                 val i = Intent(Intent.ACTION_MAIN, null)
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
@@ -136,6 +119,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            // BACK BUTTON PRESS
             BackHandler {
                 customScope.launch {
                     pagerState.scrollToPage(0)
@@ -148,7 +132,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier
                     .padding(start = 19.dp, top = 30.dp),
                 text = date,
-                color = textColor,
+                color = AppColors.textColor,
                 fontSize = 11.sp,
                 fontWeight = FontWeight(600)
             )
@@ -168,7 +152,6 @@ class MainActivity : ComponentActivity() {
                         appDrawer,
                         lazyScroll,
                         customScope,
-                        textColor,
                     )
                 }
             }

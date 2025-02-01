@@ -68,10 +68,16 @@ class AppDrawer(
         activity.startActivity(intent)
     }
 
-    private fun getPackages() {
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        packages = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+    fun scrollToFirstItem(letter: String, lazyScroll: LazyListState) {
+        customScope.launch {
+
+            apps.forEachIndexed { index, app ->
+                if (app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
+                    lazyScroll.animateScrollToItem(index)
+                    return@launch
+                }
+            }
+        }
     }
 
     fun createAppList() {
@@ -99,6 +105,12 @@ class AppDrawer(
 
         createAlphabetList(apps)
     }
+    
+    private fun getPackages() {
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        packages = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
+    }
 
     private fun createAlphabetList(apps: List<ApplicationInformation>) {
         val letters = "1234567890qwertyuiopasdfghjklzxcvbnm"
@@ -122,18 +134,6 @@ class AppDrawer(
         alphabet.clear()
         filteredLetters.forEach {
             alphabet.add(it)
-        }
-    }
-
-    fun scrollToFirstItem(letter: String, lazyScroll: LazyListState) {
-        customScope.launch {
-
-            apps.forEachIndexed { index, app ->
-                if (app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar()) {
-                    lazyScroll.animateScrollToItem(index)
-                    return@launch
-                }
-            }
         }
     }
 }
