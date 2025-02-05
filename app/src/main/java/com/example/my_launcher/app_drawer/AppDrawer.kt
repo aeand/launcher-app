@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.mutableStateListOf
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class AppDrawer(
@@ -48,7 +49,7 @@ class AppDrawer(
         apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden =
             !app?.hidden!!
 
-        //createAppList()
+        createAlphabetList(apps)
     }
 
     fun uninstallApp(packageName: String?) {
@@ -68,6 +69,11 @@ class AppDrawer(
         val intent = Intent(Intent.ACTION_DELETE)
         intent.data = Uri.parse("package:${app.activityInfo.packageName}")
         activity.startActivity(intent)
+
+        customScope.launch {
+            delay(2500)
+            createAppList()
+        }
     }
 
     fun scrollToFirstItem(letter: String, lazyScroll: LazyListState) {

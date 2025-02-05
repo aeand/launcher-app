@@ -79,7 +79,6 @@ fun AppDrawerUI(
                 uninstall = {
                     if (selectedApp.value != null) {
                         appDrawer.uninstallApp(selectedApp.value!!.packageName)
-                        //TODO -> add delay, then refresh app list and remove receiver
                     }
 
                     selectedApp.value = null
