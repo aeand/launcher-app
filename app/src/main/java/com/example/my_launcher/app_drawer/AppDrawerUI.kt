@@ -1,6 +1,5 @@
 package com.example.my_launcher.app_drawer
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -51,7 +50,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-@SuppressLint("UseOfNonLambdaOffsetOverload")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppDrawerUI(
@@ -105,10 +103,12 @@ fun AppDrawerUI(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(if (showAllApps.value) 30.dp else 20.dp)
-                    .offset(
-                        x = if (showAllApps.value) (-35).dp else (-40).dp,
-                        y = if (showAllApps.value) (-1).dp else (-5).dp
-                    )
+                    .offset {
+                        IntOffset(
+                            x = if (showAllApps.value) (-88) else (-100),
+                            y = if (showAllApps.value) (0) else (-10)
+                        )
+                    }
                     .clickable {
                         showAllApps.value = !showAllApps.value
                     },
