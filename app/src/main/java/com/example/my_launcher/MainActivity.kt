@@ -169,7 +169,6 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize())
                 } else if (it == 1) {
                     AppDrawerUI(
-                        Modifier,
                         appDrawer,
                         customScope,
                     )

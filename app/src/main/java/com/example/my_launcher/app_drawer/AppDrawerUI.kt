@@ -53,7 +53,6 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppDrawerUI(
-    modifier: Modifier,
     appDrawer: AppDrawer,
     customScope: CoroutineScope,
 ) {
@@ -64,7 +63,7 @@ fun AppDrawerUI(
     val selectedApp = remember { mutableStateOf<AppDrawer.ApplicationInformation?>(null) }
 
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(start = 10.dp, end = 10.dp)
     ) {
