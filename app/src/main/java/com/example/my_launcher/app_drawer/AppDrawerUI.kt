@@ -149,7 +149,7 @@ fun AppDrawerUI(
                         if (showAllApps.value || !app.hidden!!) {
                             val firstAppWithLetter = appDrawer.apps.find {
                                 it.label?.uppercase()
-                                    ?.startsWith(app.label?.uppercase()!![0])!! && it.hidden == false
+                                    ?.startsWith(app.label?.uppercase()!![0])!! && (it.hidden == false || showAllApps.value)
                             }!!
 
                             if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
