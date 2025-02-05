@@ -20,7 +20,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
@@ -149,7 +148,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val lazyScroll = rememberLazyListState()
 
             Text(
                 modifier = Modifier
@@ -173,7 +171,6 @@ class MainActivity : ComponentActivity() {
                     AppDrawerUI(
                         Modifier,
                         appDrawer,
-                        lazyScroll,
                         customScope,
                     )
                 }

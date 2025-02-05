@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -57,9 +57,10 @@ import kotlin.math.roundToInt
 fun AppDrawerUI(
     modifier: Modifier,
     appDrawer: AppDrawer,
-    lazyScroll: LazyListState,
     customScope: CoroutineScope,
 ) {
+    val lazyScroll = rememberLazyListState()
+
     val showAllApps = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
     val selectedApp = remember { mutableStateOf<AppDrawer.ApplicationInformation?>(null) }
@@ -81,7 +82,7 @@ fun AppDrawerUI(
                 uninstall = {
                     if (selectedApp.value != null) {
                         appDrawer.uninstallApp(selectedApp.value!!.packageName)
-                        //TODO -> add delay, then refresh app list
+                        //TODO -> add delay, then refresh app list and remove receiver
                     }
 
                     selectedApp.value = null
