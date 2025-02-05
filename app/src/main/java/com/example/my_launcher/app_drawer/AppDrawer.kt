@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ class AppDrawer(
     var packages: List<ResolveInfo> = listOf()
     var apps = mutableStateListOf<ApplicationInformation>()
     var alphabet = mutableStateListOf<String>()
+    var showAllApps = mutableStateOf(false)
 
     init {
         createAppList()
@@ -136,7 +138,7 @@ class AppDrawer(
         letters.add("ö")
 
         val filteredLetters = letters.filter { letter ->
-            apps.find { app -> app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar() && app.hidden == false } != null
+            apps.find { app -> app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar() && (app.hidden == false || showAllApps.value) } != null
         }
 
         alphabet.clear()

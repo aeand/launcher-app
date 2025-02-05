@@ -58,7 +58,6 @@ fun AppDrawerUI(
 ) {
     val lazyScroll = rememberLazyListState()
 
-    val showAllApps = remember { mutableStateOf(false) }
     val showDialog = remember { mutableStateOf(false) }
     val selectedApp = remember { mutableStateOf<AppDrawer.ApplicationInformation?>(null) }
 
@@ -100,17 +99,18 @@ fun AppDrawerUI(
             Icon(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .size(if (showAllApps.value) 30.dp else 20.dp)
+                    .size(if (appDrawer.showAllApps.value) 30.dp else 20.dp)
                     .offset {
                         IntOffset(
-                            x = if (showAllApps.value) (-88) else (-100),
-                            y = if (showAllApps.value) (0) else (-10)
+                            x = if (appDrawer.showAllApps.value) (-88) else (-100),
+                            y = if (appDrawer.showAllApps.value) (0) else (-10)
                         )
                     }
                     .clickable {
-                        showAllApps.value = !showAllApps.value
+                        appDrawer.showAllApps.value = !appDrawer.showAllApps.value
+                        appDrawer.createAppList()
                     },
-                painter = painterResource(id = if (showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
+                painter = painterResource(id = if (appDrawer.showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
                 contentDescription = null,
                 tint = AppColors.textColor
             )
@@ -147,10 +147,10 @@ fun AppDrawerUI(
             ) {
                 appDrawer.apps.forEach { app ->
                     item {
-                        if (showAllApps.value || !app.hidden!!) {
+                        if (appDrawer.showAllApps.value || !app.hidden!!) {
                             val firstAppWithLetter = appDrawer.apps.find {
                                 it.label?.uppercase()
-                                    ?.startsWith(app.label?.uppercase()!![0])!! && (it.hidden == false || showAllApps.value)
+                                    ?.startsWith(app.label?.uppercase()!![0])!! && (it.hidden == false || appDrawer.showAllApps.value)
                             }!!
 
                             if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
