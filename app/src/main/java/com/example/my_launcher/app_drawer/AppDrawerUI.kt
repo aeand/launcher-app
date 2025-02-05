@@ -68,7 +68,7 @@ fun AppDrawerUI(
     ) {
         if (showDialog.value) {
             AppDrawerDialog(
-                hide = {
+                toggleVisibility = {
                     if (selectedApp.value != null)
                         appDrawer.hideApp(selectedApp.value!!.packageName)
 

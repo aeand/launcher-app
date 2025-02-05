@@ -27,7 +27,7 @@ import com.example.my_launcher.Typography
 
 @Composable
 fun AppDrawerDialog(
-    hide: () -> Unit,
+    toggleVisibility: () -> Unit,
     uninstall: () -> Unit,
     cancel: () -> Unit,
     selectedApp: MutableState<AppDrawer.ApplicationInformation?>,
@@ -83,13 +83,13 @@ fun AppDrawerDialog(
                             .height(50.dp)
                             .border(3.dp, Color.LightGray, RoundedCornerShape(10.dp))
                             .clickable {
-                                hide()
+                                toggleVisibility()
                             },
                     ) {
                         Text(
                             modifier = Modifier
                                 .align(Alignment.Center),
-                            text = "hide",
+                            text = if (selectedApp.value!!.hidden == true) "show" else "hide",
                             color = Color.White,
                             fontFamily = Typography.bodyMedium.fontFamily,
                             fontSize = Typography.bodyMedium.fontSize,

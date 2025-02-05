@@ -44,9 +44,6 @@ import java.util.concurrent.TimeUnit
 
 /*
 bugs:
-list apps and alphabet don't update to changes
-can init drag down when at bottom. Which will active the dim effect
-when trying to show an app in show all apps list. it says hide. still works though
 when installed a completely new app and updating the lists. The hit box for button J broke when the app was alone in J (could be the letters hit boxes being incorrect or completely off)
 when hiding first app in letter list the letter disappears
 showing apps reveals discord in C category
