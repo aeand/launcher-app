@@ -47,6 +47,8 @@ class AppDrawer(
         val app = apps.find { it.packageName?.lowercase() == packageName?.lowercase() }
         apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden =
             !app?.hidden!!
+
+        //createAppList()
     }
 
     fun uninstallApp(packageName: String?) {
@@ -105,7 +107,7 @@ class AppDrawer(
 
         createAlphabetList(apps)
     }
-    
+
     private fun getPackages() {
         val intent = Intent(Intent.ACTION_MAIN, null)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
@@ -128,7 +130,7 @@ class AppDrawer(
         letters.add("ö")
 
         val filteredLetters = letters.filter { letter ->
-            apps.find { app -> app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar() } != null
+            apps.find { app -> app.label != null && app.label!![0].uppercaseChar() == letter.toCharArray()[0].uppercaseChar() && app.hidden == false } != null
         }
 
         alphabet.clear()

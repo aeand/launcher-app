@@ -24,8 +24,6 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -46,7 +44,7 @@ import java.util.concurrent.TimeUnit
 
 /*
 bugs:
-alphabet doesn't update when hiding apps
+list apps and alphabet don't update to changes
 can init drag down when at bottom. Which will active the dim effect
 when trying to show an app in show all apps list. it says hide. still works though
 when installed a completely new app and updating the lists. The hit box for button J broke when the app was alone in J (could be the letters hit boxes being incorrect or completely off)
@@ -82,7 +80,6 @@ class MainActivity : ComponentActivity() {
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         registerReceiver(appDrawer)
-        appDrawer.createAppList()
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AppColors.background.toArgb()),
@@ -90,10 +87,7 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            val isAppDrawerActive = remember { mutableStateOf(false) }
-            val pagerState = rememberPagerState(pageCount = {
-                2
-            })
+            val pagerState = rememberPagerState(pageCount = { 2 })
 
             // DATE
             LaunchedEffect(true) {
@@ -119,7 +113,7 @@ class MainActivity : ComponentActivity() {
 
             // DIMMER
             val floatAnim = animateFloatAsState(
-                targetValue = if (isAppDrawerActive.value) 0.5f else 0f,
+                targetValue = if (pagerState.currentPage > 0) 0.5f else 0f,
                 tween(
                     durationMillis = 1000,
                     easing = LinearEasing,
@@ -129,7 +123,7 @@ class MainActivity : ComponentActivity() {
             window.setDimAmount(floatAnim.value)
 
             // UPDATE APP LIST
-            LaunchedEffect(isAppDrawerActive.value) {
+            LaunchedEffect(pagerState.currentPage > 0) {
                 val i = Intent(Intent.ACTION_MAIN, null)
                 i.addCategory(Intent.CATEGORY_LAUNCHER)
 
@@ -148,7 +142,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-
             Text(
                 modifier = Modifier
                     .padding(start = 19.dp, top = 30.dp),
@@ -163,8 +156,6 @@ class MainActivity : ComponentActivity() {
                     .padding(top = 32.dp, bottom = 48.dp),
                 state = pagerState,
             ) {
-                isAppDrawerActive.value = it > 0
-
                 if (it == 0) {
                     Box(modifier = Modifier.fillMaxSize())
                 } else if (it == 1) {
