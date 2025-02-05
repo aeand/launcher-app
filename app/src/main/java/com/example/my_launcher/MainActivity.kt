@@ -43,15 +43,8 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /*
-bugs:
-when installed a completely new app and updating the lists. The hit box for button J broke when the app was alone in J (could be the letters hit boxes being incorrect or completely off)
-when hiding first app in letter list the letter disappears
-showing apps reveals discord in C category
-
 fix delay on startup by doing intents on non-blocking main thread
 check out recompositions. reduce them as much as possible
-fix hidden apps resetting when app dies
-fix app & alphabet list not updating when uninstalling app (look at files in notes)
 refresh app list after install
 fix app select background (currently grey)
 */
