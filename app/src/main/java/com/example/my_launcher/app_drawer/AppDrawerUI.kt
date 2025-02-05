@@ -79,8 +79,10 @@ fun AppDrawerUI(
                     showDialog.value = false
                 },
                 uninstall = {
-                    if (selectedApp.value != null)
+                    if (selectedApp.value != null) {
                         appDrawer.uninstallApp(selectedApp.value!!.packageName)
+                        //TODO -> add delay, then refresh app list
+                    }
 
                     selectedApp.value = null
                     showDialog.value = false
