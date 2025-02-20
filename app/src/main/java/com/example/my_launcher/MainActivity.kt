@@ -47,6 +47,12 @@ fix delay on startup by doing intents on non-blocking main thread
 check out recompositions. reduce them as much as possible
 refresh app list after install
 fix app select background (currently grey)
+app select background shows when opening app select, locking, and then unlocking phone
+
+either:
+remove popup to hide and uninstall and long press
+or remove popup and make long press hide app
+or add option to go into app select from popup
 */
 
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
