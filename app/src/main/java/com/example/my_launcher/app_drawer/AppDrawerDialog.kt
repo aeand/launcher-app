@@ -28,7 +28,7 @@ import com.example.my_launcher.Typography
 @Composable
 fun AppDrawerDialog(
     toggleVisibility: () -> Unit,
-    uninstall: () -> Unit,
+    openSettings: () -> Unit,
     cancel: () -> Unit,
     selectedApp: MutableState<ApplicationInformation?>,
 ) {
@@ -104,13 +104,13 @@ fun AppDrawerDialog(
                             .height(50.dp)
                             .border(3.dp, Color.LightGray, RoundedCornerShape(10.dp))
                             .clickable {
-                                uninstall()
+                                openSettings()
                             },
                     ) {
                         Text(
                             modifier = Modifier
                                 .align(Alignment.Center),
-                            text = "uninstall",
+                            text = "settings",
                             color = Color.White,
                             fontFamily = Typography.bodyMedium.fontFamily,
                             fontSize = Typography.bodyMedium.fontSize,

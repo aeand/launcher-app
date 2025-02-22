@@ -75,9 +75,9 @@ fun AppDrawerUI(
                     selectedApp.value = null
                     showDialog.value = false
                 },
-                uninstall = {
+                openSettings = {
                     if (selectedApp.value != null) {
-                        appDrawer.uninstallApp(selectedApp.value!!.packageName)
+                        appDrawer.openAppSettings(selectedApp.value!!.packageName)
                     }
 
                     selectedApp.value = null

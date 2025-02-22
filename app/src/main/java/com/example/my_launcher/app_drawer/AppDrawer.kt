@@ -6,12 +6,14 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 class ApplicationInformation {
     var label: String? = null
@@ -44,6 +46,20 @@ class AppDrawer(
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         activity.startActivity(launchIntent)
+    }
+
+    fun openAppSettings(packageName: String?) {
+        if (packageName == null)
+            return
+
+        if (packages.find { it.activityInfo.packageName == packageName } == null) {
+            return
+        }
+
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        intent.addCategory(Intent.CATEGORY_DEFAULT)
+        intent.setData(Uri.parse("package:$packageName"))
+        activity.startActivity(intent)
     }
 
     fun hideApp(packageName: String?) {
