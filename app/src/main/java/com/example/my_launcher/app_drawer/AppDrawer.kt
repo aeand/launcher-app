@@ -13,18 +13,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+class ApplicationInformation {
+    var label: String? = null
+    var packageName: String? = null
+    var icon: Drawable? = null
+    var hidden: Boolean? = null
+}
+
 class AppDrawer(
     private val activity: Activity,
     private val packageManager: PackageManager,
     private val customScope: CoroutineScope,
 ) {
-    class ApplicationInformation {
-        var label: String? = null
-        var packageName: String? = null
-        var icon: Drawable? = null
-        var hidden: Boolean? = null
-    }
-
     var packages: List<ResolveInfo> = listOf()
     var apps = mutableStateListOf<ApplicationInformation>()
     var alphabet = mutableStateListOf<String>()

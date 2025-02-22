@@ -1,10 +1,7 @@
 package com.example.my_launcher
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -63,7 +60,6 @@ object AppColors {
 }
 
 class MainActivity : ComponentActivity() {
-    private lateinit var receiver: BroadcastReceiver
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,8 +70,6 @@ class MainActivity : ComponentActivity() {
 
         @SuppressLint("SourceLockedOrientationActivity")
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-        registerReceiver(appDrawer)
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AppColors.background.toArgb()),
@@ -162,75 +156,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    private fun registerReceiver(appDrawer: AppDrawer) {
-        val filters = IntentFilter()
-        receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val list = listOf(
-                    Intent.ACTION_APPLICATION_LOCALE_CHANGED,
-                    Intent.ACTION_MY_PACKAGE_REPLACED,
-                    Intent.ACTION_PACKAGE_ADDED,
-                    Intent.ACTION_PACKAGE_FULLY_REMOVED,
-                    Intent.ACTION_PACKAGE_REMOVED,
-                    Intent.ACTION_PACKAGE_REPLACED,
-                    Intent.ACTION_UID_REMOVED,
-                    Intent.ACTION_APPLICATION_PREFERENCES,
-                    Intent.ACTION_PACKAGE_CHANGED,
-                    Intent.ACTION_PACKAGE_INSTALL,
-                    Intent.ACTION_MEDIA_BUTTON,
-                    Intent.ACTION_CLOSE_SYSTEM_DIALOGS,
-                    Intent.ACTION_DATE_CHANGED,
-                    Intent.ACTION_TIMEZONE_CHANGED,
-                    Intent.ACTION_TIME_CHANGED,
-                )
-
-                list.forEach {
-                    when (intent.action) {
-                        it -> {
-                            println(it)
-                        }
-                    }
-                }
-
-                when (intent.action) {
-                    Intent.ACTION_APPLICATION_LOCALE_CHANGED,
-                    Intent.ACTION_MY_PACKAGE_REPLACED,
-                    Intent.ACTION_PACKAGE_ADDED,
-                    Intent.ACTION_PACKAGE_FULLY_REMOVED,
-                    Intent.ACTION_PACKAGE_REMOVED,
-                    Intent.ACTION_PACKAGE_REPLACED,
-                    Intent.ACTION_UID_REMOVED -> { // for uninstall
-                        appDrawer.createAppList()
-                    }
-
-                    Intent.ACTION_APPLICATION_PREFERENCES, // intent for adjusting app preferences. recommended for all apps with settings
-                    Intent.ACTION_PACKAGE_CHANGED, // broadcast a package has been changed
-                    Intent.ACTION_PACKAGE_INSTALL, // deprecated broadcast trigger download and install of package
-                        -> {
-                    }
-
-                    Intent.ACTION_MEDIA_BUTTON -> {
-                        println(Intent.ACTION_MEDIA_BUTTON)
-                        println(intent.extras)
-                    }
-
-                    Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
-                        appDrawer.createAppList()
-                        //TODO -> scroll to page 0
-                    }
-
-                    Intent.ACTION_DATE_CHANGED,
-                    Intent.ACTION_TIMEZONE_CHANGED,
-                    Intent.ACTION_TIME_CHANGED -> {
-                        //TODO -> set date
-                        //date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
-                    }
-                }
-            }
-        }
-
-        registerReceiver(receiver, filters, RECEIVER_NOT_EXPORTED)
     }
 }

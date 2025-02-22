@@ -59,7 +59,7 @@ fun AppDrawerUI(
     val lazyScroll = rememberLazyListState()
 
     val showDialog = remember { mutableStateOf(false) }
-    val selectedApp = remember { mutableStateOf<AppDrawer.ApplicationInformation?>(null) }
+    val selectedApp = remember { mutableStateOf<ApplicationInformation?>(null) }
 
     Box(
         modifier = Modifier

@@ -30,7 +30,7 @@ fun AppDrawerDialog(
     toggleVisibility: () -> Unit,
     uninstall: () -> Unit,
     cancel: () -> Unit,
-    selectedApp: MutableState<AppDrawer.ApplicationInformation?>,
+    selectedApp: MutableState<ApplicationInformation?>,
 ) {
     Box(
         modifier = Modifier
