@@ -39,7 +39,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-/*
+/* TODO
+when tapping eye open a checkbox for every app to select what apps to hide
+and replace long press on app to open app settings
+and remove back to top arrow
+
+clean up unused icons, fonts, and similar
+
 fix delay on startup by doing intents on non-blocking main thread
 check out recompositions. reduce them as much as possible
 refresh app list after install
@@ -48,15 +54,6 @@ app select background shows when opening app select, locking, and then unlocking
 
 test without alphabet list (unused feature)
 improve the pager to swipe faster
-
-either:
-hide eye if all apps are visible
-or open a checkbox for every app to select what apps to hide
-
-either:
-remove popup to hide and uninstall and long press
-or remove popup and make long press hide app
-or add option to go into app select from popup
 */
 
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
