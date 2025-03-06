@@ -46,6 +46,13 @@ refresh app list after install
 fix app select background (currently grey)
 app select background shows when opening app select, locking, and then unlocking phone
 
+test without alphabet list (unused feature)
+improve the pager to swipe faster
+
+either:
+hide eye if all apps are visible
+or open a checkbox for every app to select what apps to hide
+
 either:
 remove popup to hide and uninstall and long press
 or remove popup and make long press hide app
