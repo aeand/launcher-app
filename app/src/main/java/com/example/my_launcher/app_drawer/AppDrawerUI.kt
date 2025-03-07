@@ -40,7 +40,6 @@ import com.example.my_launcher.rememberDrawablePainter
 @Composable
 fun AppDrawerUI(
     appDrawer: AppDrawer,
-    //customScope: CoroutineScope,
 ) {
     val lazyScroll = rememberLazyListState()
 
@@ -90,8 +89,6 @@ fun AppDrawerUI(
                         IntOffset(
                             x = if (appDrawer.showAllApps.value) (0) else (-13),
                             y = if (appDrawer.showAllApps.value) (0) else (-10)
-                            //x = if (appDrawer.showAllApps.value) (-88) else (-100),
-                            //y = if (appDrawer.showAllApps.value) (0) else (-10)
                         )
                     }
                     .clickable {
@@ -102,21 +99,6 @@ fun AppDrawerUI(
                 contentDescription = null,
                 tint = AppColors.textColor
             )
-
-            /*Icon(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(30.dp)
-                    .align(Alignment.BottomEnd)
-                    .clickable {
-                        customScope.launch {
-                            lazyScroll.animateScrollToItem(0)
-                        }
-                    },
-                imageVector = Icons.Rounded.KeyboardArrowUp,
-                contentDescription = null,
-                tint = AppColors.textColor
-            )*/
         }
 
         Row(
@@ -208,55 +190,6 @@ fun AppDrawerUI(
                     }
                 }
             }
-
-            /*var offsetY by remember { mutableFloatStateOf(0f) }
-            var selectedLetter by remember { mutableStateOf("") }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                appDrawer.alphabet.forEach { letter ->
-                    Text(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        try {
-                                            selectedLetter = letter
-                                            offsetY = -150f
-                                            awaitRelease()
-                                        } finally {
-                                            appDrawer.scrollToFirstItem(selectedLetter, lazyScroll)
-
-                                            offsetY = 0f
-                                            selectedLetter = ""
-                                        }
-                                    },
-                                )
-                            }
-                            .offset {
-                                if (selectedLetter == letter) IntOffset(
-                                    0,
-                                    offsetY.roundToInt()
-                                ) else IntOffset(0, 0)
-                            }
-                            .drawBehind {
-                                if (selectedLetter == letter)
-                                    drawCircle(
-                                        radius = 80f,
-                                        color = Color.Black
-                                    )
-                            },
-                        text = letter.uppercase(),
-                        color = AppColors.textColor,
-                        fontSize = if (selectedLetter == letter) 40.sp else 16.sp,
-                        fontWeight = FontWeight(600)
-                    )
-                }
-            }*/
         }
     }
 }

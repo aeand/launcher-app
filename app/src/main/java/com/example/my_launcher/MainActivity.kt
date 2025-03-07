@@ -155,7 +155,6 @@ class MainActivity : ComponentActivity() {
                 } else if (it == 1) {
                     AppDrawerUI(
                         appDrawer,
-                        //customScope,
                     )
                 }
             }
