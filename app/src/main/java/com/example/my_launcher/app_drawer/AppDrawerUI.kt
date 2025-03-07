@@ -5,10 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,41 +18,29 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.my_launcher.AppColors
 import com.example.my_launcher.R
 import com.example.my_launcher.Typography
 import com.example.my_launcher.rememberDrawablePainter
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppDrawerUI(
     appDrawer: AppDrawer,
-    customScope: CoroutineScope,
+    //customScope: CoroutineScope,
 ) {
     val lazyScroll = rememberLazyListState()
 
@@ -115,7 +101,7 @@ fun AppDrawerUI(
                 tint = AppColors.textColor
             )
 
-            Icon(
+            /*Icon(
                 modifier = Modifier
                     .width(36.dp)
                     .height(30.dp)
@@ -128,12 +114,11 @@ fun AppDrawerUI(
                 imageVector = Icons.Rounded.KeyboardArrowUp,
                 contentDescription = null,
                 tint = AppColors.textColor
-            )
+            )*/
         }
 
         Row(
             modifier = Modifier
-                .padding(start = 10.dp, end = 10.dp)
                 .fillMaxWidth()
                 .fillMaxHeight(0.6f)
                 .align(Alignment.BottomEnd),
@@ -141,7 +126,7 @@ fun AppDrawerUI(
         ) {
             LazyColumn(
                 modifier = Modifier
-                    .padding(end = 20.dp),
+                    .padding(end = 0.dp),
                 state = lazyScroll,
                 horizontalAlignment = Alignment.End
             ) {
@@ -222,7 +207,7 @@ fun AppDrawerUI(
                 }
             }
 
-            var offsetY by remember { mutableFloatStateOf(0f) }
+            /*var offsetY by remember { mutableFloatStateOf(0f) }
             var selectedLetter by remember { mutableStateOf("") }
 
             Column(
@@ -269,7 +254,7 @@ fun AppDrawerUI(
                         fontWeight = FontWeight(600)
                     )
                 }
-            }
+            }*/
         }
     }
 }

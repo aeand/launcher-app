@@ -52,7 +52,7 @@ refresh app list after install
 fix app select background (currently grey)
 app select background shows when opening app select, locking, and then unlocking phone
 
-test without alphabet list (unused feature)
+//test without alphabet list (unused feature)
 improve the pager to swipe faster
 */
 
@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val appDrawer = AppDrawer(this, packageManager, customScope)
+        val appDrawer = AppDrawer(this, packageManager/*, customScope*/)
         var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
 
         @SuppressLint("SourceLockedOrientationActivity")
@@ -155,7 +155,7 @@ class MainActivity : ComponentActivity() {
                 } else if (it == 1) {
                     AppDrawerUI(
                         appDrawer,
-                        customScope,
+                        //customScope,
                     )
                 }
             }

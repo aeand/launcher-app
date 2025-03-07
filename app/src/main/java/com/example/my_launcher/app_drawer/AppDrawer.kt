@@ -7,12 +7,8 @@ import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 
 class ApplicationInformation {
@@ -25,11 +21,12 @@ class ApplicationInformation {
 class AppDrawer(
     private val activity: Activity,
     private val packageManager: PackageManager,
-    private val customScope: CoroutineScope,
+    //private val customScope: CoroutineScope,
 ) {
     var packages: List<ResolveInfo> = listOf()
     var apps = mutableStateListOf<ApplicationInformation>()
-    var alphabet = mutableStateListOf<String>()
+
+    //var alphabet = mutableStateListOf<String>()
     var showAllApps = mutableStateOf(false)
 
     init {
@@ -67,10 +64,10 @@ class AppDrawer(
         apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden =
             !app?.hidden!!
 
-        createAlphabetList(apps)
+        //createAlphabetList(apps)
     }
 
-    fun uninstallApp(packageName: String?) {
+    /*fun uninstallApp(packageName: String?) {
         if (packageName == null)
             return
 
@@ -92,9 +89,9 @@ class AppDrawer(
             delay(2500)
             createAppList()
         }
-    }
+    }*/
 
-    fun scrollToFirstItem(letter: String, lazyScroll: LazyListState) {
+    /*fun scrollToFirstItem(letter: String, lazyScroll: LazyListState) {
         customScope.launch {
 
             apps.forEachIndexed { index, app ->
@@ -104,7 +101,7 @@ class AppDrawer(
                 }
             }
         }
-    }
+    }*/
 
     fun createAppList() {
         getPackages()
@@ -129,7 +126,7 @@ class AppDrawer(
             apps.add(it)
         }
 
-        createAlphabetList(apps)
+        //createAlphabetList(apps)
     }
 
     private fun getPackages() {
@@ -138,7 +135,7 @@ class AppDrawer(
         packages = packageManager.queryIntentActivities(intent, PackageManager.GET_META_DATA)
     }
 
-    private fun createAlphabetList(apps: List<ApplicationInformation>) {
+    /*private fun createAlphabetList(apps: List<ApplicationInformation>) {
         val letters = "1234567890qwertyuiopasdfghjklzxcvbnm"
             .split("")
             .dropLast(1)
@@ -161,5 +158,5 @@ class AppDrawer(
         filteredLetters.forEach {
             alphabet.add(it)
         }
-    }
+    }*/
 }
