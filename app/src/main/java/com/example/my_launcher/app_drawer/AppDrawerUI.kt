@@ -50,7 +50,7 @@ fun AppDrawerUI(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 10.dp, end = 10.dp)
+            .padding(start = 15.dp, end = 15.dp)
     ) {
         if (showDialog.value) {
             AppDrawerDialog(
