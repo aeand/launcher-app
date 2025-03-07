@@ -88,8 +88,10 @@ fun AppDrawerUI(
                     .size(if (appDrawer.showAllApps.value) 30.dp else 20.dp)
                     .offset {
                         IntOffset(
-                            x = if (appDrawer.showAllApps.value) (-88) else (-100),
+                            x = if (appDrawer.showAllApps.value) (0) else (-13),
                             y = if (appDrawer.showAllApps.value) (0) else (-10)
+                            //x = if (appDrawer.showAllApps.value) (-88) else (-100),
+                            //y = if (appDrawer.showAllApps.value) (0) else (-10)
                         )
                     }
                     .clickable {
