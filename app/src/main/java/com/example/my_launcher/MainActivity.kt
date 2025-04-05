@@ -40,6 +40,8 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
+save hidden apps to file
+
 when tapping eye open a checkbox for every app to select what apps to hide
 and replace long press on app to open app settings
 and remove back to top arrow
