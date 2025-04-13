@@ -1,6 +1,7 @@
 package com.example.my_launcher.app_drawer
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -9,6 +10,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import com.example.my_launcher.FileManager
 
 class ApplicationInformation {
     var label: String? = null
@@ -20,11 +22,13 @@ class ApplicationInformation {
 class AppDrawer(
     private val activity: Activity,
     private val packageManager: PackageManager,
+    context: Context
 ) {
     var packages: List<ResolveInfo> = listOf()
     var apps = mutableStateListOf<ApplicationInformation>()
-
     var showAllApps = mutableStateOf(false)
+
+    private val fileManager = FileManager(context)
 
     init {
         createAppList()
@@ -58,12 +62,21 @@ class AppDrawer(
 
     fun hideApp(packageName: String?) {
         val app = apps.find { it.packageName?.lowercase() == packageName?.lowercase() }
-        apps.find { it.packageName?.lowercase() == packageName?.lowercase() }?.hidden =
-            !app?.hidden!!
+
+        if (packageName != null && !app?.hidden!!) {
+            fileManager.hidePackage(packageName)
+
+            apps.find { it.packageName?.lowercase() == packageName.lowercase() }?.hidden = true
+        } else if (packageName != null && app?.hidden!!) {
+            fileManager.showPackage(packageName)
+
+            apps.find { it.packageName?.lowercase() == packageName.lowercase() }?.hidden = false
+        }
     }
 
     fun createAppList() {
         getPackages()
+        fileManager.validateHiddenPackages(packages.map { it.activityInfo.packageName })
         val appList = packages
             .map { app ->
                 ApplicationInformation()
@@ -71,9 +84,8 @@ class AppDrawer(
                         label = app.loadLabel(packageManager).toString()
                         packageName = app.activityInfo.packageName
                         icon = app.loadIcon(packageManager)
-                        val previousApp =
-                            apps.find { it.packageName?.lowercase() == packageName!!.lowercase() }
-                        hidden = if (previousApp != null) previousApp.hidden else false
+                        hidden = fileManager.getHiddenPackages()
+                            .contains(app.activityInfo.packageName)
                     }
             }
             .sortedWith { a, b ->

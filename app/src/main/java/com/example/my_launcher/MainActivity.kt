@@ -40,9 +40,6 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
-save hidden apps to file
-add a log file for logging all restarts
-
 make eye hitbox a lot bigger. not the icon tho
 
 when tapping eye open a checkbox for every app to select what apps to hide
@@ -98,7 +95,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val appDrawer = AppDrawer(this, packageManager/*, customScope*/)
+        val appDrawer = AppDrawer(this, packageManager, applicationContext)
         var date = SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date())
 
         @SuppressLint("SourceLockedOrientationActivity")
