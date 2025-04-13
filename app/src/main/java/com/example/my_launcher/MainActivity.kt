@@ -43,10 +43,6 @@ when tapping eye open a checkbox for every app to select what apps to hide
 and replace long press on app to open app settings
 and remove back to top arrow
 
-clean up unused icons, fonts, and similar
-
-add a safety check that apps exist before opening them or settings so app dont crash
-
 make it rotatable
 
 load apps on sidethread and fill after each app loaded to make it faster??
