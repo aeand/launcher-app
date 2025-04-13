@@ -43,7 +43,6 @@ fun AppDrawerUI(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 15.dp, end = 15.dp)
     ) {
         Box(
             modifier = Modifier
@@ -128,7 +127,7 @@ fun AppDrawerUI(
                                 remember { mutableStateOf<ApplicationInformation?>(null) }
                             Row(
                                 modifier = Modifier
-                                    .padding(bottom = 20.dp)
+                                    .padding(start = 15.dp, bottom = 20.dp, end = 15.dp)
                                     .fillMaxHeight()
                                     .combinedClickable(
                                         onClick = {

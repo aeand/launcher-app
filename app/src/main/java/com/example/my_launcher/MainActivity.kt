@@ -37,38 +37,26 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
-when tapping eye open a checkbox for every app to select what apps to hide
-and replace long press on app to open app settings
-and remove back to top arrow
+PIE LAUNCHER
+- load apps on separate thread to make it faster and not freeze
+- disable battery saving for app?
+- home works for pie launcher :eyes: checkout their code!!!
+- also check how pie launcher converted the app icons to drawables
+- refresh app list after install
 
-make it rotatable
-
-load apps on sidethread and fill after each app loaded to make it faster??
-
-disable battery saving for app?
-
-are there any settings that are worth a settings page?
-
-home works for pie launcher :eyes: checkout their code!!!
-
-also check how pie launcher converted the app icons to drawables
-
-make padding on sides of app list part of scrolling app list instead of scrolling pager.
-cause i sometimes scroll at the very edge of my phone
+improve the pager to swipe faster
 
 sometimes when pressing back the fade takes a loong time to clear
 
-load apps on separate thread to make it faster and not freeze
-
-check out recompositions. reduce them as much as possible
-
-refresh app list after install
+are there any settings that are worth a settings page?
 
 fix app select background (currently grey)
 
 app select background shows when opening app select, locking, and then unlocking phone
 
-improve the pager to swipe faster
+make it rotatable
+
+check out recompositions. reduce them as much as possible
 */
 
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
