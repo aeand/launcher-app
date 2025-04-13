@@ -37,8 +37,6 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
-remove the dialog and replace it with an inline element
-
 when tapping eye open a checkbox for every app to select what apps to hide
 and replace long press on app to open app settings
 and remove back to top arrow
@@ -52,6 +50,8 @@ disable battery saving for app?
 are there any settings that are worth a settings page?
 
 home works for pie launcher :eyes: checkout their code!!!
+
+also check how pie launcher converted the app icons to drawables
 
 make padding on sides of app list part of scrolling app list instead of scrolling pager.
 cause i sometimes scroll at the very edge of my phone

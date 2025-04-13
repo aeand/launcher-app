@@ -40,41 +40,11 @@ import com.example.my_launcher.rememberDrawablePainter
 fun AppDrawerUI(
     appDrawer: AppDrawer,
 ) {
-    val lazyScroll = rememberLazyListState()
-
-    val showDialog = remember { mutableStateOf(false) }
-    val selectedApp = remember { mutableStateOf<ApplicationInformation?>(null) }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(start = 15.dp, end = 15.dp)
     ) {
-        if (showDialog.value) {
-            AppDrawerDialog(
-                toggleVisibility = {
-                    if (selectedApp.value != null)
-                        appDrawer.hideApp(selectedApp.value!!.packageName)
-
-                    selectedApp.value = null
-                    showDialog.value = false
-                },
-                openSettings = {
-                    if (selectedApp.value != null) {
-                        appDrawer.openAppSettings(selectedApp.value!!.packageName)
-                    }
-
-                    selectedApp.value = null
-                    showDialog.value = false
-                },
-                cancel = {
-                    selectedApp.value = null
-                    showDialog.value = false
-                },
-                selectedApp = selectedApp
-            )
-        }
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -106,6 +76,7 @@ fun AppDrawerUI(
             }
         }
 
+        val lazyScroll = rememberLazyListState()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -114,8 +85,6 @@ fun AppDrawerUI(
             horizontalArrangement = Arrangement.End
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .padding(end = 0.dp),
                 state = lazyScroll,
                 horizontalAlignment = Alignment.End
             ) {
@@ -155,34 +124,72 @@ fun AppDrawerUI(
                                 }
                             }
 
+                            val selectedApp =
+                                remember { mutableStateOf<ApplicationInformation?>(null) }
                             Row(
                                 modifier = Modifier
                                     .padding(bottom = 20.dp)
+                                    .fillMaxHeight()
                                     .combinedClickable(
                                         onClick = {
                                             appDrawer.launchApp(app.packageName)
                                         },
                                         onLongClick = {
                                             selectedApp.value = app
-                                            showDialog.value = true
                                         },
-                                    )
+                                    ),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    modifier = Modifier
-                                        .align(Alignment.CenterVertically)
-                                        .padding(end = 10.dp)
-                                        .width(300.dp),
-                                    text = "${app.label}",
-                                    color = Color.White,
-                                    fontFamily = Typography.titleMedium.fontFamily,
-                                    fontSize = Typography.titleMedium.fontSize,
-                                    fontWeight = Typography.titleMedium.fontWeight,
-                                    lineHeight = Typography.titleMedium.lineHeight,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.End
-                                )
+                                if (selectedApp.value == app) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .padding(end = 15.dp)
+                                            .fillMaxHeight()
+                                            .size(if (app.hidden == true) 40.dp else 30.dp)
+                                            .clickable {
+                                                if (selectedApp.value != null)
+                                                    appDrawer.hideApp(selectedApp.value!!.packageName)
+
+                                                selectedApp.value = null
+                                            },
+                                        painter = painterResource(id = if (app.hidden == true) R.drawable.eye_cross else R.drawable.eye),
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+
+                                    Icon(
+                                        modifier = Modifier
+                                            .padding(end = 15.dp)
+                                            .fillMaxHeight()
+                                            .size(30.dp)
+                                            .clickable {
+                                                if (selectedApp.value != null) {
+                                                    appDrawer.openAppSettings(selectedApp.value!!.packageName)
+                                                }
+
+                                                selectedApp.value = null
+                                            },
+                                        painter = painterResource(id = R.drawable.settings),
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                } else {
+                                    Text(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterVertically)
+                                            .padding(end = 10.dp)
+                                            .width(300.dp),
+                                        text = "${app.label}",
+                                        color = Color.White,
+                                        fontFamily = Typography.titleMedium.fontFamily,
+                                        fontSize = Typography.titleMedium.fontSize,
+                                        fontWeight = Typography.titleMedium.fontWeight,
+                                        lineHeight = Typography.titleMedium.lineHeight,
+                                        overflow = TextOverflow.Ellipsis,
+                                        maxLines = 1,
+                                        textAlign = TextAlign.End
+                                    )
+                                }
 
                                 Image(
                                     modifier = Modifier
