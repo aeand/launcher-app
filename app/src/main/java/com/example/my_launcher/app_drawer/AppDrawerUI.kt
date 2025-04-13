@@ -80,24 +80,30 @@ fun AppDrawerUI(
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
         ) {
-            Icon(
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .size(if (appDrawer.showAllApps.value) 30.dp else 20.dp)
-                    .offset {
-                        IntOffset(
-                            x = if (appDrawer.showAllApps.value) (0) else (-13),
-                            y = if (appDrawer.showAllApps.value) (0) else (-10)
-                        )
-                    }
+                    .size(40.dp)
                     .clickable {
                         appDrawer.showAllApps.value = !appDrawer.showAllApps.value
                         appDrawer.createAppList()
-                    },
-                painter = painterResource(id = if (appDrawer.showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
-                contentDescription = null,
-                tint = Color.White
-            )
+                    }
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(if (appDrawer.showAllApps.value) 30.dp else 20.dp)
+                        .offset {
+                            IntOffset(
+                                x = if (appDrawer.showAllApps.value) (0) else (-13),
+                                y = if (appDrawer.showAllApps.value) (0) else (-10)
+                            )
+                        },
+                    painter = painterResource(id = if (appDrawer.showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
         }
 
         Row(

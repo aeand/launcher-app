@@ -37,7 +37,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
-make eye hitbox a lot bigger. not the icon tho
+remove the dialog and replace it with an inline element
 
 when tapping eye open a checkbox for every app to select what apps to hide
 and replace long press on app to open app settings
