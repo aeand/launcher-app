@@ -135,7 +135,11 @@ fun AppDrawerUI(
                                             appDrawer.launchApp(app.packageName)
                                         },
                                         onLongClick = {
-                                            selectedApp.value = app
+                                            if (selectedApp.value == app) {
+                                                selectedApp.value = null
+                                            } else {
+                                                selectedApp.value = app
+                                            }
                                         },
                                     ),
                                 verticalAlignment = Alignment.CenterVertically
