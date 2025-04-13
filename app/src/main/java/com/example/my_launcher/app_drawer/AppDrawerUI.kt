@@ -48,6 +48,7 @@ fun AppDrawerUI(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
+                .padding(start = 15.dp, end = 15.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -64,7 +65,7 @@ fun AppDrawerUI(
                         .size(if (appDrawer.showAllApps.value) 30.dp else 20.dp)
                         .offset {
                             IntOffset(
-                                x = if (appDrawer.showAllApps.value) (0) else (-13),
+                                x = if (appDrawer.showAllApps.value) (13) else (0),
                                 y = if (appDrawer.showAllApps.value) (0) else (-10)
                             )
                         },
