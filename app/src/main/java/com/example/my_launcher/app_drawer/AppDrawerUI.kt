@@ -76,7 +76,9 @@ fun AppDrawerUI(
             }
         }
 
+        val selectedApp = remember { mutableStateOf<ApplicationInformation?>(null) }
         val lazyScroll = rememberLazyListState()
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -92,8 +94,8 @@ fun AppDrawerUI(
                     item {
                         if (appDrawer.showAllApps.value || !app.hidden!!) {
                             val firstAppWithLetter = appDrawer.apps.find {
-                                it.label?.uppercase()
-                                    ?.startsWith(app.label?.uppercase()!![0])!! && (it.hidden == false || appDrawer.showAllApps.value)
+                                it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!!
+                                        && (it.hidden == false || appDrawer.showAllApps.value)
                             }!!
 
                             if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
@@ -124,8 +126,6 @@ fun AppDrawerUI(
                                 }
                             }
 
-                            val selectedApp =
-                                remember { mutableStateOf<ApplicationInformation?>(null) }
                             Row(
                                 modifier = Modifier
                                     .padding(start = 15.dp, bottom = 20.dp, end = 15.dp)
@@ -148,7 +148,7 @@ fun AppDrawerUI(
                                             .size(if (app.hidden == true) 40.dp else 30.dp)
                                             .clickable {
                                                 if (selectedApp.value != null)
-                                                    appDrawer.hideApp(selectedApp.value!!.packageName)
+                                                    appDrawer.hideApp(app.packageName)
 
                                                 selectedApp.value = null
                                             },
