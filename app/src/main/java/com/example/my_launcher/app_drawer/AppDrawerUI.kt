@@ -31,7 +31,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.example.my_launcher.AppColors
 import com.example.my_launcher.R
 import com.example.my_launcher.Typography
 import com.example.my_launcher.rememberDrawablePainter
@@ -97,7 +96,7 @@ fun AppDrawerUI(
                     },
                 painter = painterResource(id = if (appDrawer.showAllApps.value) R.drawable.eye_cross else R.drawable.eye),
                 contentDescription = null,
-                tint = AppColors.textColor
+                tint = Color.White
             )
         }
 
@@ -145,7 +144,7 @@ fun AppDrawerUI(
                                         fontSize = Typography.bodyMedium.fontSize,
                                         fontWeight = Typography.bodyMedium.fontWeight,
                                         lineHeight = Typography.bodyMedium.lineHeight,
-                                        color = AppColors.textColor,
+                                        color = Color.White,
                                     )
                                 }
                             }
@@ -169,7 +168,7 @@ fun AppDrawerUI(
                                         .padding(end = 10.dp)
                                         .width(300.dp),
                                     text = "${app.label}",
-                                    color = AppColors.textColor,
+                                    color = Color.White,
                                     fontFamily = Typography.titleMedium.fontFamily,
                                     fontSize = Typography.titleMedium.fontSize,
                                     fontWeight = Typography.titleMedium.fontWeight,

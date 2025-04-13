@@ -7,10 +7,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -23,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,10 +44,6 @@ and replace long press on app to open app settings
 and remove back to top arrow
 
 clean up unused icons, fonts, and similar
-
-remove edge to edge. Was it for the trasparent colors?
-
-when going to settings i should go to top of app list
 
 add a safety check that apps exist before opening them or settings so app dont crash
 
@@ -84,11 +77,6 @@ improve the pager to swipe faster
 
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
 
-object AppColors {
-    var textColor = Color.White
-    var background = Color.Transparent
-}
-
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
 
@@ -100,11 +88,6 @@ class MainActivity : ComponentActivity() {
 
         @SuppressLint("SourceLockedOrientationActivity")
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(AppColors.background.toArgb()),
-            navigationBarStyle = SystemBarStyle.dark(AppColors.background.toArgb()),
-        )
 
         setContent {
             val pagerState = rememberPagerState(pageCount = { 2 })
@@ -164,24 +147,18 @@ class MainActivity : ComponentActivity() {
 
             Text(
                 modifier = Modifier
-                    .padding(start = 19.dp, top = 30.dp),
+                    .padding(start = 19.dp),
                 text = date,
-                color = AppColors.textColor,
+                color = Color.White,
                 fontSize = 11.sp,
                 fontWeight = FontWeight(600)
             )
 
-            VerticalPager(
-                modifier = Modifier
-                    .padding(top = 32.dp, bottom = 48.dp),
-                state = pagerState,
-            ) {
+            VerticalPager(state = pagerState) {
                 if (it == 0) {
                     Box(modifier = Modifier.fillMaxSize())
                 } else if (it == 1) {
-                    AppDrawerUI(
-                        appDrawer,
-                    )
+                    AppDrawerUI(appDrawer)
                 }
             }
         }
