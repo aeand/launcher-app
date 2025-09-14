@@ -40,16 +40,12 @@ import java.util.concurrent.TimeUnit
 Bugs:
 - sometimes when pressing back the fade takes a loong time to clear
 - fix app select background (currently grey). App select background shows when opening app select, locking, and then unlocking phone
-- after uninstall. open app. it will crash even though i have safety checks. prolly cause i dont check if it exists
 
 Fix:
 - make it rotatable
-- make the app list a seperate activity
+- make the app list a separate activity
 - refresh app list after install
-
-Notes:
-- one UI home. samsungs home app has statusbar fade thing when dragging from top. as well as no grey background in app select
-- check how pie launcher converted the app icons to drawables
+- one UI home. Samsungs home app has statusbar fade thing when dragging from top. as well as no grey background in app select
 
 Performance:
 - check out recompositions. reduce them as much as possible

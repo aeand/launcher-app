@@ -45,8 +45,12 @@ class AppDrawer(
             return
         }
 
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        activity.startActivity(launchIntent)
+        try {
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            activity.startActivity(launchIntent)
+        } catch (e: Exception) {
+            createAppList()
+        }
     }
 
     fun openAppSettings(packageName: String?) {
