@@ -113,7 +113,6 @@ fun AppDrawerUI(
                                             .width(150.dp)
                                             .height(1.dp)
                                             .padding(end = 10.dp)
-                                            .offset(0.dp, 2.dp)
                                             .background(Color.White)
                                     )
                                     Text(
