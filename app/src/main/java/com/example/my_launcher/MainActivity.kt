@@ -37,26 +37,25 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
-PIE LAUNCHER
-- load apps on separate thread to make it faster and not freeze
-- disable battery saving for app?
-- home works for pie launcher :eyes: checkout their code!!!
-- also check how pie launcher converted the app icons to drawables
+Bugs:
+- sometimes when pressing back the fade takes a loong time to clear
+- fix app select background (currently grey). App select background shows when opening app select, locking, and then unlocking phone
+- after uninstall. open app. it will crash even though i have safety checks. prolly cause i dont check if it exists
+
+Fix:
+- make it rotatable
+- make the app list a seperate activity
 - refresh app list after install
 
-improve the pager to swipe faster
+Notes:
+- one UI home. samsungs home app has statusbar fade thing when dragging from top. as well as no grey background in app select
+- check how pie launcher converted the app icons to drawables
 
-sometimes when pressing back the fade takes a loong time to clear
-
-are there any settings that are worth a settings page?
-
-fix app select background (currently grey)
-
-app select background shows when opening app select, locking, and then unlocking phone
-
-make it rotatable
-
-check out recompositions. reduce them as much as possible
+Performance:
+- check out recompositions. reduce them as much as possible
+- improve the pager to swipe faster
+- load apps on separate thread to make it faster and not freeze
+- disable battery saving for app?
 */
 
 // Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
