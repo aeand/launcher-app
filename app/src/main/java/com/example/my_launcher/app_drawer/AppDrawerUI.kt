@@ -25,7 +25,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,7 +36,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.my_launcher.R
 import com.example.my_launcher.Typography
-import com.example.my_launcher.rememberDrawablePainter
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -195,11 +198,17 @@ fun AppDrawerUI(
                                     )
                                 }
 
-                                Image(
+                                Box(
                                     modifier = Modifier
-                                        .size(50.dp),
-                                    painter = rememberDrawablePainter(drawable = app.icon),
-                                    contentDescription = null
+                                        .size(50.dp)
+                                        .drawBehind {
+                                            drawIntoCanvas { canvas ->
+                                                app.icon?.let { icon ->
+                                                    icon.setBounds(0, 0, size.width.roundToInt(), size.height.roundToInt())
+                                                    icon.draw(canvas.nativeCanvas)
+                                                }
+                                            }
+                                        }
                                 )
                             }
                         }

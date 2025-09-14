@@ -58,8 +58,6 @@ Performance:
 - disable battery saving for app?
 */
 
-// Inspiration: https://github.com/markusfisch/PieLauncher/tree/master
-
 class MainActivity : ComponentActivity() {
     private val customScope = CoroutineScope(AndroidUiDispatcher.Main)
 
