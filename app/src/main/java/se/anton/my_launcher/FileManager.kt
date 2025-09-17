@@ -1,4 +1,4 @@
-package com.example.my_launcher
+package se.anton.my_launcher
 
 import android.content.Context
 import java.io.File

@@ -1,19 +1,16 @@
-package com.example.my_launcher.app_drawer
+package se.anton.my_launcher.app_drawer
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.content.res.Resources.NotFoundException
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import com.example.my_launcher.FileManager
-
+import se.anton.my_launcher.FileManager
 
 class ApplicationInformation {
     var label: String? = null

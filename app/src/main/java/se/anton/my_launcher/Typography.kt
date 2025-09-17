@@ -1,4 +1,4 @@
-package com.example.my_launcher
+package se.anton.my_launcher
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

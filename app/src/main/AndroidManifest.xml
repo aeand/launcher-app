@@ -22,7 +22,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mylauncher">
         <activity
-            android:name=".MainActivity"
+            android:name="se.anton.my_launcher.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Mylauncher">
             <intent-filter>

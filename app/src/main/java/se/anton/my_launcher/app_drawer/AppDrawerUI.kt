@@ -1,7 +1,6 @@
-package com.example.my_launcher.app_drawer
+package se.anton.my_launcher.app_drawer
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -34,8 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.example.my_launcher.R
-import com.example.my_launcher.Typography
+import se.anton.my_launcher.R
+import se.anton.my_launcher.Typography
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)

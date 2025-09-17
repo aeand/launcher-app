@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.my_launcher"
+    namespace = "se.anton.my_launcher"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.my_launcher"
+        applicationId = "se.anton.my_launcher"
         minSdk = 33
         targetSdk = 34
         versionCode = 1

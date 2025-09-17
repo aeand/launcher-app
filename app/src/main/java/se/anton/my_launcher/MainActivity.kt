@@ -1,4 +1,4 @@
-package com.example.my_launcher
+package se.anton.my_launcher
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -25,8 +25,8 @@ import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.my_launcher.app_drawer.AppDrawer
-import com.example.my_launcher.app_drawer.AppDrawerUI
+import se.anton.my_launcher.app_drawer.AppDrawer
+import se.anton.my_launcher.app_drawer.AppDrawerUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit
 Bugs:
 - sometimes when pressing back the fade takes a loong time to clear
 - fix app select background (currently grey). App select background shows when opening app select, locking, and then unlocking phone
+- installing the same app under a different package name but same app name. This creates two letter category. eg "...Maps ---N Notes ---N Notes ---P Phone Play Store..."
 
 Fix:
 - make it rotatable
