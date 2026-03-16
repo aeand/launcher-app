@@ -37,22 +37,51 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
+Show/hide apps button fixes:
+- disable when loading
+- add loading indicator
+- increase size
+- make it filter result instead of reloading result
+
 Bugs:
-- sometimes when pressing back the fade takes a loong time to clear
-- fix app select background (currently grey). App select background shows when opening app select, locking, and then unlocking phone
+- takes long to visually react on unlock
+- hiding app gator resulted in gallery getting its own G category with my other app gallery starting a new G category
 - installing the same app under a different package name but same app name. This creates two letter category. eg "...Maps ---N Notes ---N Notes ---P Phone Play Store..."
 
 Fix:
-- make it rotatable
-- make the app list a separate activity
-- refresh app list after install
-- one UI home. Samsungs home app has statusbar fade thing when dragging from top. as well as no grey background in app select
+- disable scroll for section with overlapping scroll
+- callback on opening app settings? could refresh app list after going back
+- add drag down to open notifications again (try with fade)
 
 Performance:
 - check out recompositions. reduce them as much as possible
 - improve the pager to swipe faster
 - load apps on separate thread to make it faster and not freeze
 - disable battery saving for app?
+
+Look into:
+- refresh app list after install and uninstall
+- gray app select background
+- fade when dragging down notifications
+- home button going to home app
+
+other launchers to look into
+- octopi
+- compose
+- indistractable
+- ratio productivity homescreen
+- p
+- xos
+- lynx
+- square home app
+- before launcher go minimal
+- mini desktop
+- aio
+- mur
+- hyperion
+- ace smart
+- zen detox minimalist
+- pro launcher productive you
 */
 
 class MainActivity : ComponentActivity() {
