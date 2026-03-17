@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,9 +57,39 @@ fun AppDrawerUI(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(40.dp)
+                    .offset {
+                        IntOffset(
+                            x = -100,
+                            y = 0
+                        )
+                    }
+                    .clickable {
+                        if (!appDrawer.loadingApps.value) {
+                            appDrawer.createAppList()
+                        }
+                    }) {
+                Icon(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(20.dp)
+                        .offset {
+                            IntOffset(
+                                x = 0,
+                                y = -12
+                            )
+                        },
+                    painter = painterResource(id = R.drawable.refresh),
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(40.dp)
                     .clickable {
                         appDrawer.showAllApps.value = !appDrawer.showAllApps.value
-                        appDrawer.createAppList()
                     }
             ) {
                 Icon(
@@ -88,126 +119,145 @@ fun AppDrawerUI(
                 .align(Alignment.BottomEnd),
             horizontalArrangement = Arrangement.End
         ) {
-            LazyColumn(
-                state = lazyScroll,
-                horizontalAlignment = Alignment.End
-            ) {
-                appDrawer.apps.forEach { app ->
-                    item {
-                        if (appDrawer.showAllApps.value || !app.hidden!!) {
-                            val firstAppWithLetter = appDrawer.apps.find {
-                                it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!!
-                                        && (it.hidden == false || appDrawer.showAllApps.value)
-                            }!!
+            if (appDrawer.loadingApps.value) {
+                Box(
+                    Modifier
+                        .padding(end = 10.dp)
+                        .align(Alignment.CenterVertically)
+                ) {
+                    CircularProgressIndicator(
+                        Modifier.size(80.dp),
+                        color = Color.Gray,
+                        trackColor = Color.White
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = lazyScroll,
+                    horizontalAlignment = Alignment.End
+                ) {
+                    appDrawer.apps.forEach { app ->
+                        item {
+                            if (appDrawer.showAllApps.value || !app.hidden!!) {
+                                val firstAppWithLetter = appDrawer.apps.find {
+                                    it.label?.uppercase()?.startsWith(app.label?.uppercase()!![0])!!
+                                            && (it.hidden == false || appDrawer.showAllApps.value)
+                                }!!
 
-                            if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
+                                if (app.label?.uppercase() == firstAppWithLetter.label?.uppercase()) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(150.dp)
+                                                .height(1.dp)
+                                                .padding(end = 10.dp)
+                                                .background(Color.White)
+                                        )
+                                        Text(
+                                            modifier = Modifier
+                                                .padding(end = 10.dp),
+                                            text = app.label?.first()?.uppercaseChar().toString(),
+                                            fontFamily = Typography.bodyMedium.fontFamily,
+                                            fontSize = Typography.bodyMedium.fontSize,
+                                            fontWeight = Typography.bodyMedium.fontWeight,
+                                            lineHeight = Typography.bodyMedium.lineHeight,
+                                            color = Color.White,
+                                        )
+                                    }
+                                }
+
                                 Row(
                                     modifier = Modifier
-                                        .padding(bottom = 4.dp),
-                                    horizontalArrangement = Arrangement.End,
+                                        .padding(start = 15.dp, bottom = 20.dp, end = 15.dp)
+                                        .fillMaxHeight()
+                                        .combinedClickable(
+                                            onClick = {
+                                                appDrawer.launchApp(app.packageName)
+                                            },
+                                            onLongClick = {
+                                                if (selectedApp.value == app) {
+                                                    selectedApp.value = null
+                                                } else {
+                                                    selectedApp.value = app
+                                                }
+                                            },
+                                        ),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    if (selectedApp.value == app) {
+                                        Icon(
+                                            modifier = Modifier
+                                                .padding(end = 15.dp)
+                                                .fillMaxHeight()
+                                                .size(if (app.hidden == true) 40.dp else 30.dp)
+                                                .clickable {
+                                                    if (selectedApp.value != null)
+                                                        appDrawer.hideApp(app.packageName)
+
+                                                    selectedApp.value = null
+                                                },
+                                            painter = painterResource(id = if (app.hidden == true) R.drawable.eye_cross else R.drawable.eye),
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+
+                                        Icon(
+                                            modifier = Modifier
+                                                .padding(end = 15.dp)
+                                                .fillMaxHeight()
+                                                .size(30.dp)
+                                                .clickable {
+                                                    if (selectedApp.value != null) {
+                                                        appDrawer.openAppSettings(selectedApp.value!!.packageName)
+                                                    }
+
+                                                    selectedApp.value = null
+                                                },
+                                            painter = painterResource(id = R.drawable.settings),
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    } else {
+                                        Text(
+                                            modifier = Modifier
+                                                .align(Alignment.CenterVertically)
+                                                .padding(end = 10.dp)
+                                                .width(300.dp),
+                                            text = "${app.label}",
+                                            color = Color.White,
+                                            fontFamily = Typography.titleMedium.fontFamily,
+                                            fontSize = Typography.titleMedium.fontSize,
+                                            fontWeight = Typography.titleMedium.fontWeight,
+                                            lineHeight = Typography.titleMedium.lineHeight,
+                                            overflow = TextOverflow.Ellipsis,
+                                            maxLines = 1,
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
+
                                     Box(
                                         modifier = Modifier
-                                            .width(150.dp)
-                                            .height(1.dp)
-                                            .padding(end = 10.dp)
-                                            .background(Color.White)
-                                    )
-                                    Text(
-                                        modifier = Modifier
-                                            .padding(end = 10.dp),
-                                        text = app.label?.first()?.uppercaseChar().toString(),
-                                        fontFamily = Typography.bodyMedium.fontFamily,
-                                        fontSize = Typography.bodyMedium.fontSize,
-                                        fontWeight = Typography.bodyMedium.fontWeight,
-                                        lineHeight = Typography.bodyMedium.lineHeight,
-                                        color = Color.White,
-                                    )
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .padding(start = 15.dp, bottom = 20.dp, end = 15.dp)
-                                    .fillMaxHeight()
-                                    .combinedClickable(
-                                        onClick = {
-                                            appDrawer.launchApp(app.packageName)
-                                        },
-                                        onLongClick = {
-                                            if (selectedApp.value == app) {
-                                                selectedApp.value = null
-                                            } else {
-                                                selectedApp.value = app
-                                            }
-                                        },
-                                    ),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (selectedApp.value == app) {
-                                    Icon(
-                                        modifier = Modifier
-                                            .padding(end = 15.dp)
-                                            .fillMaxHeight()
-                                            .size(if (app.hidden == true) 40.dp else 30.dp)
-                                            .clickable {
-                                                if (selectedApp.value != null)
-                                                    appDrawer.hideApp(app.packageName)
-
-                                                selectedApp.value = null
-                                            },
-                                        painter = painterResource(id = if (app.hidden == true) R.drawable.eye_cross else R.drawable.eye),
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-
-                                    Icon(
-                                        modifier = Modifier
-                                            .padding(end = 15.dp)
-                                            .fillMaxHeight()
-                                            .size(30.dp)
-                                            .clickable {
-                                                if (selectedApp.value != null) {
-                                                    appDrawer.openAppSettings(selectedApp.value!!.packageName)
-                                                }
-
-                                                selectedApp.value = null
-                                            },
-                                        painter = painterResource(id = R.drawable.settings),
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                } else {
-                                    Text(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterVertically)
-                                            .padding(end = 10.dp)
-                                            .width(300.dp),
-                                        text = "${app.label}",
-                                        color = Color.White,
-                                        fontFamily = Typography.titleMedium.fontFamily,
-                                        fontSize = Typography.titleMedium.fontSize,
-                                        fontWeight = Typography.titleMedium.fontWeight,
-                                        lineHeight = Typography.titleMedium.lineHeight,
-                                        overflow = TextOverflow.Ellipsis,
-                                        maxLines = 1,
-                                        textAlign = TextAlign.End
-                                    )
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .drawBehind {
-                                            drawIntoCanvas { canvas ->
-                                                app.icon?.let { icon ->
-                                                    icon.setBounds(0, 0, size.width.roundToInt(), size.height.roundToInt())
-                                                    icon.draw(canvas.nativeCanvas)
+                                            .size(50.dp)
+                                            .drawBehind {
+                                                drawIntoCanvas { canvas ->
+                                                    app.icon?.let { icon ->
+                                                        icon.setBounds(
+                                                            0,
+                                                            0,
+                                                            size.width.roundToInt(),
+                                                            size.height.roundToInt()
+                                                        )
+                                                        icon.draw(canvas.nativeCanvas)
+                                                    }
                                                 }
                                             }
-                                        }
-                                )
+                                    )
+                                }
                             }
                         }
                     }

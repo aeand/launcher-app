@@ -37,12 +37,6 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /* TODO
-Show/hide apps button fixes:
-- disable when loading
-- add loading indicator
-- increase size
-- make it filter result instead of reloading result
-
 Bugs:
 - takes long to visually react on unlock
 - hiding app gator resulted in gallery getting its own G category with my other app gallery starting a new G category

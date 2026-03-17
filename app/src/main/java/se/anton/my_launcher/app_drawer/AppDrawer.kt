@@ -27,6 +27,7 @@ class AppDrawer(
     var packages: List<ResolveInfo> = listOf()
     var apps = mutableStateListOf<ApplicationInformation>()
     var showAllApps = mutableStateOf(false)
+    var loadingApps = mutableStateOf(false)
 
     private val fileManager = FileManager(context)
 
@@ -79,6 +80,7 @@ class AppDrawer(
     }
 
     fun createAppList() {
+        loadingApps.value = true
         getPackages()
         fileManager.validateHiddenPackages(packages.map { it.activityInfo.packageName })
         val appList = packages
@@ -100,6 +102,7 @@ class AppDrawer(
         appList.forEach {
             apps.add(it)
         }
+        loadingApps.value = false
     }
 
     private fun getPackages() {
