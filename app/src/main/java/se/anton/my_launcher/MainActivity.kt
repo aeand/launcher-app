@@ -60,6 +60,11 @@ Look into:
 - home button going to home app
 
 other launchers to look into
+- a15 (does delete)
+- lime
+- mango
+- pie
+- velora
 - octopi
 - compose
 - indistractable
